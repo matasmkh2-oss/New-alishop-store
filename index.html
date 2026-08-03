@@ -2,26 +2,40 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#6c55ed"><meta name="mobile-web-app-capable" content="yes">
-<title>علي شوب</title><link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./assets/icons/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#6958F5"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>علي شوب</title>
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./assets/icons/icon-192.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./assets/css/app.css">
 </head>
 <body>
-<div id="splash" class="splash"><div class="logo big">A</div><b>علي شوب</b><span>جارٍ تجهيز المتجر...</span></div>
-<div id="toasts"></div>
-<header><a class="brand" href="#/home"><div class="logo">A</div><div><b>علي شوب</b><small id="subtitle">المنتجات الرقمية</small></div></a><div class="head-actions"><button id="theme">☾</button><button id="notify" class="hidden">🔔<i id="ncount" class="hidden">0</i></button></div></header>
-<main id="app"></main>
-<nav>
-<a href="#/home" data-route="home"><b>⌂</b><small>الرئيسية</small></a>
-<a href="#/products" data-route="products"><b>▦</b><small>المنتجات</small></a>
-<a href="#/orders" data-route="orders"><b>▣</b><small>طلباتي</small></a>
-<a href="#/wallet" data-route="wallet"><b>◉</b><small>المحفظة</small></a>
-<a href="#/account" data-route="account"><b>●</b><small>حسابي</small></a>
+<div id="splash" class="splash"><div class="splash-logo">A</div><h1>علي شوب</h1><p>متجر المنتجات الرقمية</p></div>
+<div id="announcementBar" class="announcement-bar hidden"></div>
+<div id="toastRoot" class="toast-root"></div>
+<header class="app-header">
+<a href="#/home" class="brand"><span class="brand-logo">A</span><span><strong id="storeName">علي شوب</strong><small id="pageTitle">المنتجات الرقمية</small></span></a>
+<div class="header-actions">
+<button id="installButton" class="icon-btn hidden" title="تثبيت التطبيق">⬇</button>
+<button id="themeButton" class="icon-btn">☾</button>
+<button id="notificationButton" class="icon-btn hidden">🔔<i id="notificationCount" class="counter hidden">0</i></button>
+</div>
+</header>
+<main id="app" class="page"></main>
+<nav class="bottom-nav">
+<a href="#/home" data-route="home"><span>⌂</span><small>الرئيسية</small></a>
+<a href="#/products" data-route="products"><span>▦</span><small>المنتجات</small></a>
+<a href="#/orders" data-route="orders"><span>▣</span><small>طلباتي</small></a>
+<a href="#/wallet" data-route="wallet"><span>◉</span><small>المحفظة</small></a>
+<a href="#/account" data-route="account"><span>●</span><small>حسابي</small></a>
 </nav>
-<dialog id="auth"><form id="authForm"><div class="handle"></div><div class="sheet-head"><div><h2 id="authTitle">تسجيل الدخول</h2><p>ادخل بيانات حسابك.</p></div><button type="button" data-close="auth">×</button></div><div id="register" class="hidden"><label>الاسم<input id="name"></label><label>الهاتف<input id="phone"></label></div><label>البريد<input id="email" type="email" required></label><label>كلمة المرور<input id="password" type="password" minlength="6" required></label><button id="authSubmit" class="primary full">دخول</button><button id="switch" type="button" class="text">ليس لديك حساب؟ أنشئ حسابًا</button></form></dialog>
-<dialog id="modal"></dialog>
+
+<dialog id="authDialog" class="sheet"><form id="authForm" class="sheet-body">
+<div class="grip"></div><div class="sheet-head"><div><h2 id="authTitle">تسجيل الدخول</h2><p>ادخل بيانات حسابك</p></div><button type="button" data-close-dialog="authDialog">×</button></div>
+<div id="registerFields" class="hidden"><label>الاسم الكامل<input id="fullName"></label><label>رقم الهاتف<input id="phone"></label></div>
+<label>البريد الإلكتروني<input id="email" type="email" required></label><label>كلمة المرور<input id="password" type="password" minlength="6" required></label>
+<button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn">ليس لديك حساب؟ أنشئ حسابًا</button>
+</form></dialog>
+<dialog id="modalDialog" class="sheet wide"></dialog>
 <script type="module" src="./assets/js/app.js"></script>
 </body></html>
