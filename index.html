@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="متجر منتجات رقمية مع محفظة ولوحة إدارة" />
+  <title>متجري الرقمي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <header class="topbar">
+    <a href="#" class="brand" data-route="home">
+      <span class="brand-mark">D</span>
+      <span>
+        <strong>متجري الرقمي</strong>
+        <small>منتجاتك الرقمية بسهولة</small>
+      </span>
+    </a>
+
+    <nav class="desktop-nav">
+      <button data-route="home">الرئيسية</button>
+      <button data-route="orders">طلباتي</button>
+      <button data-route="wallet">المحفظة</button>
+      <button data-route="profile">حسابي</button>
+      <button id="adminNav" data-route="admin" class="hidden">الإدارة</button>
+    </nav>
+
+    <div class="top-actions">
+      <button id="themeBtn" class="icon-btn" aria-label="تبديل المظهر">☾</button>
+      <button id="authBtn" class="primary-btn">تسجيل الدخول</button>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <nav class="mobile-nav">
+    <button data-route="home">⌂<span>الرئيسية</span></button>
+    <button data-route="orders">▣<span>طلباتي</span></button>
+    <button data-route="wallet">◉<span>المحفظة</span></button>
+    <button data-route="profile">●<span>حسابي</span></button>
+  </nav>
+
+  <dialog id="authDialog" class="modal">
+    <form id="authForm" method="dialog">
+      <div class="modal-head">
+        <div>
+          <h2 id="authTitle">تسجيل الدخول</h2>
+          <p>ادخل بياناتك للوصول إلى حسابك.</p>
+        </div>
+        <button type="button" class="close-btn" data-close>×</button>
+      </div>
+
+      <label>الاسم الكامل
+        <input id="fullName" type="text" placeholder="الاسم الكامل" />
+      </label>
+
+      <label>البريد الإلكتروني
+        <input id="email" type="email" required placeholder="name@example.com" />
+      </label>
+
+      <label>كلمة المرور
+        <input id="password" type="password" required minlength="6" placeholder="••••••••" />
+      </label>
+
+      <button id="authSubmit" class="primary-btn wide" type="submit">دخول</button>
+      <button id="switchAuth" class="link-btn" type="button">ليس لديك حساب؟ أنشئ حساباً</button>
+    </form>
+  </dialog>
+
+  <dialog id="productDialog" class="modal product-modal"></dialog>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
