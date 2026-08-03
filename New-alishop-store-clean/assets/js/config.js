@@ -1,8 +1,0 @@
-export const CONFIG = {
-  SUPABASE_URL: "https://jcnbbingctwuathvfqty.supabase.co",
-  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjbmJiaW5nY3R3dWF0aHZmcXR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3Nzg3NTUsImV4cCI6MjEwMTM1NDc1NX0.jQY17YOKCYD9g5O04WX6RuqQkHJx_NyGUzEWc_Rh8s4",
-  STORE_NAME: "علي شوب",
-  CURRENCY: "USD",
-  SUPPORT_EMAIL: "matasmkh2@gmail.com",
-  WHATSAPP: "963937580652"
-};
