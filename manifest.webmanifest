@@ -1,0 +1,18 @@
+{
+  "name": "AliShop - علي شوب",
+  "short_name": "AliShop",
+  "start_url": "./index.html#/home",
+  "display": "standalone",
+  "background_color": "#f5f6fb",
+  "theme_color": "#6c55ed",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
