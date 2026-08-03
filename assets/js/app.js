@@ -43,4 +43,34 @@ async function aMarketing(){let[{data:s},{data:a}]=await Promise.all([supabase.f
 function slideForm(){openModal(`<div class="sheet-head"><h2>إضافة سلايد</h2><button data-close>×</button></div><form id="sf"><label>العنوان<input id="st" required></label><label>النص<input id="ss"></label><label>رابط الصورة<input id="si" type="url"></label><label>نص الزر<input id="sb" value="استكشف"></label><label>رابط الزر<input id="su" value="#/products"></label><button class="btn primary block">حفظ</button></form>`);$("#sf").onsubmit=async e=>{e.preventDefault();let{error}=await supabase.from("store_slides").insert({title:$("#st").value,subtitle:$("#ss").value,image_url:$("#si").value||null,button_text:$("#sb").value,button_url:$("#su").value,is_active:true});if(error)return toast(error.message,"error");toast("تم الحفظ");modal.close();aMarketing()}}
 function annForm(){openModal(`<div class="sheet-head"><h2>إعلان عام</h2><button data-close>×</button></div><form id="af"><label>العنوان<input id="at"></label><label>النص<textarea id="am" required></textarea></label><label>النوع<select id="ak"><option value="bar">شريط علوي</option><option value="notification">إشعار عام</option></select></label><button class="btn primary block">نشر</button></form>`);$("#af").onsubmit=async e=>{e.preventDefault();let{error}=await supabase.rpc("publish_announcement",{p_title:$("#at").value||"إعلان",p_message:$("#am").value,p_kind:$("#ak").value});if(error)return toast(error.message,"error");toast("تم نشر الإعلان");modal.close();aMarketing()}}
 async function aSystem(){$("#adminContent").innerHTML=`${section("النظام","الإعدادات والتثبيت")}<div class="card item"><div class="item-main"><h3>تثبيت التطبيق</h3><p>يظهر زر التثبيت عندما يسمح Chrome بذلك</p></div><button class="btn soft" onclick="document.getElementById('installButton').click()">تثبيت</button></div><div class="note" style="margin-top:12px">تم تفعيل الإشعارات داخل التطبيق عبر Supabase Realtime. إشعارات أندرويد في الخلفية تحتاج Push Server منفصل، لذلك هذه النسخة تدعم الإشعارات الفورية أثناء فتح التطبيق.</div>`}
+
+// ===== AliShop V4 extensions =====
+async function toggleFavorite(productId){
+  if(!needUser())return;
+  const{data:existing}=await supabase.from("favorites").select("id").eq("user_id",S.user.id).eq("product_id",productId).maybeSingle();
+  if(existing){
+    const{error}=await supabase.from("favorites").delete().eq("id",existing.id);
+    if(error)return toast(error.message,"error");
+    toast("تمت الإزالة من المفضلة");
+  }else{
+    const{error}=await supabase.from("favorites").insert({user_id:S.user.id,product_id:productId});
+    if(error)return toast(error.message,"error");
+    toast("تمت الإضافة إلى المفضلة");
+  }
+}
+async function applyCoupon(code,productId){
+  const{data,error}=await supabase.rpc("validate_coupon",{p_code:code,p_product_id:productId});
+  if(error)throw error;
+  return data;
+}
+async function exportCsv(table,filename){
+  const{data,error}=await supabase.from(table).select("*").limit(5000);
+  if(error)return toast(error.message,"error");
+  if(!data?.length)return toast("لا توجد بيانات للتصدير","error");
+  const keys=Object.keys(data[0]);
+  const csv=[keys.join(","),...data.map(r=>keys.map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(","))].join("\\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();URL.revokeObjectURL(a.href);
+}
+
 authMode();init();
