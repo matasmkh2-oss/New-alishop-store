@@ -1,0 +1,5 @@
+# لا يوجد مفتاح سري داخل المشروع
+.env
+.env.*
+node_modules/
+.DS_Store
