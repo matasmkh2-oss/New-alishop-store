@@ -19,6 +19,40 @@ async function uploadFile(file,folder){
 }
 function imagePicker(id,current=""){return `<div class="upload-box">${current?`<img class="upload-preview" src="${esc(current)}">`:"<div class='upload-placeholder'>⌑</div>"}<label class="btn soft upload-button">اختيار صورة<input id="${id}" type="file" accept="image/*" hidden></label><small>PNG أو JPG أو WEBP، بحد أقصى 5MB</small></div>`}
 
+
+function applyBranding(){
+  const name=S.settings.store_name||"علي شوب";
+  const logo=S.settings.logo_url||null;
+  $("#storeName").textContent=name;
+  const topLogo=$(".brand-logo");
+  const splashLogo=$(".splash-logo");
+  if(logo){
+    topLogo.innerHTML=`<img src="${esc(logo)}" alt="${esc(name)}">`;
+    splashLogo.innerHTML=`<img src="${esc(logo)}" alt="${esc(name)}">`;
+  }else{
+    const initial=name.trim().charAt(0)||"A";
+    topLogo.textContent=initial;
+    splashLogo.textContent=initial;
+  }
+}
+async function previewCoupon(code,product){
+  const box=$("#couponPreview",modal);
+  if(!box)return;
+  if(!code){box.className="coupon-preview hidden";box.innerHTML="";return}
+  box.className="coupon-preview loading";
+  box.innerHTML=`<i data-lucide="loader-circle"></i><span>جاري التحقق من الكوبون...</span>`;
+  refreshIcons();
+  const{data,error}=await supabase.rpc("preview_coupon_discount",{p_code:code,p_product_id:product.id});
+  if(error||!data?.valid){
+    box.className="coupon-preview invalid";
+    box.innerHTML=`<i data-lucide="circle-x"></i><div><strong>الكوبون غير صالح أو غير نشط</strong><small>${esc(data?.message||error?.message||"تحقق من الرمز")}</small></div>`;
+  }else{
+    box.className="coupon-preview valid";
+    box.innerHTML=`<i data-lucide="badge-percent"></i><div><strong>خصم ${money(data.discount)}</strong><small>السعر بعد الخصم: ${money(data.final_total)} • الكوبون نشط</small></div>`;
+  }
+  refreshIcons();
+}
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -41,7 +75,7 @@ function setTheme(t){document.documentElement.dataset.theme=t;localStorage.theme
 function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#authTitle").textContent=r?"إنشاء حساب":"تسجيل الدخول";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا"}
 async function submitAuth(e){e.preventDefault();try{const email=$("#email").value.trim(),password=$("#password").value;if(S.authMode==="register"){const{error}=await supabase.auth.signUp({email,password,options:{data:{full_name:$("#fullName").value.trim(),phone:$("#phone").value.trim()}}});if(error)throw error}else{const{error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error}auth.close();toast("تمت العملية بنجاح")}catch(e){toast(e.message,"error")}}
 async function loadIdentity(){S.profile=null;S.wallet={balance:0};if(!S.user)return;const[{data:p},{data:w}]=await Promise.all([supabase.from("profiles").select("*").eq("id",S.user.id).maybeSingle(),supabase.from("wallets").select("balance").eq("user_id",S.user.id).maybeSingle()]);S.profile=p;S.wallet=w||{balance:0}}
-async function loadPublic(){const[{data:s},{data:a},{data:st}]=await Promise.all([supabase.from("store_slides").select("*").eq("is_active",true).order("sort_order"),supabase.from("announcements").select("*").eq("is_active",true).eq("kind","bar").order("created_at",{ascending:false}).limit(1),supabase.from("store_settings").select("*").limit(1).maybeSingle()]);S.slides=s||[];S.settings=st||{};$("#storeName").textContent=S.settings.store_name||"علي شوب";const bar=$("#announcementBar");if(a?.[0]){bar.innerHTML=`${esc(a[0].message)}<button>×</button>`;bar.classList.remove("hidden");bar.querySelector("button").onclick=()=>bar.classList.add("hidden")}else bar.classList.add("hidden")}
+async function loadPublic(){const[{data:s},{data:a},{data:st}]=await Promise.all([supabase.from("store_slides").select("*").eq("is_active",true).order("sort_order"),supabase.from("announcements").select("*").eq("is_active",true).eq("kind","bar").order("created_at",{ascending:false}).limit(1),supabase.from("store_settings").select("*").limit(1).maybeSingle()]);S.slides=s||[];S.settings=st||{};applyBranding();const bar=$("#announcementBar");if(a?.[0]){bar.innerHTML=`${esc(a[0].message)}<button>×</button>`;bar.classList.remove("hidden");bar.classList.remove("news-enter");void bar.offsetWidth;bar.classList.add("news-enter");bar.querySelector("button").onclick=()=>bar.classList.add("hidden")}else bar.classList.add("hidden")}
 async function loadNotes(){S.notes=[];if(!S.user)return;const{data}=await supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50);S.notes=data||[]}
 function updateHeader(){$("#notificationButton").classList.toggle("hidden",!S.user);const n=S.notes.filter(x=>!x.is_read).length;$("#notificationCount").textContent=n;$("#notificationCount").classList.toggle("hidden",!n)}
 function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();toast(p.new.title);await loadNotes();updateHeader()}}).subscribe()}
@@ -82,45 +116,61 @@ function bindProducts(){
   $$("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});
   refreshIcons();
 }
-async function home(){await catalog();const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];app.innerHTML=`<div class="hero-slider">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}" style="${s.image_url?`background-image:linear-gradient(90deg,rgba(23,19,55,.72),rgba(23,19,55,.25)),url('${esc(s.image_url)}')`:""}"><div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div><div class="wallet-strip"><div><small>رصيد محفظتك</small><strong>${money(S.wallet.balance)}</strong></div><a href="#/wallet" class="btn soft">شحن</a></div>${section("خدمات السوشل ميديا","خدمات السوشل ميديا",`<a class="btn soft" href="#/social-services"><i data-lucide="rocket"></i> عرض الخدمات</a>`)}<div class="card item"><div class="item-main"><h3>خدمات السوشل ميديا سريعة</h3><p>متابعون، مشاهدات وتفاعل مع متابعة الطلب.</p></div><a href="#/social-services" class="icon-action"><i data-lucide="arrow-left"></i></a></div>${section("منتجات مميزة","أحدث المنتجات المتاحة")}<div class="grid">${S.products.slice(0,6).map(pcard).join("")||empty("لا توجد منتجات")}</div>`;let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{els[cur].classList.remove("active");dots[cur].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active")};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);bindProducts()}
+async function home(){await catalog();const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];app.innerHTML=`<div class="hero-slider">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}" style="${s.image_url?`background-image:linear-gradient(90deg,rgba(23,19,55,.72),rgba(23,19,55,.25)),url('${esc(s.image_url)}')`:""}"><div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div><div class="wallet-strip"><div><small>رصيد محفظتك</small><strong>${money(S.wallet.balance)}</strong></div><a href="#/wallet" class="btn soft">شحن</a></div>${section("خدمات السوشل ميديا","خدمات السوشل ميديا",`<a class="btn soft" href="#/social-services"><i data-lucide="rocket"></i> عرض الخدمات</a>`)}<div class="card item"><div class="item-main"><h3>خدمات السوشل ميديا سريعة</h3><p>متابعون، مشاهدات وتفاعل مع متابعة الطلب.</p></div><a href="#/social-services" class="icon-action"><i data-lucide="arrow-left"></i></a></div>${section("منتجات مميزة","أحدث المنتجات المتاحة")}<div class="grid">${S.products.slice(0,6).map(pcard).join("")||empty("لا توجد منتجات")}</div>`;let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{const prev=cur;els[prev].classList.remove("active");els[prev].classList.add("leaving");dots[prev].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active");setTimeout(()=>els[prev].classList.remove("leaving"),650)};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);bindProducts()}
 async function products(){
-  app.innerHTML=`${section("المنتجات والخدمات","اختر القسم الذي تريد الدخول إليه")}
-  <div class="product-mode-grid">
-    <button class="mode-card digital-mode" data-mode-link="#/digital-products">
-      <span class="mode-icon"><i data-lucide="package-open"></i></span>
-      <div><h2>المنتجات الرقمية</h2><p>اشتراكات، أكواد، حسابات ومنتجات رقمية جاهزة.</p></div>
-      <i class="mode-arrow" data-lucide="arrow-left"></i>
-    </button>
-    <button class="mode-card social-mode" data-mode-link="#/social-services">
-      <span class="mode-icon"><i data-lucide="messages-square"></i></span>
-      <div><h2>خدمات السوشل ميديا</h2><p>متابعون، مشاهدات، إعجابات وخدمات المنصات.</p></div>
-      <i class="mode-arrow" data-lucide="arrow-left"></i>
-    </button>
-  </div>
-  ${section("وصول سريع","يمكنك العودة واختيار قسم آخر في أي وقت")}
-  <div class="card note-card"><i data-lucide="sparkles"></i><p>تم فصل المنتجات عن خدمات السوشل ميديا لتصبح عملية البحث والطلب أبسط وأكثر وضوحًا.</p></div>`;
-  $$("[data-mode-link]").forEach(b=>b.onclick=()=>location.hash=b.dataset.modeLink);
-  refreshIcons();
+  const initial=new URLSearchParams(location.hash.split("?")[1]||"").get("tab")||"digital";
+  S.productMode=initial;
+  const drawShell=()=>{
+    app.innerHTML=`${section("المنتجات والخدمات","اختر النوع من الشريط العلوي")}
+    <div class="catalog-top-tabs">
+      <button class="${S.productMode==="digital"?"active":""}" data-catalog-tab="digital"><i data-lucide="package-open"></i><span>منتجات رقمية</span></button>
+      <button class="${S.productMode==="social"?"active":""}" data-catalog-tab="social"><i data-lucide="messages-square"></i><span>خدمات السوشل ميديا</span></button>
+    </div>
+    <div id="catalogDynamic" class="catalog-dynamic"></div>`;
+    $$("[data-catalog-tab]").forEach(b=>b.onclick=()=>{S.productMode=b.dataset.catalogTab;drawShell();renderCatalogTab()});
+    renderCatalogTab();refreshIcons();
+  };
+  const renderCatalogTab=()=>S.productMode==="digital"?renderDigitalInside():renderSocialInside();
+  const renderDigitalInside=async()=>{
+    await catalog();
+    const{data:cats}=await supabase.from("categories").select("*").eq("is_active",true).order("sort_order");
+    const categories=cats||[],roots=categories.filter(c=>!c.parent_id);
+    $("#catalogDynamic").innerHTML=`${roots.length?`<div class="category-strip">${roots.map(c=>`<button class="category-pill" data-root-category="${c.id}">${c.image_url?`<img src="${esc(c.image_url)}">`:`<i data-lucide="folder-open"></i>`}<span>${esc(c.name)}</span></button>`).join("")}</div>`:""}
+    <div class="search-row compact-search"><input id="search" class="input" placeholder="بحث في المنتجات..."><select id="cat" class="input"><option value="">الكل</option>${categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>
+    <div id="pgrid" class="catalog-image-grid">${S.products.map(pcard).join("")||empty("لا توجد منتجات")}</div>`;
+    let selectedRoot="";
+    const draw=()=>{const q=$("#search").value.toLowerCase(),cat=$("#cat").value;const allowed=selectedRoot?[selectedRoot,...categories.filter(c=>c.parent_id===selectedRoot).map(c=>c.id)]:null;const list=S.products.filter(p=>(!cat||p.category_id===cat)&&(!allowed||allowed.includes(p.category_id))&&(`${p.name} ${p.description||""}`).toLowerCase().includes(q));$("#pgrid").innerHTML=list.map(pcard).join("")||empty("لا توجد نتائج");bindProducts()};
+    $$("[data-root-category]").forEach(b=>b.onclick=()=>{$$("[data-root-category]").forEach(x=>x.classList.remove("active"));if(selectedRoot===b.dataset.rootCategory){selectedRoot="";}else{selectedRoot=b.dataset.rootCategory;b.classList.add("active")}draw()});
+    $("#search").oninput=draw;$("#cat").onchange=draw;bindProducts();refreshIcons();
+  };
+  const renderSocialInside=async()=>{
+    if(!S.user){$("#catalogDynamic").innerHTML=empty("خدمات السوشل ميديا","سجل الدخول للطلب");return}
+    const[{data:platforms},{data:services}]=await Promise.all([
+      supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order"),
+      supabase.from("smm_services").select("*,platform:social_platforms(name,icon)").eq("is_active",true).order("sort_order")
+    ]);
+    const ps=platforms||[],all=services||[];let platformId=ps[0]?.id;
+    $("#catalogDynamic").innerHTML=`<div class="official-order-card compact-social">
+      <div class="platform-picker">${ps.map((p,i)=>`<button class="platform-choice ${i===0?"active":""}" data-platform="${p.id}"><i data-lucide="${p.icon||"circle"}"></i><span>${esc(p.name)}</span></button>`).join("")}</div>
+      <div class="social-form-grid"><label>الفئة<select id="socialCategorySelect"></select></label><label>الخدمة<select id="socialServiceSelect"></select></label></div>
+      <div id="serviceInfo" class="service-info-card"></div>
+      <form id="officialSocialForm"><label>الرابط<input id="socialTarget" type="url" placeholder="https://..." required></label><div class="social-form-grid"><label>الكمية<input id="socialQuantity" type="number" required></label><div id="socialCalculation" class="calculation-card"></div></div><label>ملاحظات<textarea id="socialNotes" placeholder="اختياري"></textarea></label><button class="btn primary block"><i data-lucide="shopping-cart"></i> تأكيد الطلب</button></form>
+    </div>`;
+    const byPlatform=()=>all.filter(s=>s.platform_id===platformId);
+    const selectedService=()=>all.find(s=>s.id===$("#socialServiceSelect").value);
+    const updateCategories=()=>{const cats=[...new Set(byPlatform().map(s=>s.service_category||"خدمات عامة"))];$("#socialCategorySelect").innerHTML=cats.map(c=>`<option>${esc(c)}</option>`).join("");updateServices()};
+    const updateServices=()=>{const cat=$("#socialCategorySelect").value,list=byPlatform().filter(s=>(s.service_category||"خدمات عامة")===cat);$("#socialServiceSelect").innerHTML=list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");updateInfo()};
+    const updateCalc=()=>{const s=selectedService(),q=+$("#socialQuantity").value||0;if(!s)return;$("#socialCalculation").innerHTML=`<small>الإجمالي</small><strong>${money((q/1000)*s.price_per_1000)}</strong>`};
+    const updateInfo=()=>{const s=selectedService();if(!s){$("#serviceInfo").innerHTML=empty("لا توجد خدمات");return}$("#serviceInfo").innerHTML=`<div class="service-info-head"><span class="service-platform-icon"><i data-lucide="${s.platform?.icon||"circle"}"></i></span><div><h3>${esc(s.name)}</h3><p>${esc(s.description||"")}</p></div></div><div class="service-stat-row"><span>الأدنى <b>${s.min_quantity}</b></span><span>الأقصى <b>${s.max_quantity}</b></span><span>1000 / <b>${money(s.price_per_1000)}</b></span></div>`;$("#socialQuantity").min=s.min_quantity;$("#socialQuantity").max=s.max_quantity;$("#socialQuantity").value=s.min_quantity;updateCalc();refreshIcons()};
+    $$(".platform-choice").forEach(b=>b.onclick=()=>{$$(".platform-choice").forEach(x=>x.classList.remove("active"));b.classList.add("active");platformId=b.dataset.platform;updateCategories()});
+    $("#socialCategorySelect").onchange=updateServices;$("#socialServiceSelect").onchange=updateInfo;$("#socialQuantity").oninput=updateCalc;updateCategories();
+    $("#officialSocialForm").onsubmit=async e=>{e.preventDefault();const s=selectedService();if(!s)return;const{error}=await supabase.rpc("create_smm_order",{p_service_id:s.id,p_target_url:$("#socialTarget").value,p_quantity:+$("#socialQuantity").value,p_notes:$("#socialNotes").value||null});if(error)return toast(error.message,"error");toast("تم إنشاء طلب السوشل ميديا");location.hash="#/orders?tab=social"};
+    refreshIcons();
+  };
+  drawShell();
 }
-async function digitalProducts(parentId=null){
-  await catalog();
-  const{data:cats}=await supabase.from("categories").select("*").eq("is_active",true).order("sort_order");
-  const categories=cats||[];
-  const currentParent=parentId||new URLSearchParams(location.hash.split("?")[1]||"").get("category");
-  const childCategories=categories.filter(c=>(c.parent_id||null)===(currentParent||null));
-  const visibleProducts=S.products.filter(p=>!currentParent||p.category_id===currentParent||categories.some(c=>c.parent_id===currentParent&&c.id===p.category_id));
-  app.innerHTML=`${section("المنتجات الرقمية","اختر قسمًا أو ابحث عن منتج",`<a href="#/products" class="icon-action" title="العودة"><i data-lucide="layout-grid"></i></a>`)}
-  ${childCategories.length?`<div class="category-image-grid">${childCategories.map(c=>`<button class="category-image-card" data-open-category="${c.id}">
-    <div class="category-cover">${c.image_url?`<img src="${esc(c.image_url)}">`:`<i data-lucide="folder-open"></i>`}</div>
-    <div class="category-overlay"><h3>${esc(c.name)}</h3><span><i data-lucide="arrow-left"></i></span></div>
-  </button>`).join("")}</div>`:""}
-  <div class="search-row"><input id="search" class="input" placeholder="ابحث في المنتجات الرقمية..."><select id="cat" class="input"><option value="">جميع الأقسام</option>${categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>
-  <div id="pgrid" class="catalog-image-grid" style="margin-top:15px">${visibleProducts.map(pcard).join("")||empty("لا توجد منتجات")}</div>`;
-  $$("[data-open-category]").forEach(b=>b.onclick=()=>location.hash=`#/digital-products?category=${b.dataset.openCategory}`);
-  const draw=()=>{const q=$("#search").value.toLowerCase(),cat=$("#cat").value;const list=S.products.filter(p=>(!cat||p.category_id===cat)&&(!currentParent||p.category_id===currentParent||categories.some(c=>c.parent_id===currentParent&&c.id===p.category_id))&&(`${p.name} ${p.description||""}`).toLowerCase().includes(q));$("#pgrid").innerHTML=list.map(pcard).join("")||empty("لا توجد نتائج");bindProducts()};
-  $("#search").oninput=draw;$("#cat").onchange=draw;bindProducts();refreshIcons();
-}
-function details(id){const p=S.products.find(x=>String(x.id)===String(id)),sold=p.availability_status==="sold_out",fields=p.required_fields||[];openModal(`<div class="sheet-head"><div><h2>${esc(p.name)}</h2><p>${sold?"نفد المخزون":"متوفر الآن"}</p></div><button data-close>×</button></div><div class="product-image" style="height:230px;border-radius:19px">${p.image_url?`<img src="${esc(p.image_url)}">`:"🛍️"}</div><p style="line-height:1.9;color:var(--m)">${esc(p.description||"")}</p>${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" ${f.required?"required":""}></label>`).join("")}<label>كوبون الخصم<input id="couponCode" placeholder="اختياري"></label><div class="product-foot"><span class="price">${money(p.price)}</span><button id="buy" class="btn ${sold?"soft":"primary"}" ${sold?"disabled":""}>${sold?"غير متوفر حاليًا":"شراء الآن"}</button></div>`);if(!sold)$("#buy").onclick=()=>buy(p)}
+async function digitalProducts(){location.hash="#/products?tab=digital"}
+function details(id){const p=S.products.find(x=>String(x.id)===String(id)),sold=p.availability_status==="sold_out",fields=p.required_fields||[];openModal(`<div class="sheet-head"><div><h2>${esc(p.name)}</h2><p>${sold?"نفد المخزون":"متوفر الآن"}</p></div><button data-close>×</button></div><div class="product-image" style="height:230px;border-radius:19px">${p.image_url?`<img src="${esc(p.image_url)}">`:"🛍️"}</div><p style="line-height:1.9;color:var(--m)">${esc(p.description||"")}</p>${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" ${f.required?"required":""}></label>`).join("")}<label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label><div id="couponPreview" class="coupon-preview hidden"></div><div class="product-foot"><span class="price">${money(p.price)}</span><button id="buy" class="btn ${sold?"soft":"primary"}" ${sold?"disabled":""}>${sold?"غير متوفر حاليًا":"شراء الآن"}</button></div>`);if(!sold)$("#buy").onclick=()=>buy(p);$("#couponCode").oninput=debounce(()=>previewCoupon($("#couponCode").value.trim(),p),350)}
 async function buy(p){if(!needUser()||!confirm(`شراء ${p.name}؟`))return;const code=$("#couponCode")?.value.trim()||null;const customerData={};$$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());const{error}=await supabase.rpc("purchase_product_v6",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData});if(error)return toast(error.message,"error");toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders"}
 async function orders(){
   if(!needUser())return app.innerHTML=empty("طلباتي","سجل الدخول");
@@ -143,58 +193,7 @@ async function orders(){
 }
 async function wallet(){if(!needUser())return app.innerHTML=empty("المحفظة","سجل الدخول");const[{data:t},{data:d}]=await Promise.all([supabase.from("wallet_transactions").select("*").order("created_at",{ascending:false}).limit(50),supabase.from("deposit_requests").select("*,payment_method:payment_methods(name)").order("created_at",{ascending:false})]);app.innerHTML=`${section("المحفظة","الرصيد وطرق الشحن",`<button id="deposit" class="btn primary">طلب شحن</button>`)}<div class="stats"><div class="card stat"><small>الرصيد</small><strong>${money(S.wallet.balance)}</strong></div><div class="card stat"><small>طلبات الشحن</small><strong>${(d||[]).length}</strong></div></div><div class="card item" style="margin-top:12px"><div class="item-main"><h3>استخدام بطاقة شحن</h3><p>أدخل رمز البطاقة لإضافة الرصيد فورًا</p></div><button id="redeemCard" class="btn soft">استخدام</button></div>${section("الحركات المالية","آخر العمليات")}<div class="list">${(t||[]).map(x=>`<div class="card item"><div class="item-main"><h3>${esc(x.description||x.type)}</h3><p>${dt(x.created_at)}</p></div><strong>${money(x.amount)}</strong></div>`).join("")||empty("لا توجد حركات")}</div>`;$("#deposit").onclick=depositForm;$("#redeemCard").onclick=async()=>{const code=prompt("أدخل رمز بطاقة الشحن:");if(!code)return;const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});if(error)return toast(error.message,"error");toast(data.message||"تم شحن الرصيد");await loadIdentity();wallet()}}
 async function depositForm(){const{data}=await supabase.from("payment_methods").select("*").eq("is_active",true).order("sort_order"),m=data||[];if(!m.length)return toast("لا توجد طرق دفع","error");openModal(`<div class="sheet-head"><h2>طلب شحن</h2><button data-close>×</button></div><form id="df"><label>طريقة الدفع<select id="method">${m.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label><label>المبلغ<input id="amount" type="number" min="1" required></label><label>رقم التحويل<input id="ref" required></label><label>إثبات الدفع${imagePicker("receiptFile")}</label><button id="depositSubmit" class="btn primary block">إرسال</button></form>`);$("#df").onsubmit=async e=>{e.preventDefault();const btn=$("#depositSubmit");btn.disabled=true;try{const receipt=await uploadFile($("#receiptFile").files[0],"receipts");const{error}=await supabase.from("deposit_requests").insert({user_id:S.user.id,payment_method_id:$("#method").value,amount:+$("#amount").value,transfer_reference:$("#ref").value,receipt_url:receipt});if(error)throw error;toast("تم إرسال الطلب");closeModal();wallet()}catch(err){toast(err.message,"error")}finally{btn.disabled=false}}}
-async function socialServices(){
-  if(!needUser())return app.innerHTML=empty("خدمات السوشل ميديا","سجل الدخول لطلب الخدمات");
-  const[{data:platforms},{data:services}]=await Promise.all([
-    supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order"),
-    supabase.from("smm_services").select("*,platform:social_platforms(name,slug,icon)").eq("is_active",true).order("sort_order")
-  ]);
-  S.platforms=platforms||[];
-  const allServices=services||[];
-  app.innerHTML=`${section("خدمات السوشل ميديا","اختر المنصة ثم الفئة والخدمة",`<a href="#/products" class="icon-action"><i data-lucide="layout-grid"></i></a>`)}
-  <div class="official-order-card">
-    <div class="order-step"><span>1</span><div><strong>المنصة</strong><small>اختر شبكة التواصل</small></div></div>
-    <div class="platform-picker">${S.platforms.map((p,i)=>`<button class="platform-choice ${i===0?"active":""}" data-platform="${p.id}"><i data-lucide="${p.icon||"circle"}"></i><span>${esc(p.name)}</span></button>`).join("")}</div>
-    <div class="order-step"><span>2</span><div><strong>فئة الخدمة</strong><small>مثال: متابعون أو مشاهدات</small></div></div>
-    <select id="socialCategorySelect" class="input"></select>
-    <div class="order-step"><span>3</span><div><strong>الخدمة</strong><small>اختر الباقة المناسبة</small></div></div>
-    <select id="socialServiceSelect" class="input"></select>
-    <div id="serviceInfo" class="service-info-card"></div>
-    <div class="order-step"><span>4</span><div><strong>تفاصيل الطلب</strong><small>أدخل الرابط والكمية</small></div></div>
-    <form id="officialSocialForm">
-      <label>رابط الحساب أو المنشور<input id="socialTarget" type="url" placeholder="https://..." required></label>
-      <label>الكمية<input id="socialQuantity" type="number" required></label>
-      <div id="socialCalculation" class="calculation-card"></div>
-      <label>ملاحظات إضافية<textarea id="socialNotes" placeholder="اختياري"></textarea></label>
-      <button class="btn primary block"><i data-lucide="shopping-cart"></i> تأكيد الطلب</button>
-    </form>
-  </div>`;
-  let selectedPlatform=S.platforms[0]?.id;
-  const servicesForPlatform=()=>allServices.filter(s=>s.platform_id===selectedPlatform);
-  const updateCategories=()=>{
-    const categories=[...new Set(servicesForPlatform().map(s=>s.service_category||"خدمات عامة"))];
-    $("#socialCategorySelect").innerHTML=categories.map(c=>`<option>${esc(c)}</option>`).join("");
-    updateServices();
-  };
-  const updateServices=()=>{
-    const category=$("#socialCategorySelect").value;
-    const list=servicesForPlatform().filter(s=>(s.service_category||"خدمات عامة")===category);
-    $("#socialServiceSelect").innerHTML=list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
-    updateServiceInfo();
-  };
-  const selectedService=()=>allServices.find(s=>s.id===$("#socialServiceSelect").value);
-  const updateServiceInfo=()=>{
-    const s=selectedService();if(!s){$("#serviceInfo").innerHTML=empty("لا توجد خدمات");return}
-    $("#serviceInfo").innerHTML=`<div class="service-info-head"><span class="service-platform-icon"><i data-lucide="${s.platform?.icon||"circle"}"></i></span><div><h3>${esc(s.name)}</h3><p>${esc(s.description||"")}</p></div></div><div class="service-stat-row"><span>الحد الأدنى <b>${s.min_quantity}</b></span><span>الحد الأقصى <b>${s.max_quantity}</b></span><span>السعر / 1000 <b>${money(s.price_per_1000)}</b></span></div>`;
-    $("#socialQuantity").min=s.min_quantity;$("#socialQuantity").max=s.max_quantity;$("#socialQuantity").value=s.min_quantity;updateCalculation();refreshIcons()
-  };
-  const updateCalculation=()=>{const s=selectedService(),qty=+$("#socialQuantity").value||0;if(!s)return;$("#socialCalculation").innerHTML=`<span>الكمية <b>${qty}</b></span><span>الإجمالي <strong>${money((qty/1000)*s.price_per_1000)}</strong></span>`};
-  $$(".platform-choice").forEach(b=>b.onclick=()=>{$$(".platform-choice").forEach(x=>x.classList.remove("active"));b.classList.add("active");selectedPlatform=b.dataset.platform;updateCategories()});
-  $("#socialCategorySelect").onchange=updateServices;$("#socialServiceSelect").onchange=updateServiceInfo;$("#socialQuantity").oninput=updateCalculation;
-  updateCategories();
-  $("#officialSocialForm").onsubmit=async e=>{e.preventDefault();const s=selectedService();if(!s)return;const{error}=await supabase.rpc("create_smm_order",{p_service_id:s.id,p_target_url:$("#socialTarget").value,p_quantity:+$("#socialQuantity").value,p_notes:$("#socialNotes").value||null});if(error)return toast(error.message,"error");toast("تم إنشاء طلب السوشل ميديا");location.hash="#/orders?tab=social"};
-  refreshIcons();
-}
+async function socialServices(){location.hash="#/products?tab=social"}
 function smmOrderForm(){location.hash="#/social-services"}
 function account(){if(!S.user){app.innerHTML=`${section("حسابي","سجل الدخول")}<div class="card empty"><h2>أهلًا بك</h2><button id="openAuth" class="btn primary">تسجيل الدخول</button></div>`;$("#openAuth").onclick=()=>auth.showModal();return}app.innerHTML=`${section("حسابي","المعلومات والإعدادات")}<div class="card item"><div class="item-main"><h3>${esc(S.profile?.full_name||"مستخدم")}</h3><p>${esc(S.user.email)}</p></div>${badge(S.profile?.status)}</div>${S.profile?.role==="admin"?`<a href="#/admin" class="card item" style="margin-top:11px"><div class="item-main"><h3>لوحة الإدارة</h3><p>إدارة المتجر بالكامل</p></div><span>›</span></a>`:""}<button id="logout" class="card item" style="width:100%;margin-top:11px;color:var(--bad)"><h3>تسجيل الخروج</h3></button>`;$("#logout").onclick=()=>supabase.auth.signOut()}
 
@@ -265,7 +264,7 @@ function manageSmmOrder(o){
   openModal(`<div class="sheet-head"><h2>إدارة طلب السوشل ميديا</h2><button data-close>×</button></div><div class="note">الخدمة: ${esc(o.service?.name||"-")}<br>الرابط: ${esc(o.target_url)}<br>الكمية: ${o.quantity}<br>القيمة: ${money(o.total)}</div><form id="manageSmm"><label>الحالة<select id="smmStatus"><option value="pending">معلق</option><option value="processing">قيد التنفيذ</option><option value="delivered">مكتمل</option><option value="cancelled">إلغاء وإعادة الرصيد</option></select></label><label>مرجع المزود<input id="providerRef" value="${esc(o.provider_reference||"")}"></label><label>ملاحظة الإدارة<textarea id="adminNote">${esc(o.admin_note||"")}</textarea></label><button class="btn primary block">حفظ</button></form>`);
   $("#manageSmm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_update_smm_order",{p_order_id:o.id,p_status:$("#smmStatus").value,p_provider_reference:$("#providerRef").value||null,p_admin_note:$("#adminNote").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminSmmOrders()}
 }
-async function adminSettings(){const{data}=await supabase.from("store_settings").select("*").limit(1).maybeSingle(),s=data||{};$("#adminContent").innerHTML=`${section("إعدادات المتجر","الاسم والدعم والعملة")}<form id="settingsForm" class="card" style="padding:18px"><label>اسم المتجر<input id="setName" value="${esc(s.store_name||"علي شوب")}"></label>${imagePicker("storeLogoFile",s.logo_url||"")}<label>العملة<input id="setCurrency" value="${esc(s.currency||CONFIG.CURRENCY)}"></label><label>البريد<input id="setEmail" value="${esc(s.support_email||CONFIG.SUPPORT_EMAIL)}"></label><label>واتساب<input id="setWhats" value="${esc(s.support_whatsapp||CONFIG.WHATSAPP)}"></label><button class="btn primary block">حفظ الإعدادات</button></form><div class="card item" style="margin-top:12px"><div class="item-main"><h3>تثبيت التطبيق</h3><p>استخدم زر التثبيت أو قائمة Chrome</p></div><button id="forceInstall" class="btn soft">تثبيت</button></div>`;$("#settingsForm").onsubmit=async e=>{e.preventDefault();let logo=s.logo_url||null;const logoFile=$("#storeLogoFile").files[0];if(logoFile)logo=await uploadFile(logoFile,"branding");const payload={store_name:$("#setName").value,logo_url:logo,currency:$("#setCurrency").value,support_email:$("#setEmail").value,support_whatsapp:$("#setWhats").value,updated_at:new Date().toISOString()};const q=s.id?supabase.from("store_settings").update(payload).eq("id",s.id):supabase.from("store_settings").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم حفظ الإعدادات");await loadPublic();adminSettings()};$("#forceInstall").onclick=()=>$("#installButton").click()}
+async function adminSettings(){const{data}=await supabase.from("store_settings").select("*").limit(1).maybeSingle(),s=data||{};$("#adminContent").innerHTML=`${section("إعدادات المتجر","الاسم والدعم والعملة")}<form id="settingsForm" class="card" style="padding:18px"><label>اسم المتجر<input id="setName" value="${esc(s.store_name||"علي شوب")}"></label>${imagePicker("storeLogoFile",s.logo_url||"")}<label>العملة<input id="setCurrency" value="${esc(s.currency||CONFIG.CURRENCY)}"></label><label>البريد<input id="setEmail" value="${esc(s.support_email||CONFIG.SUPPORT_EMAIL)}"></label><label>واتساب<input id="setWhats" value="${esc(s.support_whatsapp||CONFIG.WHATSAPP)}"></label><button class="btn primary block">حفظ الإعدادات</button></form><div class="card item" style="margin-top:12px"><div class="item-main"><h3>تثبيت التطبيق</h3><p>استخدم زر التثبيت أو قائمة Chrome</p></div><button id="forceInstall" class="btn soft">تثبيت</button></div>`;$("#settingsForm").onsubmit=async e=>{e.preventDefault();let logo=s.logo_url||null;const logoFile=$("#storeLogoFile").files[0];if(logoFile)logo=await uploadFile(logoFile,"branding");const payload={store_name:$("#setName").value,logo_url:logo,currency:$("#setCurrency").value,support_email:$("#setEmail").value,support_whatsapp:$("#setWhats").value,updated_at:new Date().toISOString()};const q=s.id?supabase.from("store_settings").update(payload).eq("id",s.id):supabase.from("store_settings").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم حفظ الإعدادات");await loadPublic();applyBranding();adminSettings()};$("#forceInstall").onclick=()=>$("#installButton").click()}
 async function adminLogs(){
   const{data,count}=await listQuery("admin_activity_logs","*,admin:profiles(full_name)",q=>{if(S.query)q=q.ilike("action",`%${S.query}%`);return q});
   const r=data||[];
