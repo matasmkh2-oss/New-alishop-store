@@ -268,6 +268,101 @@ window.addEventListener("error",event=>{
   if(message&&!String(message).includes("ResizeObserver"))toast(friendlyError(message),"error");
 });
 
+
+function appConfirm({
+  title="تأكيد العملية",
+  message="هل أنت متأكد؟",
+  confirmText="تأكيد",
+  cancelText="إلغاء",
+  icon="circle-alert",
+  danger=false
+}={}){
+  return new Promise(resolve=>{
+    openModal(`<div class="app-dialog">
+      <div class="app-dialog-icon ${danger?"danger":""}"><i data-lucide="${icon}"></i></div>
+      <div class="app-dialog-content">
+        <h2>${esc(title)}</h2>
+        <p>${esc(message)}</p>
+      </div>
+      <div class="app-dialog-actions">
+        <button id="appDialogCancel" class="btn soft">${esc(cancelText)}</button>
+        <button id="appDialogConfirm" class="btn ${danger?"danger":"primary"}">${esc(confirmText)}</button>
+      </div>
+    </div>`);
+    let settled=false;
+    const finish=value=>{
+      if(settled)return;
+      settled=true;
+      closeModal();
+      resolve(value);
+    };
+    $("#appDialogCancel").onclick=()=>finish(false);
+    $("#appDialogConfirm").onclick=()=>finish(true);
+    const backdrop=$("#modal");
+    const oldClose=backdrop?.onclick;
+    if(backdrop)backdrop.onclick=e=>{
+      if(e.target===backdrop)finish(false);
+      else if(oldClose)oldClose(e);
+    };
+    refreshIcons();
+  });
+}
+function appPrompt({
+  title="أدخل المعلومات",
+  message="",
+  placeholder="",
+  value="",
+  confirmText="حفظ",
+  cancelText="إلغاء",
+  icon="message-square-text",
+  required=true,
+  multiline=true,
+  danger=false
+}={}){
+  return new Promise(resolve=>{
+    openModal(`<div class="app-dialog">
+      <div class="app-dialog-icon ${danger?"danger":""}"><i data-lucide="${icon}"></i></div>
+      <div class="app-dialog-content">
+        <h2>${esc(title)}</h2>
+        ${message?`<p>${esc(message)}</p>`:""}
+        ${multiline
+          ? `<textarea id="appDialogInput" class="app-dialog-input" placeholder="${esc(placeholder)}">${esc(value)}</textarea>`
+          : `<input id="appDialogInput" class="app-dialog-input" placeholder="${esc(placeholder)}" value="${esc(value)}">`}
+        <small id="appDialogError" class="app-dialog-error hidden">هذا الحقل مطلوب</small>
+      </div>
+      <div class="app-dialog-actions">
+        <button id="appDialogCancel" class="btn soft">${esc(cancelText)}</button>
+        <button id="appDialogConfirm" class="btn ${danger?"danger":"primary"}">${esc(confirmText)}</button>
+      </div>
+    </div>`);
+    let settled=false;
+    const finish=value=>{
+      if(settled)return;
+      settled=true;
+      closeModal();
+      resolve(value);
+    };
+    $("#appDialogCancel").onclick=()=>finish(null);
+    $("#appDialogConfirm").onclick=()=>{
+      const input=$("#appDialogInput");
+      const val=input.value.trim();
+      if(required&&!val){
+        $("#appDialogError").classList.remove("hidden");
+        input.classList.add("invalid");
+        input.focus();
+        return;
+      }
+      finish(val);
+    };
+    $("#appDialogInput").oninput=e=>{
+      e.target.classList.remove("invalid");
+      $("#appDialogError").classList.add("hidden");
+    };
+    setTimeout(()=>$("#appDialogInput")?.focus(),80);
+    refreshIcons();
+  });
+}
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -525,7 +620,14 @@ async function wallet(){
 
     $("#deposit").onclick=depositForm;
     $("#redeemCard").onclick=async()=>{
-      const code=prompt("أدخل رمز بطاقة الشحن:");
+      const code=await appPrompt({
+        title:"استخدام بطاقة شحن",
+        message:"أدخل رمز بطاقة الشحن لإضافة الرصيد إلى محفظتك.",
+        placeholder:"ALI-XXXXXXXXXXXX",
+        confirmText:"شحن الرصيد",
+        icon:"scan-line",
+        multiline:false
+      });
       if(!code)return;
       const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});
       if(error)return toast(friendlyError(error),"error");
@@ -1021,7 +1123,15 @@ async function adminDeposits(){
 }
 
 async function processDeposit(id,approve){
-  const note=approve?null:(prompt("سبب الرفض:")||"تم رفض الطلب");
+  const note=approve?null:await appPrompt({
+    title:"رفض طلب الشحن",
+    message:"اكتب سبب الرفض ليظهر للمستخدم في سجل المحفظة.",
+    placeholder:"مثال: صورة الإثبات غير واضحة",
+    confirmText:"رفض الطلب",
+    icon:"circle-x",
+    danger:true
+  });
+  if(!approve&&note===null)return;
   const{data,error}=await supabase.rpc("admin_process_deposit_v13",{
     p_deposit_id:id,
     p_approve:approve,
