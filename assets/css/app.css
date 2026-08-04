@@ -268,3 +268,37 @@ body:before{background:radial-gradient(circle at 85% 5%,rgba(45,212,191,.16),tra
   .support-send-rich{grid-template-columns:auto minmax(0,1fr) auto}.chat-tools .icon-action{width:31px;height:31px}
   .emoji-picker{width:205px;grid-template-columns:repeat(8,1fr);right:0}.chat-image{max-width:175px;max-height:190px}
 }
+
+/* V11 support-list hotfix and icon-only image picker */
+.chat-file-input{
+  position:fixed!important;
+  width:1px!important;
+  height:1px!important;
+  margin:0!important;
+  padding:0!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  overflow:hidden!important;
+  clip:rect(0 0 0 0)!important;
+  clip-path:inset(50%)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+.chat-image-button{position:relative!important}
+.chat-image-button.has-file{
+  color:var(--accent-text)!important;
+  background:linear-gradient(135deg,var(--p),var(--p2))!important;
+}
+[data-theme=dark] .chat-image-button.has-file{color:#062D30!important}
+.image-selected-badge{
+  position:absolute;
+  top:-4px;
+  left:-4px;
+  width:13px;
+  height:13px;
+  border:2px solid var(--s);
+  border-radius:50%;
+  background:#16A36A;
+  box-shadow:0 3px 8px rgba(22,163,106,.35);
+}
+.image-selected-badge.hidden{display:none!important}

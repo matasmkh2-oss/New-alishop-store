@@ -170,7 +170,11 @@ async function openSupportChat(){
     <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>`<div class="support-message ${m.sender_id===S.user.id?"mine":"theirs"}">${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
     ${thread.is_user_blocked?`<div class="chat-blocked"><i data-lucide="ban"></i><span>قام الدعم بإيقاف إرسال الرسائل مؤقتًا.</span></div>`:
     `<form id="supportSendForm" class="support-send-rich">
-      <div class="chat-tools"><button type="button" class="icon-action" data-toggle-emoji="supportBody"><i data-lucide="smile"></i></button><label class="icon-action"><i data-lucide="image-plus"></i><input id="supportImage" type="file" accept="image/*" hidden></label></div>
+      <div class="chat-tools">
+        <button type="button" class="icon-action" data-toggle-emoji="supportBody" title="إيموجي"><i data-lucide="smile"></i></button>
+        <button type="button" class="icon-action chat-image-button" id="supportImageButton" title="إضافة صورة"><i data-lucide="image-plus"></i><i id="supportImageBadge" class="image-selected-badge hidden"></i></button>
+        <input id="supportImage" class="chat-file-input" type="file" accept="image/*" tabindex="-1" aria-hidden="true">
+      </div>
       ${emojiPicker("supportBody")}
       <input id="supportBody" class="input" placeholder="اكتب رسالتك...">
       <button class="icon-action primary"><i data-lucide="send"></i></button>
@@ -186,9 +190,25 @@ async function openSupportChat(){
       playChatSound(false);closeModal();openSupportChat();
     }catch(err){toast(err.message,"error")}
   };
-  bindEmojiPicker();refreshIcons();
+  bindEmojiPicker();bindChatImagePicker("supportImage","supportImageButton","supportImageBadge");refreshIcons();
   const list=$("#supportMessages");if(list)list.scrollTop=list.scrollHeight;
 }
+
+function bindChatImagePicker(inputId,buttonId,badgeId){
+  const input=$("#"+inputId),button=$("#"+buttonId),badge=$("#"+badgeId);
+  if(!input||!button)return;
+  button.onclick=()=>input.click();
+  input.onchange=()=>{
+    const file=input.files?.[0];
+    if(badge){
+      badge.textContent=file?"1":"";
+      badge.classList.toggle("hidden",!file);
+    }
+    button.classList.toggle("has-file",!!file);
+    if(file)toast("تم اختيار الصورة");
+  };
+}
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -633,9 +653,55 @@ function manageSmmOrder(o){
 }
 
 async function adminSupport(){
-  const{data}=await supabase.from("support_threads").select("*,profile:profiles(full_name,phone)").order("updated_at",{ascending:false}).limit(300);
-  $("#adminContent").innerHTML=`${section("محادثات الدعم","المحادثات الجديدة والمفتوحة")}<div class="list">${(data||[]).map(t=>`<div class="card item ${t.admin_unread_count>0?"support-unread":""}"><div class="item-main"><h3>${esc(t.profile?.full_name||"-")} ${t.is_user_blocked?'<span class="badge danger">محظور</span>':""}</h3><p>${esc(t.subject||"محادثة دعم")} • ${dt(t.updated_at)}</p></div><div class="item-actions">${t.admin_unread_count?`<i class="admin-notice-badge">${t.admin_unread_count}</i>`:""}${badge(t.status)}${t.profile?.phone?`<a class="icon-action whatsapp-btn" href="https://wa.me/${String(t.profile.phone).replace(/\D/g,"")}" target="_blank"><i data-lucide="message-circle"></i></a>`:""}${iconButton("messages-square","فتح المحادثة",`data-support-thread="${t.id}"`)}</div></div>`).join("")||empty("لا توجد محادثات")}</div>`;
-  $$("[data-support-thread]").forEach(b=>b.onclick=()=>openAdminSupportThread((data||[]).find(x=>x.id===b.dataset.supportThread)));refreshIcons()
+  const threadsResult=await supabase
+    .from("support_threads")
+    .select("*")
+    .order("updated_at",{ascending:false})
+    .limit(300);
+
+  if(threadsResult.error){
+    $("#adminContent").innerHTML=`${section("محادثات الدعم","تعذر تحميل المحادثات")}
+      <div class="card empty"><h2>حدث خطأ أثناء جلب المحادثات</h2><p>${esc(threadsResult.error.message)}</p><button id="retrySupportList" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retrySupportList").onclick=adminSupport;
+    refreshIcons();
+    return;
+  }
+
+  const threads=threadsResult.data||[];
+  const userIds=[...new Set(threads.map(t=>t.user_id).filter(Boolean))];
+  let profilesById={};
+
+  if(userIds.length){
+    const profilesResult=await supabase
+      .from("profiles")
+      .select("id,full_name,phone")
+      .in("id",userIds);
+
+    if(!profilesResult.error){
+      profilesById=Object.fromEntries((profilesResult.data||[]).map(p=>[p.id,p]));
+    }
+  }
+
+  const rows=threads.map(t=>({...t,profile:profilesById[t.user_id]||null}));
+
+  $("#adminContent").innerHTML=`${section("محادثات الدعم","المحادثات الجديدة والمفتوحة")}
+    <div class="list">${rows.map(t=>`<div class="card item ${t.admin_unread_count>0?"support-unread":""}">
+      <div class="item-main">
+        <h3>${esc(t.profile?.full_name||"مستخدم")} ${t.is_user_blocked?'<span class="badge danger">محظور</span>':""}</h3>
+        <p>${esc(t.subject||"محادثة دعم")} • ${dt(t.updated_at)}</p>
+      </div>
+      <div class="item-actions">
+        ${t.admin_unread_count?`<i class="admin-notice-badge">${t.admin_unread_count}</i>`:""}
+        ${badge(t.status)}
+        ${t.profile?.phone?`<a class="icon-action whatsapp-btn" href="https://wa.me/${String(t.profile.phone).replace(/\D/g,"")}" target="_blank"><i data-lucide="message-circle"></i></a>`:""}
+        ${iconButton("messages-square","فتح المحادثة",`data-support-thread="${t.id}"`)}
+      </div>
+    </div>`).join("")||empty("لا توجد محادثات")}</div>`;
+
+  $$("[data-support-thread]").forEach(b=>{
+    b.onclick=()=>openAdminSupportThread(rows.find(x=>x.id===b.dataset.supportThread));
+  });
+  refreshIcons();
 }
 async function openAdminSupportThread(thread){
   const{data:messages}=await supabase.from("support_messages").select("*,sender:profiles(full_name,role)").eq("thread_id",thread.id).order("created_at");
@@ -644,7 +710,11 @@ async function openAdminSupportThread(thread){
   <div class="support-admin-actions"><button id="toggleUserChatBlock" class="btn ${thread.is_user_blocked?"success":"danger"}"><i data-lucide="${thread.is_user_blocked?"unlock":"ban"}"></i>${thread.is_user_blocked?"فك حظر الإرسال":"حظر الإرسال"}</button></div>
   <div id="adminSupportMessages" class="support-messages">${(messages||[]).map(m=>`<div class="support-message ${m.sender_id===S.user.id?"mine":"theirs"}">${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`).join("")}</div>
   <form id="adminSupportForm" class="support-send-rich">
-    <div class="chat-tools"><button type="button" class="icon-action" data-toggle-emoji="adminSupportBody"><i data-lucide="smile"></i></button><label class="icon-action"><i data-lucide="image-plus"></i><input id="adminSupportImage" type="file" accept="image/*" hidden></label></div>
+    <div class="chat-tools">
+      <button type="button" class="icon-action" data-toggle-emoji="adminSupportBody" title="إيموجي"><i data-lucide="smile"></i></button>
+      <button type="button" class="icon-action chat-image-button" id="adminSupportImageButton" title="إضافة صورة"><i data-lucide="image-plus"></i><i id="adminSupportImageBadge" class="image-selected-badge hidden"></i></button>
+      <input id="adminSupportImage" class="chat-file-input" type="file" accept="image/*" tabindex="-1" aria-hidden="true">
+    </div>
     ${emojiPicker("adminSupportBody")}
     <input id="adminSupportBody" class="input" placeholder="اكتب الرد...">
     <button class="icon-action primary"><i data-lucide="send"></i></button>
@@ -665,7 +735,7 @@ async function openAdminSupportThread(thread){
       playChatSound(false);closeModal();openAdminSupportThread(thread);
     }catch(err){toast(err.message,"error")}
   };
-  bindEmojiPicker();refreshIcons();const list=$("#adminSupportMessages");if(list)list.scrollTop=list.scrollHeight;
+  bindEmojiPicker();bindChatImagePicker("adminSupportImage","adminSupportImageButton","adminSupportImageBadge");refreshIcons();const list=$("#adminSupportMessages");if(list)list.scrollTop=list.scrollHeight;
 }
 async function adminSettings(){const{data}=await supabase.from("store_settings").select("*").limit(1).maybeSingle(),s=data||{};$("#adminContent").innerHTML=`${section("إعدادات المتجر","الاسم والدعم والعملة")}<form id="settingsForm" class="card" style="padding:18px"><label>اسم المتجر<input id="setName" value="${esc(s.store_name||"علي شوب")}"></label>${imagePicker("storeLogoFile",s.logo_url||"")}<label>العملة<input id="setCurrency" value="${esc(s.currency||CONFIG.CURRENCY)}"></label><label>البريد<input id="setEmail" value="${esc(s.support_email||CONFIG.SUPPORT_EMAIL)}"></label><label>واتساب الدعم<input id="setWhats" value="${esc(s.support_whatsapp||CONFIG.WHATSAPP)}" placeholder="963..."></label><label>اسم مستخدم تلغرام<input id="setTelegram" value="${esc(s.support_telegram||"")}" placeholder="username بدون @"></label><button class="btn primary block">حفظ الإعدادات</button></form><div class="card item" style="margin-top:12px"><div class="item-main"><h3>تثبيت التطبيق</h3><p>استخدم زر التثبيت أو قائمة Chrome</p></div><button id="forceInstall" class="btn soft">تثبيت</button></div>`;$("#settingsForm").onsubmit=async e=>{e.preventDefault();let logo=s.logo_url||null;const logoFile=$("#storeLogoFile").files[0];if(logoFile)logo=await uploadFile(logoFile,"branding");const payload={store_name:$("#setName").value,logo_url:logo,currency:$("#setCurrency").value,support_email:$("#setEmail").value,support_whatsapp:$("#setWhats").value,support_telegram:$("#setTelegram").value,updated_at:new Date().toISOString()};const q=s.id?supabase.from("store_settings").update(payload).eq("id",s.id):supabase.from("store_settings").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم حفظ الإعدادات");await loadPublic();applyBranding();adminSettings()};$("#forceInstall").onclick=()=>$("#installButton").click()}
 async function adminLogs(){
