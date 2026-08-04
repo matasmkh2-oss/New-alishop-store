@@ -817,3 +817,74 @@ label:has(.styled-select){
   .product-fields-builder-head{align-items:center}
   .product-fields-builder-head p{max-width:190px}
 }
+
+/* =========================================================
+   Universal real hitbox for every custom select
+   ========================================================= */
+.styled-select{
+  position:relative!important;
+  isolation:isolate;
+  width:100%!important;
+  min-height:50px!important;
+  display:block!important;
+  cursor:pointer!important;
+  touch-action:manipulation;
+}
+.styled-select::before{
+  display:none!important;
+}
+.styled-select-button{
+  position:relative!important;
+  z-index:1!important;
+  width:100%!important;
+  min-height:50px!important;
+  pointer-events:none!important;
+}
+.styled-select-hitbox{
+  position:absolute!important;
+  inset:-6px!important;
+  z-index:100!important;
+  width:auto!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:18px!important;
+  opacity:0!important;
+  background:transparent!important;
+  cursor:pointer!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.styled-select-hitbox:focus-visible{
+  opacity:1!important;
+  outline:3px solid color-mix(in srgb,var(--p) 30%,transparent)!important;
+}
+.styled-select.disabled .styled-select-hitbox{
+  pointer-events:none!important;
+}
+.styled-select>select{
+  position:absolute!important;
+  inset:0!important;
+  z-index:-1!important;
+  width:1px!important;
+  height:1px!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+label:has(.styled-select){
+  position:relative;
+  overflow:visible!important;
+}
+@media(max-width:520px){
+  .styled-select,
+  .styled-select-button{
+    min-height:48px!important;
+  }
+  .styled-select-hitbox{
+    inset:-8px!important;
+    border-radius:17px!important;
+  }
+}

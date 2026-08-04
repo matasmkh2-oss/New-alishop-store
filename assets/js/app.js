@@ -517,26 +517,65 @@ function refreshStyledSelect(select){
   wrapper.classList.toggle("disabled",select.disabled);wrapper.setAttribute("aria-label",selectDisplayText(select));
 }
 function styleSelect(select){
-  if(!select||select.dataset.customSelect==="true"||select.multiple||select.size>1)return;
-  select.dataset.customSelect="true";
-  const wrapper=document.createElement("div");
-  wrapper.className="styled-select";
-  select.parentNode.insertBefore(wrapper,select);
-  wrapper.appendChild(select);
-  const button=document.createElement("button");
-  button.type="button";
-  button.className="styled-select-button";
-  button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
-  wrapper.appendChild(button);
+  if(!select||select.multiple||select.size>1)return;
 
-    });
+  // Repair old/incomplete wrappers instead of skipping them.
+  let wrapper=select.closest(".styled-select");
+  if(!wrapper){
+    wrapper=document.createElement("div");
+    wrapper.className="styled-select";
+    select.parentNode.insertBefore(wrapper,select);
+    wrapper.appendChild(select);
   }
-  button.dataset.selectTrigger="true";
-  wrapper.dataset.selectWrapper="true";
-  wrapper.tabIndex=0;
-  wrapper.setAttribute("role","button");
-  wrapper.setAttribute("aria-label",selectDisplayText(select));
-  select.addEventListener("change",()=>refreshStyledSelect(select));
+
+  select.dataset.customSelect="true";
+
+  let button=wrapper.querySelector(".styled-select-button");
+  if(!button){
+    button=document.createElement("button");
+    button.type="button";
+    button.className="styled-select-button";
+    button.tabIndex=-1;
+    button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
+    wrapper.appendChild(button);
+  }
+
+  // A real button covering the complete field. This is the only touch target.
+  let hitbox=wrapper.querySelector(".styled-select-hitbox");
+  if(!hitbox){
+    hitbox=document.createElement("button");
+    hitbox.type="button";
+    hitbox.className="styled-select-hitbox";
+    hitbox.setAttribute("aria-label","فتح القائمة");
+    wrapper.appendChild(hitbox);
+  }
+
+  const open=event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    if(select.disabled||wrapper.dataset.opening==="true")return;
+    wrapper.dataset.opening="true";
+    openStyledSelect(select);
+    setTimeout(()=>delete wrapper.dataset.opening,280);
+  };
+
+  // Replace handlers each time to repair dynamically rebuilt controls.
+  const freshHitbox=hitbox.cloneNode(true);
+  hitbox.replaceWith(freshHitbox);
+  hitbox=freshHitbox;
+
+  hitbox.addEventListener("pointerup",open);
+  hitbox.addEventListener("click",event=>{
+    // Keyboard-generated click has detail 0; mobile click is fallback.
+    if(event.detail===0||!window.PointerEvent)open(event);
+  });
+  hitbox.addEventListener("keydown",event=>{
+    if(event.key==="Enter"||event.key===" "){
+      open(event);
+    }
+  });
+
+  select.onchange=()=>refreshStyledSelect(select);
   refreshStyledSelect(select);
 }
 function styleAllSelects(scope=document){
@@ -644,52 +683,25 @@ function openStyledSelect(select){
 }
 
 const selectObserver=new MutationObserver(mutations=>{
+  let needsScan=false;
   for(const mutation of mutations){
     mutation.addedNodes.forEach(node=>{
       if(node.nodeType!==1)return;
-      if(node.matches?.("select"))styleSelect(node);
-      node.querySelectorAll?.("select").forEach(styleSelect);
+      if(node.matches?.("select,.styled-select")||node.querySelector?.("select"))needsScan=true;
     });
   }
+  if(needsScan)refreshAllStyledSelects();
 });
 
-let styledSelectOpenLock=false;
-function findStyledSelectFromEvent(event){
-  const wrapper=event.target?.closest?.(".styled-select");
-  if(!wrapper)return null;
-  return wrapper.querySelector("select");
-}
-function openStyledSelectFromEvent(event){
-  const select=findStyledSelectFromEvent(event);
-  if(!select||select.disabled||styledSelectOpenLock)return;
-  event.preventDefault();
-  event.stopPropagation();
-  styledSelectOpenLock=true;
-  openStyledSelect(select);
-  setTimeout(()=>{styledSelectOpenLock=false},240);
-}
-function installStyledSelectDelegation(){
-  if(document.documentElement.dataset.selectDelegation==="true")return;
-  document.documentElement.dataset.selectDelegation="true";
 
-  document.addEventListener("pointerup",event=>{
-    if(event.target?.closest?.("#selectChoiceDialog"))return;
-    if(event.target?.closest?.(".styled-select"))openStyledSelectFromEvent(event);
-  },true);
-
-  document.addEventListener("click",event=>{
-    if(event.detail!==0)return;
-    if(event.target?.closest?.(".styled-select"))openStyledSelectFromEvent(event);
-  },true);
-
-  document.addEventListener("keydown",event=>{
-    if(!["Enter"," "].includes(event.key))return;
-    if(event.target?.matches?.(".styled-select"))openStyledSelectFromEvent(event);
-  },true);
+function refreshAllStyledSelects(){
+  requestAnimationFrame(()=>{
+    styleAllSelects(document);
+    setTimeout(()=>styleAllSelects(document),80);
+  });
 }
 
 function initStyledControls(){
-  installStyledSelectDelegation();
   styleAllSelects(document);
   selectObserver.observe(document.body,{childList:true,subtree:true});
 }
@@ -796,7 +808,7 @@ function toast(m,t="success"){const e=document.createElement("div");e.className=
 function badge(s){const m={pending:["قيد المراجعة","warning"],approved:["مقبول","success"],rejected:["مرفوض","danger"],paid:["مدفوع","success"],processing:["قيد التنفيذ","warning"],delivered:["تم التسليم","success"],cancelled:["ملغي","danger"],refunded:["مسترد","warning"],active:["نشط","success"],blocked:["محظور","danger"],available:["متاح","success"],paused:["موقوف","warning"],sold_out:["نفد","danger"]};const[t,c]=m[s]||[s||"-",""];return`<span class="badge ${c}">${t}</span>`}
 function section(t,p,a=""){return`<div class="section"><div><h2>${t}</h2><p>${p}</p></div>${a}</div>`}
 function empty(t,p="لا توجد بيانات"){return`<div class="card empty"><h2>${t}</h2><p>${p}</p></div>`}
-function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(()=>{styleAllSelects(modal);refreshIcons()},0)}
+function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(()=>{styleAllSelects(modal);refreshAllStyledSelects();refreshIcons()},0)}
 function closeModal(){closeSelectOverlay();modal.close();document.body.style.overflow=""}
 function needUser(){if(!S.user){auth.showModal();toast("سجل الدخول أولًا","error");return false}return true}
 function needAdmin(){if(S.profile?.role!=="admin"){app.innerHTML=empty("غير مصرح");return false}return true}
