@@ -302,3 +302,11 @@ body:before{background:radial-gradient(circle at 85% 5%,rgba(45,212,191,.16),tra
   box-shadow:0 3px 8px rgba(22,163,106,.35);
 }
 .image-selected-badge.hidden{display:none!important}
+
+/* Catalog save reliability hotfix */
+.spin-icon{animation:catalogSaveSpin .8s linear infinite}
+@keyframes catalogSaveSpin{to{transform:rotate(360deg)}}
+form button[disabled]{opacity:.72;cursor:wait;pointer-events:none}
+.switch-label{display:flex!important;align-items:center;gap:8px;padding:10px 11px;border:1px solid var(--b);border-radius:13px;background:var(--s2)}
+.switch-label input{width:auto!important;margin:0!important}
+#prequired{direction:ltr;text-align:left;font-family:monospace;min-height:120px}

@@ -209,6 +209,62 @@ function bindChatImagePicker(inputId,buttonId,badgeId){
   };
 }
 
+
+function friendlyError(error){
+  const raw=String(error?.message||error||"حدث خطأ غير معروف");
+  const map=[
+    ["row-level security","لا توجد صلاحية لتنفيذ العملية. شغّل ملف إصلاح قاعدة البيانات المرفق."],
+    ["violates not-null constraint","هناك حقل مطلوب في قاعدة البيانات لم يتم إرساله."],
+    ["duplicate key","هذه البيانات موجودة مسبقًا."],
+    ["invalid input syntax for type json","صيغة الحقول المطلوبة غير صحيحة."],
+    ["Failed to fetch","تعذر الاتصال بقاعدة البيانات. تحقق من الإنترنت."],
+    ["Bucket not found","مساحة رفع الصور غير موجودة. شغّل ملف SQL المرفق."],
+    ["new row violates","تعذر الحفظ بسبب سياسة قاعدة البيانات."]
+  ];
+  const found=map.find(([key])=>raw.toLowerCase().includes(key.toLowerCase()));
+  return found?.[1]||raw;
+}
+function setFormBusy(form,busy,label="جارٍ الحفظ..."){
+  if(!form)return;
+  const button=form.querySelector('button[type="submit"],button:not([type])');
+  if(!button)return;
+  if(busy){
+    button.dataset.originalHtml=button.innerHTML;
+    button.disabled=true;
+    button.innerHTML=`<i data-lucide="loader-circle" class="spin-icon"></i><span>${label}</span>`;
+  }else{
+    button.disabled=false;
+    if(button.dataset.originalHtml)button.innerHTML=button.dataset.originalHtml;
+  }
+  refreshIcons();
+}
+function parseRequiredFields(value){
+  const text=String(value||"").trim();
+  if(!text)return [];
+  let fields;
+  try{fields=JSON.parse(text)}catch{throw new Error("صيغة الحقول المطلوبة غير صحيحة. استخدم القائمة بالشكل الموضح في المثال.")}
+  if(!Array.isArray(fields))throw new Error("الحقول المطلوبة يجب أن تكون قائمة.");
+  return fields.map((field,index)=>{
+    if(!field||typeof field!=="object")throw new Error(`الحقل رقم ${index+1} غير صالح.`);
+    const label=String(field.label||"").trim();
+    if(!label)throw new Error(`اسم الحقل رقم ${index+1} مطلوب.`);
+    const type=["text","url","number"].includes(field.type)?field.type:"text";
+    return {label,type,required:Boolean(field.required),placeholder:String(field.placeholder||"")};
+  });
+}
+function validatePositiveNumber(value,label,allowZero=false){
+  const number=Number(value);
+  if(!Number.isFinite(number)||(allowZero?number<0:number<=0))throw new Error(`${label} غير صالح.`);
+  return number;
+}
+window.addEventListener("unhandledrejection",event=>{
+  console.error("Unhandled promise rejection:",event.reason);
+  toast(friendlyError(event.reason),"error");
+});
+window.addEventListener("error",event=>{
+  console.error("Application error:",event.error||event.message);
+});
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -473,10 +529,19 @@ async function reviewCancel(id,approve){const reason=approve?"قبول طلب ا
 async function adminCatalogItems(){
   const digitalQuery=supabase.from("products_with_stock").select("*",{count:"exact"}).order("created_at",{ascending:false});
   const socialQuery=supabase.from("smm_services").select("*,platform:social_platforms(name,icon)",{count:"exact"}).order("created_at",{ascending:false});
-  const [{data:digital,count:digitalCount},{data:social,count:socialCount}]=await Promise.all([
+  const [digitalResult,socialResult]=await Promise.all([
     digitalQuery.range(0,999),
     socialQuery.range(0,999)
   ]);
+  if(digitalResult.error||socialResult.error){
+    $("#adminContent").innerHTML=`${section("الكتالوج الموحد","تعذر تحميل بيانات الكتالوج")}
+      <div class="card empty"><h2>حدث خطأ في قاعدة البيانات</h2><p>${esc(friendlyError(digitalResult.error||socialResult.error))}</p><button id="retryCatalog" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retryCatalog").onclick=adminCatalogItems;
+    refreshIcons();
+    return;
+  }
+  const {data:digital,count:digitalCount}=digitalResult;
+  const {data:social,count:socialCount}=socialResult;
 
   const render=()=>{
     const isDigital=S.filter!=="social";
@@ -548,8 +613,93 @@ function catalogItemChooser(){
 }
 
 async function adminProducts(){let q=supabase.from("products_with_stock").select("*",{count:"exact"}).order("created_at",{ascending:false});if(S.query)q=q.ilike("name",`%${S.query}%`);if(S.filter)q=q.eq("availability_status",S.filter);const from=(S.page-1)*CONFIG.PAGE_SIZE,{data,count}=await q.range(from,from+CONFIG.PAGE_SIZE-1),r=data||[];$("#adminContent").innerHTML=`${adminHeader("المنتجات","إضافة وتعديل وتعطيل",`<button id="addProduct" class="btn primary">إضافة منتج</button>`)}<div class="list">${r.map(p=>`<div class="card item"><div class="item-main"><h3>${esc(p.name)}</h3><p>${money(p.price)} • المخزون ${p.stock_count??"-"}</p></div><div class="item-actions">${badge(p.availability_status)}${iconButton("pencil","تعديل",`data-product-edit="${p.id}"`)}${iconButton("trash-2","حذف",`data-product-delete="${p.id}"`)}</div></div>`).join("")||empty("لا توجد منتجات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminProducts,[["available","متاح"],["sold_out","نفد المخزون"]]);bindPager(adminProducts);$("#addProduct").onclick=()=>productForm();$$("[data-product-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("products").select("*").eq("id",b.dataset.productEdit).single();productForm(data)});$$("[data-product-delete]").forEach(b=>b.onclick=()=>deleteRow("products",b.dataset.productDelete,"المنتج",adminProducts))}
-async function productForm(p=null){const{data:c}=await supabase.from("categories").select("*").order("name");openModal(`<div class="sheet-head"><h2>${p?"تعديل":"إضافة"} منتج</h2><button data-close>×</button></div><div id="productLivePreview" class="catalog-live-preview"></div><form id="productForm"><label>الاسم<input id="pn" value="${esc(p?.name||"")}" required></label><label>السعر<input id="pp" type="number" min="0" step=".01" value="${p?.price||0}" required></label><label>التصنيف<select id="pc"><option value="">بدون</option>${(c||[]).map(x=>`<option value="${x.id}" ${p?.category_id===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label><label>نوع التسليم<select id="pd"><option value="automatic">تلقائي</option><option value="manual" ${p?.delivery_type==="manual"?"selected":""}>يدوي</option></select></label><label>حالة المنتج اليدوي<select id="pm"><option value="available">متاح</option><option value="paused" ${p?.manual_availability==="paused"?"selected":""}>موقوف</option><option value="sold_out" ${p?.manual_availability==="sold_out"?"selected":""}>نفد</option></select></label>${imagePicker("productImageFile",p?.image_url||"")}<label>الوصف<textarea id="pdesc">${esc(p?.description||"")}</textarea></label><label>الحقول المطلوبة من العميل<textarea id="prequired" placeholder='مثال: [{"label":"رابط الحساب","type":"url","required":true}]'>${esc(JSON.stringify(p?.required_fields||[]))}</textarea><small>صيغة JSON؛ يمكن إضافة أكثر من حقل.</small><label><input id="pa" type="checkbox" ${p?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#productForm").onsubmit=async e=>{e.preventDefault();let imageUrl=p?.image_url||null;const imageFile=$("#productImageFile").files[0];if(imageFile)imageUrl=await uploadFile(imageFile,"products");const payload={name:$("#pn").value.trim(),price:+$("#pp").value,category_id:$("#pc").value||null,delivery_type:$("#pd").value,manual_availability:$("#pm").value,image_url:imageUrl,description:$("#pdesc").value,required_fields:JSON.parse($("#prequired").value||"[]"),is_active:$("#pa").checked};const query=p?supabase.from("products").update(payload).eq("id",p.id):supabase.from("products").insert(payload);const{error}=await query;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminProducts()}}
-async function adminCategories(){const{data,count}=await listQuery("categories","*",q=>{if(S.query)q=q.ilike("name",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("التصنيفات","إضافة وتعديل وترتيب",`<button id="addCategory" class="btn primary">إضافة تصنيف</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.name)}</h3><p>الترتيب ${c.sort_order}</p></div><div class="item-actions">${c.is_active?badge("active"):badge("blocked")}<button class="small" data-cat-edit="${c.id}">تعديل</button><button class="danger" data-cat-delete="${c.id}">حذف</button></div></div>`).join("")||empty("لا توجد تصنيفات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCategories,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminCategories);$("#addCategory").onclick=()=>categoryForm();$$("[data-cat-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("categories").select("*").eq("id",b.dataset.catEdit).single();categoryForm(data)});$$("[data-cat-delete]").forEach(b=>b.onclick=()=>deleteRow("categories",b.dataset.catDelete,"التصنيف",adminCategories))}
+async function productForm(p=null){
+  const categoriesResult=await supabase.from("categories").select("*").order("name");
+  if(categoriesResult.error)return toast(friendlyError(categoriesResult.error),"error");
+  const categories=categoriesResult.data||[];
+
+  openModal(`<div class="sheet-head"><div><h2>${p?"تعديل":"إضافة"} منتج رقمي</h2><p>جميع الحقول تُراجع قبل الحفظ</p></div><button data-close>×</button></div>
+  <div id="productLivePreview" class="catalog-live-preview"></div>
+  <form id="productForm">
+    <label>اسم المنتج<input id="pn" value="${esc(p?.name||"")}" required maxlength="160"></label>
+    <label>السعر<input id="pp" type="number" min="0" step=".01" value="${p?.price??0}" required></label>
+    <label>التصنيف<select id="pc"><option value="">بدون تصنيف</option>${categories.map(x=>`<option value="${x.id}" ${p?.category_id===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
+    <div class="social-form-grid">
+      <label>نوع التسليم<select id="pd"><option value="automatic" ${p?.delivery_type!=="manual"?"selected":""}>تلقائي من المخزون</option><option value="manual" ${p?.delivery_type==="manual"?"selected":""}>يدوي من الإدارة</option></select></label>
+      <label>حالة المنتج<select id="pm"><option value="available" ${p?.manual_availability==="available"||!p?"selected":""}>متاح</option><option value="paused" ${p?.manual_availability==="paused"?"selected":""}>موقوف</option><option value="sold_out" ${p?.manual_availability==="sold_out"?"selected":""}>نفد</option></select></label>
+    </div>
+    ${imagePicker("productImageFile",p?.image_url||"")}
+    <label>الوصف<textarea id="pdesc" maxlength="4000">${esc(p?.description||"")}</textarea></label>
+    <label>الحقول المطلوبة من العميل
+      <textarea id="prequired" placeholder='[{"label":"رابط الحساب","type":"url","required":true}]'>${esc(JSON.stringify(p?.required_fields||[],null,2))}</textarea>
+      <small>اتركها [] عند عدم الحاجة. الأنواع المدعومة: text وurl وnumber.</small>
+    </label>
+    <label class="switch-label"><input id="pa" type="checkbox" ${p?.is_active!==false?"checked":""}> المنتج مفعّل</label>
+    <button type="submit" class="btn primary block"><i data-lucide="save"></i><span>حفظ المنتج</span></button>
+  </form>`);
+
+  const drawPreview=()=>{
+    const name=$("#pn")?.value.trim()||"اسم المنتج";
+    const price=Number($("#pp")?.value||0);
+    const file=$("#productImageFile")?.files?.[0];
+    const image=file?URL.createObjectURL(file):(p?.image_url||null);
+    $("#productLivePreview").innerHTML=`<div class="mini-product-preview">${image?`<img src="${image}">`:`<div><i data-lucide="image"></i></div>`}<span><small>معاينة</small><strong>${esc(name)}</strong><b>${money(price)}</b></span></div>`;
+    refreshIcons();
+  };
+  $("#pn").oninput=drawPreview;
+  $("#pp").oninput=drawPreview;
+  $("#productImageFile").onchange=drawPreview;
+  drawPreview();
+
+  $("#productForm").onsubmit=async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    if(!form.reportValidity())return;
+    setFormBusy(form,true);
+    try{
+      const name=$("#pn").value.trim();
+      if(name.length<2)throw new Error("اسم المنتج قصير جدًا.");
+      const price=validatePositiveNumber($("#pp").value,"السعر",true);
+      const requiredFields=parseRequiredFields($("#prequired").value);
+
+      let imageUrl=p?.image_url||null;
+      const imageFile=$("#productImageFile").files?.[0];
+      if(imageFile)imageUrl=await uploadFile(imageFile,"products");
+
+      const payload={
+        name,
+        price,
+        category_id:$("#pc").value||null,
+        delivery_type:$("#pd").value,
+        manual_availability:$("#pm").value,
+        image_url:imageUrl,
+        description:$("#pdesc").value.trim()||null,
+        required_fields:requiredFields,
+        is_active:$("#pa").checked,
+        updated_at:new Date().toISOString()
+      };
+
+      let result;
+      if(p?.id){
+        result=await supabase.from("products").update(payload).eq("id",p.id).select("id").single();
+      }else{
+        result=await supabase.from("products").insert(payload).select("id").single();
+      }
+      if(result.error)throw result.error;
+
+      toast(p?"تم تعديل المنتج بنجاح":"تمت إضافة المنتج بنجاح");
+      closeModal();
+      S.query="";S.catalogStatus="";S.catalogCategory="";
+      await adminCatalogItems();
+    }catch(error){
+      console.error("Digital product save error:",error);
+      toast(friendlyError(error),"error");
+    }finally{
+      setFormBusy(form,false);
+    }
+  };
+  refreshIcons();
+}
 async function categoryForm(c=null){const{data:allCats}=await supabase.from("categories").select("id,name").order("name");openModal(`<div class="sheet-head"><h2>${c?"تعديل":"إضافة"} تصنيف</h2><button data-close>×</button></div><form id="catForm"><label>الاسم<input id="cn" value="${esc(c?.name||"")}" required></label><label>الوصف<textarea id="cd">${esc(c?.description||"")}</textarea></label>${imagePicker("categoryImageFile",c?.image_url||"")}<label>القسم الأب<select id="categoryParent"><option value="">قسم رئيسي</option></select></label><label>الترتيب<input id="co" type="number" value="${c?.sort_order||0}"></label><label><input id="ca" type="checkbox" ${c?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#categoryParent").innerHTML=`<option value="">قسم رئيسي</option>${(allCats||[]).filter(x=>x.id!==c?.id).map(x=>`<option value="${x.id}" ${c?.parent_id===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}`;$("#catForm").onsubmit=async e=>{e.preventDefault();let categoryImage=c?.image_url||null;const categoryFile=$("#categoryImageFile").files[0];if(categoryFile)categoryImage=await uploadFile(categoryFile,"categories");const payload={name:$("#cn").value,description:$("#cd").value,image_url:categoryImage,parent_id:$("#categoryParent").value||null,sort_order:+$("#co").value,is_active:$("#ca").checked};const q=c?supabase.from("categories").update(payload).eq("id",c.id):supabase.from("categories").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminCategories()}}
 async function adminInventory(){let q=supabase.from("digital_inventory").select("*,product:products(name)",{count:"exact"}).order("created_at",{ascending:false});if(S.filter)q=q.eq("is_used",S.filter==="used");const from=(S.page-1)*CONFIG.PAGE_SIZE,{data,count}=await q.range(from,from+CONFIG.PAGE_SIZE-1),r=data||[];$("#adminContent").innerHTML=`${adminHeader("المخزون الرقمي","إضافة وحذف وتصدير",`<button id="addInventory" class="btn primary">إضافة مخزون</button><button id="exportInventory" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(i=>`<div class="card item"><div class="item-main"><h3>${esc(i.product?.name||"-")}</h3><p>${i.is_used?"مستخدم":"متاح"} • ${dt(i.created_at)}</p></div><div class="item-actions">${i.is_used?badge("delivered"):badge("available")}${!i.is_used?`<button class="danger" data-inv-delete="${i.id}">حذف</button>`:""}</div></div>`).join("")||empty("لا يوجد مخزون")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminInventory,[["available","متاح"],["used","مستخدم"]]);bindPager(adminInventory);$("#addInventory").onclick=inventoryForm;$("#exportInventory").onclick=()=>exportCsv("digital_inventory","inventory.csv");$$("[data-inv-delete]").forEach(b=>b.onclick=()=>deleteRow("digital_inventory",b.dataset.invDelete,"عنصر المخزون",adminInventory))}
 async function inventoryForm(){const{data:p}=await supabase.from("products").select("id,name").eq("delivery_type","automatic").order("name");openModal(`<div class="sheet-head"><h2>إضافة مخزون</h2><button data-close>×</button></div><form id="invForm"><label>المنتج<select id="ip">${(p||[]).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label><label>كل كود في سطر<textarea id="iv" required></textarea></label><button class="btn primary block">إضافة</button></form>`);$("#invForm").onsubmit=async e=>{e.preventDefault();const vals=$("#iv").value.split("\n").map(x=>x.trim()).filter(Boolean);const{error}=await supabase.from("digital_inventory").insert(vals.map(secret_value=>({product_id:$("#ip").value,secret_value})));if(error)return toast(error.message,"error");toast(`تمت إضافة ${vals.length} عناصر`);closeModal();adminInventory()}}
@@ -631,16 +781,94 @@ async function adminSmmServices(){
   bindAdminSearch(adminSmmServices);bindPager(adminSmmServices);$("#addSmmService").onclick=()=>smmServiceForm();$$("[data-smm-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("smm_services").select("*").eq("id",b.dataset.smmEdit).single();smmServiceForm(data)});$$("[data-smm-delete]").forEach(b=>b.onclick=()=>deleteRow("smm_services",b.dataset.smmDelete,"الخدمة",adminSmmServices));refreshIcons()
 }
 async function smmServiceForm(s=null){
-  const{data:platforms}=await supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order");
-  openModal(`<div class="sheet-head"><h2>${s?"تعديل":"إضافة"} خدمة سوشل ميديا</h2><button data-close>×</button></div><div id="socialLivePreview" class="catalog-live-preview"></div><form id="smmServiceForm"><label>المنصة<select id="servicePlatform">${(platforms||[]).map(p=>`<option value="${p.id}" ${s?.platform_id===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label><div id="chosenPlatformPreview" class="chosen-platform"></div><label>فئة الخدمة<input id="serviceCategory" value="${esc(s?.service_category||"متابعون")}" placeholder="متابعون، مشاهدات، إعجابات"></label><label>اسم الخدمة<input id="sn" value="${esc(s?.name||"")}" required></label><label>الوصف<textarea id="sd">${esc(s?.description||"")}</textarea></label><label>السعر لكل 1000<input id="spr" type="number" min="0" step=".01" value="${s?.price_per_1000||0}" required></label><label>الحد الأدنى<input id="smin" type="number" value="${s?.min_quantity||100}"></label><label>الحد الأقصى<input id="smax" type="number" value="${s?.max_quantity||10000}"></label><label><input id="sactive" type="checkbox" ${s?.is_active!==false?"checked":""}> مفعلة</label><button class="btn primary block">حفظ</button></form>`);
-  const drawSocialPreview=()=>{
-  const platform=(platforms||[]).find(x=>x.id===$("#servicePlatform").value);
-  $("#socialLivePreview").innerHTML=`<div class="mini-social-preview"><span><i data-lucide="${platform?.icon||"messages-square"}"></i></span><div><small>معاينة منتج السوشل</small><strong>${esc($("#sn")?.value||"اسم الخدمة")}</strong><b>${money(+($("#spr")?.value||0))}/1000</b></div></div>`;
+  const platformsResult=await supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order");
+  if(platformsResult.error)return toast(friendlyError(platformsResult.error),"error");
+  const platforms=platformsResult.data||[];
+  if(!platforms.length){
+    toast("لا توجد منصات مفعلة. شغّل ملف SQL المرفق لإضافة المنصات تلقائيًا.","error");
+    return;
+  }
+
+  openModal(`<div class="sheet-head"><div><h2>${s?"تعديل":"إضافة"} منتج سوشل ميديا</h2><p>اختر المنصة وأدخل معلومات الخدمة</p></div><button data-close>×</button></div>
+  <div id="socialLivePreview" class="catalog-live-preview"></div>
+  <form id="smmServiceForm">
+    <label>المنصة<select id="servicePlatform">${platforms.map(p=>`<option value="${p.id}" ${s?.platform_id===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
+    <div id="chosenPlatformPreview" class="chosen-platform"></div>
+    <label>فئة الخدمة<input id="serviceCategory" value="${esc(s?.service_category||"متابعون")}" placeholder="متابعون، مشاهدات، إعجابات" required></label>
+    <label>اسم الخدمة<input id="sn" value="${esc(s?.name||"")}" required maxlength="180"></label>
+    <label>الوصف<textarea id="sd" maxlength="4000">${esc(s?.description||"")}</textarea></label>
+    <label>السعر لكل 1000<input id="spr" type="number" min="0" step=".0001" value="${s?.price_per_1000??0}" required></label>
+    <div class="social-form-grid">
+      <label>الحد الأدنى<input id="smin" type="number" min="1" value="${s?.min_quantity||100}" required></label>
+      <label>الحد الأقصى<input id="smax" type="number" min="1" value="${s?.max_quantity||10000}" required></label>
+    </div>
+    <label class="switch-label"><input id="sactive" type="checkbox" ${s?.is_active!==false?"checked":""}> الخدمة مفعلة</label>
+    <button type="submit" class="btn primary block"><i data-lucide="save"></i><span>حفظ منتج السوشل</span></button>
+  </form>`);
+
+  const selectedPlatform=()=>platforms.find(x=>x.id===$("#servicePlatform").value);
+  const drawPreview=()=>{
+    const platform=selectedPlatform();
+    $("#chosenPlatformPreview").innerHTML=`<i data-lucide="${platform?.icon||"messages-square"}"></i><strong>${esc(platform?.name||"منصة")}</strong><small>تُضاف المنصة والأيقونة تلقائيًا</small>`;
+    $("#socialLivePreview").innerHTML=`<div class="mini-social-preview"><span><i data-lucide="${platform?.icon||"messages-square"}"></i></span><div><small>معاينة</small><strong>${esc($("#sn")?.value.trim()||"اسم الخدمة")}</strong><b>${money(Number($("#spr")?.value||0))}/1000</b></div></div>`;
+    refreshIcons();
+  };
+  $("#servicePlatform").onchange=drawPreview;
+  $("#sn").oninput=drawPreview;
+  $("#spr").oninput=drawPreview;
+  drawPreview();
+
+  $("#smmServiceForm").onsubmit=async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    if(!form.reportValidity())return;
+    setFormBusy(form,true);
+    try{
+      const platform=selectedPlatform();
+      if(!platform)throw new Error("اختر منصة صالحة.");
+      const name=$("#sn").value.trim();
+      const category=$("#serviceCategory").value.trim();
+      if(name.length<2)throw new Error("اسم الخدمة قصير جدًا.");
+      if(!category)throw new Error("فئة الخدمة مطلوبة.");
+      const price=validatePositiveNumber($("#spr").value,"السعر لكل 1000",true);
+      const minimum=Math.trunc(validatePositiveNumber($("#smin").value,"الحد الأدنى"));
+      const maximum=Math.trunc(validatePositiveNumber($("#smax").value,"الحد الأقصى"));
+      if(maximum<minimum)throw new Error("الحد الأقصى يجب أن يكون أكبر من أو مساويًا للحد الأدنى.");
+
+      const payload={
+        platform_id:platform.id,
+        platform:platform.name,
+        icon:platform.icon||"messages-square",
+        service_category:category,
+        name,
+        description:$("#sd").value.trim()||null,
+        price_per_1000:price,
+        min_quantity:minimum,
+        max_quantity:maximum,
+        is_active:$("#sactive").checked,
+        updated_at:new Date().toISOString()
+      };
+
+      let result;
+      if(s?.id){
+        result=await supabase.from("smm_services").update(payload).eq("id",s.id).select("id").single();
+      }else{
+        result=await supabase.from("smm_services").insert(payload).select("id").single();
+      }
+      if(result.error)throw result.error;
+
+      toast(s?"تم تعديل منتج السوشل بنجاح":"تمت إضافة منتج السوشل بنجاح");
+      closeModal();
+      S.filter="social";S.query="";S.catalogStatus="";S.catalogPlatform="";
+      await adminCatalogItems();
+    }catch(error){
+      console.error("Social product save error:",error);
+      toast(friendlyError(error),"error");
+    }finally{
+      setFormBusy(form,false);
+    }
+  };
   refreshIcons();
-};
-["sn","spr"].forEach(id=>$("#"+id).oninput=drawSocialPreview);
-const showPlatform=()=>{const p=(platforms||[]).find(x=>x.id===$("#servicePlatform").value);$("#chosenPlatformPreview").innerHTML=p?`<i data-lucide="${p.icon}"></i><strong>${esc(p.name)}</strong><small>سيتم تعيين الأيقونة تلقائيًا</small>`:"";refreshIcons()};$("#servicePlatform").onchange=()=>{showPlatform();drawSocialPreview()};showPlatform();drawSocialPreview();
-  $("#smmServiceForm").onsubmit=async e=>{e.preventDefault();const payload={platform_id:$("#servicePlatform").value,service_category:$("#serviceCategory").value,name:$("#sn").value,description:$("#sd").value,price_per_1000:+$("#spr").value,min_quantity:+$("#smin").value,max_quantity:+$("#smax").value,is_active:$("#sactive").checked};const q=s?supabase.from("smm_services").update(payload).eq("id",s.id):supabase.from("smm_services").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminSmmServices()}
 }
 async function adminSmmOrders(){
   const{data,count}=await listQuery("smm_orders","*,service:smm_services(name,platform:social_platforms(name,icon)),profile:profiles(full_name,phone)",q=>{if(S.filter)q=q.eq("status",S.filter);return q});const r=data||[];
