@@ -239,6 +239,106 @@ function setFormBusy(form,busy,label="جارٍ الحفظ..."){
   }
   refreshIcons();
 }
+
+function normalizeProductFields(fields){
+  return Array.isArray(fields)?fields.map(field=>({
+    label:String(field?.label||""),
+    type:["text","url","number","email","phone","textarea"].includes(field?.type)?field.type:"text",
+    required:Boolean(field?.required),
+    placeholder:String(field?.placeholder||"")
+  })):[];
+}
+function productFieldRow(field={},index=0){
+  const types=[
+    ["text","نص قصير"],["textarea","نص طويل"],["url","رابط"],
+    ["number","رقم"],["email","بريد إلكتروني"],["phone","رقم هاتف"]
+  ];
+  return `<div class="product-field-builder-row" data-product-field-row>
+    <div class="product-field-row-head">
+      <strong>الحقل ${index+1}</strong>
+      <div>
+        <button type="button" class="icon-action" data-field-up title="تحريك للأعلى"><i data-lucide="arrow-up"></i></button>
+        <button type="button" class="icon-action" data-field-down title="تحريك للأسفل"><i data-lucide="arrow-down"></i></button>
+        <button type="button" class="icon-action danger-outline" data-field-remove title="حذف"><i data-lucide="trash-2"></i></button>
+      </div>
+    </div>
+    <label>اسم المعلومة
+      <input data-field-label value="${esc(field.label||"")}" placeholder="مثال: رابط الحساب" required>
+    </label>
+    <label>نوع الحقل
+      <select data-field-type>${types.map(([value,name])=>`<option value="${value}" ${field.type===value?"selected":""}>${name}</option>`).join("")}</select>
+    </label>
+    <label>نص مساعد
+      <input data-field-placeholder value="${esc(field.placeholder||"")}" placeholder="مثال: ضع رابط حسابك هنا">
+    </label>
+    <label class="switch-label">
+      <input data-field-required type="checkbox" ${field.required?"checked":""}>
+      مطلوب من العميل
+    </label>
+  </div>`;
+}
+function renderProductFieldsBuilder(fields=[]){
+  const container=$("#productFieldsBuilder");
+  if(!container)return;
+  const normalized=normalizeProductFields(fields);
+  container.innerHTML=normalized.map(productFieldRow).join("")||
+    `<div class="empty-fields-builder"><i data-lucide="list-plus"></i><p>لا توجد معلومات مطلوبة من العميل.</p></div>`;
+  bindProductFieldsBuilder();
+  styleAllSelects(container);
+  refreshIcons();
+}
+function collectProductFields(){
+  return $$("[data-product-field-row]",$("#productFieldsBuilder")).map((row,index)=>{
+    const label=row.querySelector("[data-field-label]")?.value.trim();
+    if(!label)throw new Error(`اكتب اسم الحقل رقم ${index+1}.`);
+    return {
+      label,
+      type:row.querySelector("[data-field-type]")?.value||"text",
+      required:Boolean(row.querySelector("[data-field-required]")?.checked),
+      placeholder:row.querySelector("[data-field-placeholder]")?.value.trim()||""
+    };
+  });
+}
+function bindProductFieldsBuilder(){
+  const container=$("#productFieldsBuilder");
+  if(!container)return;
+
+  $$("[data-field-remove]",container).forEach(button=>button.onclick=()=>{
+    button.closest("[data-product-field-row]")?.remove();
+    renumberProductFields();
+  });
+  $$("[data-field-up]",container).forEach(button=>button.onclick=()=>{
+    const row=button.closest("[data-product-field-row]");
+    const previous=row?.previousElementSibling;
+    if(previous?.matches("[data-product-field-row]"))container.insertBefore(row,previous);
+    renumberProductFields();
+  });
+  $$("[data-field-down]",container).forEach(button=>button.onclick=()=>{
+    const row=button.closest("[data-product-field-row]");
+    const next=row?.nextElementSibling;
+    if(next?.matches("[data-product-field-row]"))container.insertBefore(next,row);
+    renumberProductFields();
+  });
+}
+function renumberProductFields(){
+  $$("[data-product-field-row]",$("#productFieldsBuilder")).forEach((row,index)=>{
+    const title=row.querySelector(".product-field-row-head strong");
+    if(title)title.textContent=`الحقل ${index+1}`;
+  });
+  if(!$("#productFieldsBuilder")?.children.length)renderProductFieldsBuilder([]);
+}
+function addProductField(field={type:"text",required:true}){
+  const container=$("#productFieldsBuilder");
+  if(!container)return;
+  container.querySelector(".empty-fields-builder")?.remove();
+  const index=container.querySelectorAll("[data-product-field-row]").length;
+  container.insertAdjacentHTML("beforeend",productFieldRow(field,index));
+  bindProductFieldsBuilder();
+  styleAllSelects(container);
+  refreshIcons();
+  container.lastElementChild?.scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
 function parseRequiredFields(value){
   const text=String(value||"").trim();
   if(!text)return [];
@@ -414,7 +514,7 @@ function refreshStyledSelect(select){
   if(!wrapper)return;
   const text=wrapper.querySelector(".styled-select-text");
   if(text)text.textContent=selectDisplayText(select);
-  wrapper.classList.toggle("disabled",select.disabled);
+  wrapper.classList.toggle("disabled",select.disabled);wrapper.setAttribute("aria-label",selectDisplayText(select));
 }
 function styleSelect(select){
   if(!select||select.dataset.customSelect==="true"||select.multiple||select.size>1)return;
@@ -429,43 +529,13 @@ function styleSelect(select){
   button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
   wrapper.appendChild(button);
 
-  const ownerLabel=wrapper.closest("label");
-  if(ownerLabel&&!ownerLabel.dataset.selectTapGuard){
-    ownerLabel.dataset.selectTapGuard="true";
-    ownerLabel.addEventListener("click",event=>{
-      const styled=event.target.closest?.(".styled-select");
-      if(styled){
-        event.preventDefault();
-      }
     });
   }
-  let selectOpening=false;
-  const openFromTap=event=>{
-    if(event){
-      event.stopPropagation();
-      if(event.type==="click")event.preventDefault();
-    }
-    if(select.disabled||selectOpening)return;
-    selectOpening=true;
-    openStyledSelect(select);
-    setTimeout(()=>{selectOpening=false},280);
-  };
-
-  // pointerup is the most reliable mobile event. click remains a keyboard fallback.
-  button.addEventListener("pointerup",openFromTap);
-  button.addEventListener("click",openFromTap);
-  button.addEventListener("keydown",event=>{
-    if(event.key==="Enter"||event.key===" "){
-      event.preventDefault();
-      openFromTap(event);
-    }
-  });
-
-  // A tap anywhere inside the styled field opens the list.
-  wrapper.addEventListener("pointerup",event=>{
-    if(event.target===select||button.contains(event.target))return;
-    openFromTap(event);
-  });
+  button.dataset.selectTrigger="true";
+  wrapper.dataset.selectWrapper="true";
+  wrapper.tabIndex=0;
+  wrapper.setAttribute("role","button");
+  wrapper.setAttribute("aria-label",selectDisplayText(select));
   select.addEventListener("change",()=>refreshStyledSelect(select));
   refreshStyledSelect(select);
 }
@@ -582,7 +652,44 @@ const selectObserver=new MutationObserver(mutations=>{
     });
   }
 });
+
+let styledSelectOpenLock=false;
+function findStyledSelectFromEvent(event){
+  const wrapper=event.target?.closest?.(".styled-select");
+  if(!wrapper)return null;
+  return wrapper.querySelector("select");
+}
+function openStyledSelectFromEvent(event){
+  const select=findStyledSelectFromEvent(event);
+  if(!select||select.disabled||styledSelectOpenLock)return;
+  event.preventDefault();
+  event.stopPropagation();
+  styledSelectOpenLock=true;
+  openStyledSelect(select);
+  setTimeout(()=>{styledSelectOpenLock=false},240);
+}
+function installStyledSelectDelegation(){
+  if(document.documentElement.dataset.selectDelegation==="true")return;
+  document.documentElement.dataset.selectDelegation="true";
+
+  document.addEventListener("pointerup",event=>{
+    if(event.target?.closest?.("#selectChoiceDialog"))return;
+    if(event.target?.closest?.(".styled-select"))openStyledSelectFromEvent(event);
+  },true);
+
+  document.addEventListener("click",event=>{
+    if(event.detail!==0)return;
+    if(event.target?.closest?.(".styled-select"))openStyledSelectFromEvent(event);
+  },true);
+
+  document.addEventListener("keydown",event=>{
+    if(!["Enter"," "].includes(event.key))return;
+    if(event.target?.matches?.(".styled-select"))openStyledSelectFromEvent(event);
+  },true);
+}
+
 function initStyledControls(){
+  installStyledSelectDelegation();
   styleAllSelects(document);
   selectObserver.observe(document.body,{childList:true,subtree:true});
 }
@@ -1204,10 +1311,13 @@ async function productForm(p=null){
     </div>
     ${imagePicker("productImageFile",p?.image_url||"")}
     <label>الوصف<textarea id="pdesc" maxlength="4000">${esc(p?.description||"")}</textarea></label>
-    <label>الحقول المطلوبة من العميل
-      <textarea id="prequired" placeholder='[{"label":"رابط الحساب","type":"url","required":true}]'>${esc(JSON.stringify(p?.required_fields||[],null,2))}</textarea>
-      <small>اتركها [] عند عدم الحاجة. الأنواع المدعومة: text وurl وnumber.</small>
-    </label>
+    <section class="product-fields-builder-card">
+      <div class="product-fields-builder-head">
+        <div><h3>معلومات مطلوبة من العميل</h3><p>أضف الحقول التي سيملؤها العميل عند الطلب دون كتابة أكواد.</p></div>
+        <button type="button" id="addProductField" class="btn soft compact"><i data-lucide="plus"></i><span>إضافة حقل</span></button>
+      </div>
+      <div id="productFieldsBuilder" class="product-fields-builder"></div>
+    </section>
     <label class="switch-label"><input id="pa" type="checkbox" ${p?.is_active!==false?"checked":""}> المنتج مفعّل</label>
     <button type="submit" class="btn primary block"><i data-lucide="save"></i><span>حفظ المنتج</span></button>
   </form>`);
@@ -1222,6 +1332,8 @@ async function productForm(p=null){
     preview.innerHTML=`<div class="mini-product-preview">${image?`<img src="${image}">`:`<div><i data-lucide="image"></i></div>`}<span><small>معاينة</small><strong>${esc(name)}</strong><b>${money(price)}</b></span></div>`;
     refreshIcons();
   };
+  renderProductFieldsBuilder(p?.required_fields||[]);
+  $("#addProductField").onclick=()=>addProductField();
   $("#pn").oninput=drawPreview;
   $("#pp").oninput=drawPreview;
   $("#productImageFile").onchange=drawPreview;
@@ -1236,7 +1348,7 @@ async function productForm(p=null){
       const name=$("#pn").value.trim();
       if(name.length<2)throw new Error("اسم المنتج قصير جدًا.");
       const price=validatePositiveNumber($("#pp").value,"السعر",true);
-      const requiredFields=parseRequiredFields($("#prequired").value);
+      const requiredFields=collectProductFields();
 
       let imageUrl=p?.image_url||null;
       const imageFile=$("#productImageFile").files?.[0];
