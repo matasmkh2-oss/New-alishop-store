@@ -428,12 +428,19 @@ function styleSelect(select){
   button.className="styled-select-button";
   button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
   wrapper.appendChild(button);
-  button.onclick=event=>{
+  const stopSelectActivation=event=>{
     event.preventDefault();
     event.stopPropagation();
+    event.stopImmediatePropagation();
+  };
+  button.addEventListener("pointerdown",stopSelectActivation,true);
+  button.addEventListener("mousedown",stopSelectActivation,true);
+  button.addEventListener("touchstart",stopSelectActivation,{capture:true,passive:false});
+  button.addEventListener("click",event=>{
+    stopSelectActivation(event);
     if(select.disabled)return;
     openStyledSelect(select);
-  };
+  },true);
   select.addEventListener("change",()=>refreshStyledSelect(select));
   refreshStyledSelect(select);
 }
@@ -442,10 +449,10 @@ function styleAllSelects(scope=document){
   refreshIcons();
 }
 function closeSelectOverlay(){
-  const overlay=$("#selectOverlay");
-  if(!overlay)return;
-  overlay.classList.remove("show");
-  setTimeout(()=>overlay.remove(),180);
+  const dialog=$("#selectChoiceDialog");
+  if(!dialog)return;
+  try{dialog.close()}catch{}
+  dialog.remove();
 }
 function openStyledSelect(select){
   if(!select||!document.body.contains(select))return;
@@ -456,17 +463,20 @@ function openStyledSelect(select){
   const current=select.value;
   const label=select.closest("label");
   const title=label
-    ? [...label.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent.trim()).filter(Boolean)[0]||"اختر من القائمة"
+    ? [...label.childNodes]
+        .filter(node=>node.nodeType===Node.TEXT_NODE)
+        .map(node=>node.textContent.trim())
+        .filter(Boolean)[0]||"اختر من القائمة"
     : "اختر من القائمة";
 
-  const overlay=document.createElement("div");
-  overlay.id="selectOverlay";
-  overlay.className="select-overlay";
-  overlay.innerHTML=`<div class="select-overlay-sheet">
+  const dialog=document.createElement("dialog");
+  dialog.id="selectChoiceDialog";
+  dialog.className="select-choice-dialog";
+  dialog.innerHTML=`<div class="select-dialog-sheet">
     <div class="select-overlay-handle"></div>
     <div class="sheet-head">
       <div><h2>${esc(title)}</h2><p>${options.length} خيارات متاحة</p></div>
-      <button type="button" id="closeSelectOverlay" aria-label="إغلاق"><i data-lucide="x"></i></button>
+      <button type="button" id="closeSelectChoice" aria-label="إغلاق"><i data-lucide="x"></i></button>
     </div>
     <div class="custom-select-search-wrap ${options.length>7?"":"hidden"}">
       <i data-lucide="search"></i>
@@ -481,43 +491,60 @@ function openStyledSelect(select){
     </div>
   </div>`;
 
-  document.body.appendChild(overlay);
-  requestAnimationFrame(()=>overlay.classList.add("show"));
+  document.body.appendChild(dialog);
 
-  overlay.onclick=event=>{
-    if(event.target===overlay)closeSelectOverlay();
+  dialog.addEventListener("cancel",event=>{
+    event.preventDefault();
+    closeSelectOverlay();
+  });
+  dialog.addEventListener("click",event=>{
+    const rect=dialog.getBoundingClientRect();
+    const inside=
+      event.clientX>=rect.left&&event.clientX<=rect.right&&
+      event.clientY>=rect.top&&event.clientY<=rect.bottom;
+    if(!inside)closeSelectOverlay();
+  });
+
+  $("#closeSelectChoice",dialog).onclick=event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    closeSelectOverlay();
   };
-  $("#closeSelectOverlay",overlay).onclick=closeSelectOverlay;
 
-  $$("[data-select-index]",overlay).forEach(button=>{
-    button.onclick=()=>{
+  $$("[data-select-index]",dialog).forEach(button=>{
+    button.onclick=event=>{
+      event.preventDefault();
+      event.stopPropagation();
+
       const option=options[Number(button.dataset.selectIndex)];
       if(!option||option.disabled||!document.body.contains(select))return;
+
       select.value=option.value;
       refreshStyledSelect(select);
-      closeSelectOverlay();
 
-      // Fire change only after the select overlay is gone, while the parent form remains.
-      setTimeout(()=>{
-        if(document.body.contains(select)){
-          select.dispatchEvent(new Event("change",{bubbles:true}));
-        }
-      },0);
+      // Notify the original form while it is still present.
+      select.dispatchEvent(new Event("change",{bubbles:true}));
+      closeSelectOverlay();
     };
   });
 
-  const search=$("#customSelectSearch",overlay);
+  const search=$("#customSelectSearch",dialog);
   if(search){
     search.oninput=()=>{
       const query=search.value.trim().toLowerCase();
-      $$("[data-select-index]",overlay).forEach(button=>{
+      $$("[data-select-index]",dialog).forEach(button=>{
         const option=options[Number(button.dataset.selectIndex)];
-        button.classList.toggle("hidden",!option.textContent.toLowerCase().includes(query));
+        button.classList.toggle(
+          "hidden",
+          !option.textContent.toLowerCase().includes(query)
+        );
       });
     };
-    setTimeout(()=>search.focus(),120);
   }
 
+  dialog.showModal();
+  requestAnimationFrame(()=>dialog.classList.add("show"));
+  if(search)setTimeout(()=>search.focus(),120);
   refreshIcons();
 }
 
@@ -638,7 +665,7 @@ function badge(s){const m={pending:["قيد المراجعة","warning"],approve
 function section(t,p,a=""){return`<div class="section"><div><h2>${t}</h2><p>${p}</p></div>${a}</div>`}
 function empty(t,p="لا توجد بيانات"){return`<div class="card empty"><h2>${t}</h2><p>${p}</p></div>`}
 function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(()=>{styleAllSelects(modal);refreshIcons()},0)}
-function closeModal(){modal.close();document.body.style.overflow=""}
+function closeModal(){closeSelectOverlay();modal.close();document.body.style.overflow=""}
 function needUser(){if(!S.user){auth.showModal();toast("سجل الدخول أولًا","error");return false}return true}
 function needAdmin(){if(S.profile?.role!=="admin"){app.innerHTML=empty("غير مصرح");return false}return true}
 function pager(page,total,size){const pages=Math.max(1,Math.ceil(total/size)),start=Math.max(1,page-2),end=Math.min(pages,page+2);return`<div class="pagination"><button class="page-btn" data-page="${Math.max(1,page-1)}">‹</button>${Array.from({length:end-start+1},(_,i)=>start+i).map(n=>`<button class="page-btn ${n===page?"active":""}" data-page="${n}">${n}</button>`).join("")}<button class="page-btn" data-page="${Math.min(pages,page+1)}">›</button></div>`}

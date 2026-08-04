@@ -617,3 +617,69 @@ body:has(.select-overlay){overflow:hidden}
   .select-overlay{align-items:center}
   .select-overlay-sheet{border-radius:25px}
 }
+
+/* =========================================================
+   Final Android nested-dialog select fix
+   ========================================================= */
+.select-overlay{display:none!important}
+
+.select-choice-dialog{
+  width:min(calc(100% - 24px),520px);
+  max-width:520px;
+  max-height:78vh;
+  margin:auto auto 12px;
+  padding:0;
+  overflow:visible;
+  border:0;
+  border-radius:26px;
+  color:var(--t);
+  background:transparent;
+  opacity:0;
+  transform:translateY(24px) scale(.985);
+  transition:opacity .18s ease,transform .2s ease;
+}
+.select-choice-dialog.show{
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+.select-choice-dialog::backdrop{
+  background:rgba(2,10,14,.58);
+  backdrop-filter:blur(9px);
+}
+.select-dialog-sheet{
+  width:100%;
+  max-height:78vh;
+  padding:10px;
+  overflow:hidden;
+  border:1px solid var(--b);
+  border-radius:26px;
+  color:var(--t);
+  background:var(--glass-strong);
+  box-shadow:0 30px 75px rgba(0,0,0,.34);
+  backdrop-filter:blur(30px) saturate(145%);
+}
+.select-choice-dialog .sheet-head{
+  margin-bottom:8px;
+}
+.select-choice-dialog .sheet-head>button{
+  width:35px;
+  height:35px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--b);
+  border-radius:12px;
+  color:var(--t);
+  background:var(--s2);
+}
+.select-choice-dialog .sheet-head>button svg{
+  width:17px;
+  height:17px;
+}
+.select-choice-dialog .custom-select-options{
+  max-height:calc(78vh - 128px);
+}
+@media(min-width:700px){
+  .select-choice-dialog{
+    margin:auto;
+  }
+}
