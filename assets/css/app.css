@@ -555,3 +555,65 @@ input:disabled,textarea:disabled,button:disabled{opacity:.55;cursor:not-allowed}
   .order-card-main{padding:9px}.order-card-actions{padding:0 9px 8px}
   .order-cancel-action{min-height:32px;padding:6px 9px;font-size:9px}
 }
+
+/* =========================================================
+   Nested select overlay fix
+   Keeps the product/service form open behind the select.
+   ========================================================= */
+.select-overlay{
+  position:fixed;
+  inset:0;
+  z-index:5000;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:14px;
+  padding-bottom:calc(14px + env(safe-area-inset-bottom));
+  background:rgba(2,10,14,.54);
+  backdrop-filter:blur(8px);
+  opacity:0;
+  transition:opacity .18s ease;
+}
+.select-overlay.show{opacity:1}
+.select-overlay-sheet{
+  width:min(100%,520px);
+  max-height:min(76vh,620px);
+  padding:10px;
+  overflow:hidden;
+  border:1px solid var(--b);
+  border-radius:26px;
+  color:var(--t);
+  background:var(--glass-strong);
+  box-shadow:0 28px 70px rgba(0,0,0,.3);
+  backdrop-filter:blur(28px) saturate(145%);
+  transform:translateY(22px) scale(.985);
+  transition:transform .2s ease;
+}
+.select-overlay.show .select-overlay-sheet{transform:translateY(0) scale(1)}
+.select-overlay-handle{
+  width:54px;
+  height:5px;
+  margin:0 auto 8px;
+  border-radius:4px;
+  background:var(--b);
+}
+.select-overlay .sheet-head{margin-bottom:8px}
+.select-overlay .sheet-head>button{
+  width:35px;
+  height:35px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--b);
+  border-radius:12px;
+  color:var(--t);
+  background:var(--s2);
+}
+.select-overlay .sheet-head>button svg{width:17px;height:17px}
+.select-overlay .custom-select-options{
+  max-height:calc(min(76vh,620px) - 125px);
+}
+body:has(.select-overlay){overflow:hidden}
+@media(min-width:700px){
+  .select-overlay{align-items:center}
+  .select-overlay-sheet{border-radius:25px}
+}

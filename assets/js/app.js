@@ -441,51 +441,86 @@ function styleAllSelects(scope=document){
   scope.querySelectorAll("select").forEach(styleSelect);
   refreshIcons();
 }
+function closeSelectOverlay(){
+  const overlay=$("#selectOverlay");
+  if(!overlay)return;
+  overlay.classList.remove("show");
+  setTimeout(()=>overlay.remove(),180);
+}
 function openStyledSelect(select){
+  if(!select||!document.body.contains(select))return;
+
+  closeSelectOverlay();
+
   const options=[...select.options].filter(option=>!option.hidden);
   const current=select.value;
-  const title=select.closest("label")?.childNodes?.[0]?.textContent?.trim()||"اختر من القائمة";
-  openModal(`<div class="custom-select-dialog">
+  const label=select.closest("label");
+  const title=label
+    ? [...label.childNodes].filter(node=>node.nodeType===Node.TEXT_NODE).map(node=>node.textContent.trim()).filter(Boolean)[0]||"اختر من القائمة"
+    : "اختر من القائمة";
+
+  const overlay=document.createElement("div");
+  overlay.id="selectOverlay";
+  overlay.className="select-overlay";
+  overlay.innerHTML=`<div class="select-overlay-sheet">
+    <div class="select-overlay-handle"></div>
     <div class="sheet-head">
       <div><h2>${esc(title)}</h2><p>${options.length} خيارات متاحة</p></div>
-      <button data-close>×</button>
+      <button type="button" id="closeSelectOverlay" aria-label="إغلاق"><i data-lucide="x"></i></button>
     </div>
     <div class="custom-select-search-wrap ${options.length>7?"":"hidden"}">
       <i data-lucide="search"></i>
       <input id="customSelectSearch" class="input" placeholder="بحث في الخيارات...">
     </div>
     <div id="customSelectOptions" class="custom-select-options">
-      ${options.map((option,index)=>`<button type="button" class="custom-select-option ${option.value===current?"selected":""}" data-select-index="${index}">
+      ${options.map((option,index)=>`<button type="button" class="custom-select-option ${option.value===current?"selected":""}" data-select-index="${index}" ${option.disabled?"disabled":""}>
         <span class="custom-radio"><i data-lucide="${option.value===current?"circle-dot":"circle"}"></i></span>
         <span>${esc(option.textContent.trim())}</span>
         ${option.disabled?`<small>غير متاح</small>`:""}
       </button>`).join("")}
     </div>
-  </div>`);
-  $$("[data-select-index]",modal).forEach(button=>{
-    const option=options[Number(button.dataset.selectIndex)];
-    button.disabled=option.disabled;
+  </div>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(()=>overlay.classList.add("show"));
+
+  overlay.onclick=event=>{
+    if(event.target===overlay)closeSelectOverlay();
+  };
+  $("#closeSelectOverlay",overlay).onclick=closeSelectOverlay;
+
+  $$("[data-select-index]",overlay).forEach(button=>{
     button.onclick=()=>{
-      if(option.disabled)return;
+      const option=options[Number(button.dataset.selectIndex)];
+      if(!option||option.disabled||!document.body.contains(select))return;
       select.value=option.value;
-      select.dispatchEvent(new Event("change",{bubbles:true}));
       refreshStyledSelect(select);
-      closeModal();
+      closeSelectOverlay();
+
+      // Fire change only after the select overlay is gone, while the parent form remains.
+      setTimeout(()=>{
+        if(document.body.contains(select)){
+          select.dispatchEvent(new Event("change",{bubbles:true}));
+        }
+      },0);
     };
   });
-  const search=$("#customSelectSearch",modal);
+
+  const search=$("#customSelectSearch",overlay);
   if(search){
     search.oninput=()=>{
       const query=search.value.trim().toLowerCase();
-      $$("[data-select-index]",modal).forEach(button=>{
+      $$("[data-select-index]",overlay).forEach(button=>{
         const option=options[Number(button.dataset.selectIndex)];
         button.classList.toggle("hidden",!option.textContent.toLowerCase().includes(query));
       });
     };
-    setTimeout(()=>search.focus(),80);
+    setTimeout(()=>search.focus(),120);
   }
+
   refreshIcons();
 }
+
 const selectObserver=new MutationObserver(mutations=>{
   for(const mutation of mutations){
     mutation.addedNodes.forEach(node=>{
@@ -1126,11 +1161,13 @@ async function productForm(p=null){
   </form>`);
 
   const drawPreview=()=>{
-    const name=$("#pn")?.value.trim()||"اسم المنتج";
+    const preview=$("#productLivePreview");
+    if(!preview)return;
+    const name=$("#pn")?.value?.trim()||"اسم المنتج";
     const price=Number($("#pp")?.value||0);
     const file=$("#productImageFile")?.files?.[0];
     const image=file?URL.createObjectURL(file):(p?.image_url||null);
-    $("#productLivePreview").innerHTML=`<div class="mini-product-preview">${image?`<img src="${image}">`:`<div><i data-lucide="image"></i></div>`}<span><small>معاينة</small><strong>${esc(name)}</strong><b>${money(price)}</b></span></div>`;
+    preview.innerHTML=`<div class="mini-product-preview">${image?`<img src="${image}">`:`<div><i data-lucide="image"></i></div>`}<span><small>معاينة</small><strong>${esc(name)}</strong><b>${money(price)}</b></span></div>`;
     refreshIcons();
   };
   $("#pn").oninput=drawPreview;
@@ -1534,8 +1571,13 @@ async function smmServiceForm(s=null){
   const selectedPlatform=()=>platforms.find(x=>x.id===$("#servicePlatform").value);
   const drawPreview=()=>{
     const platform=selectedPlatform();
-    $("#chosenPlatformPreview").innerHTML=`<i data-lucide="${platform?.icon||"messages-square"}"></i><strong>${esc(platform?.name||"منصة")}</strong><small>تُضاف المنصة والأيقونة تلقائيًا</small>`;
-    $("#socialLivePreview").innerHTML=`<div class="mini-social-preview"><span><i data-lucide="${platform?.icon||"messages-square"}"></i></span><div><small>معاينة</small><strong>${esc($("#sn")?.value.trim()||"اسم الخدمة")}</strong><b>${money(Number($("#spr")?.value||0))}/1000</b></div></div>`;
+    const platformPreview=$("#chosenPlatformPreview");
+    const livePreview=$("#socialLivePreview");
+    const nameInput=$("#sn");
+    const priceInput=$("#spr");
+    if(!platformPreview||!livePreview)return;
+    platformPreview.innerHTML=`<i data-lucide="${platform?.icon||"messages-square"}"></i><strong>${esc(platform?.name||"منصة")}</strong><small>تُضاف المنصة والأيقونة تلقائيًا</small>`;
+    livePreview.innerHTML=`<div class="mini-social-preview"><span><i data-lucide="${platform?.icon||"messages-square"}"></i></span><div><small>معاينة</small><strong>${esc(nameInput?.value?.trim()||"اسم الخدمة")}</strong><b>${money(Number(priceInput?.value||0))}/1000</b></div></div>`;
     refreshIcons();
   };
   $("#servicePlatform").onchange=drawPreview;
