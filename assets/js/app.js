@@ -284,7 +284,6 @@ function renderProductFieldsBuilder(fields=[]){
   container.innerHTML=normalized.map(productFieldRow).join("")||
     `<div class="empty-fields-builder"><i data-lucide="list-plus"></i><p>لا توجد معلومات مطلوبة من العميل.</p></div>`;
   bindProductFieldsBuilder();
-  styleAllSelects(container);
   refreshIcons();
 }
 function collectProductFields(){
@@ -334,7 +333,6 @@ function addProductField(field={type:"text",required:true}){
   const index=container.querySelectorAll("[data-product-field-row]").length;
   container.insertAdjacentHTML("beforeend",productFieldRow(field,index));
   bindProductFieldsBuilder();
-  styleAllSelects(container);
   refreshIcons();
   container.lastElementChild?.scrollIntoView({behavior:"smooth",block:"nearest"});
 }
@@ -505,300 +503,6 @@ function appPrompt({
 }
 
 
-function selectDisplayText(select){
-  const option=select.options[select.selectedIndex];
-  return option?.textContent?.trim()||select.getAttribute("placeholder")||"اختر";
-}
-function refreshStyledSelect(select){
-  const wrapper=select.closest(".styled-select");
-  if(!wrapper)return;
-  const text=wrapper.querySelector(".styled-select-text");
-  if(text)text.textContent=selectDisplayText(select);
-  wrapper.classList.toggle("disabled",select.disabled);wrapper.setAttribute("aria-label",selectDisplayText(select));
-}
-function styleSelect(select){
-  if(!select||select.multiple||select.size>1)return;
-
-  // Repair old/incomplete wrappers instead of skipping them.
-  let wrapper=select.closest(".styled-select");
-  if(!wrapper){
-    wrapper=document.createElement("div");
-    wrapper.className="styled-select";
-    select.parentNode.insertBefore(wrapper,select);
-    wrapper.appendChild(select);
-  }
-
-  select.dataset.customSelect="true";
-
-  let button=wrapper.querySelector(".styled-select-button");
-  if(!button){
-    button=document.createElement("button");
-    button.type="button";
-    button.className="styled-select-button";
-    button.tabIndex=-1;
-    button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
-    wrapper.appendChild(button);
-  }
-
-  // A real button covering the complete field. This is the only touch target.
-  let hitbox=wrapper.querySelector(".styled-select-hitbox");
-  if(!hitbox){
-    hitbox=document.createElement("button");
-    hitbox.type="button";
-    hitbox.className="styled-select-hitbox";
-    hitbox.setAttribute("aria-label","فتح القائمة");
-    wrapper.appendChild(hitbox);
-  }
-
-  const open=event=>{
-    event.preventDefault();
-    event.stopPropagation();
-    if(select.disabled||wrapper.dataset.opening==="true")return;
-    wrapper.dataset.opening="true";
-    openStyledSelect(select);
-    setTimeout(()=>delete wrapper.dataset.opening,280);
-  };
-
-  // Replace handlers each time to repair dynamically rebuilt controls.
-  const freshHitbox=hitbox.cloneNode(true);
-  hitbox.replaceWith(freshHitbox);
-  hitbox=freshHitbox;
-
-  hitbox.addEventListener("pointerup",open);
-  hitbox.addEventListener("click",event=>{
-    // Keyboard-generated click has detail 0; mobile click is fallback.
-    if(event.detail===0||!window.PointerEvent)open(event);
-  });
-  hitbox.addEventListener("keydown",event=>{
-    if(event.key==="Enter"||event.key===" "){
-      open(event);
-    }
-  });
-
-  select.onchange=()=>refreshStyledSelect(select);
-  refreshStyledSelect(select);
-}
-function styleAllSelects(scope=document){
-  scope.querySelectorAll("select").forEach(styleSelect);
-  refreshIcons();
-}
-function closeSelectOverlay(){
-  const dialog=$("#selectChoiceDialog");
-  if(!dialog)return;
-  try{dialog.close()}catch{}
-  dialog.remove();
-}
-function openStyledSelect(select){
-  if(!select||!document.body.contains(select))return;
-
-  closeSelectOverlay();
-
-  const options=[...select.options].filter(option=>!option.hidden);
-  const current=select.value;
-  const label=select.closest("label");
-  const title=label
-    ? [...label.childNodes]
-        .filter(node=>node.nodeType===Node.TEXT_NODE)
-        .map(node=>node.textContent.trim())
-        .filter(Boolean)[0]||"اختر من القائمة"
-    : "اختر من القائمة";
-
-  const dialog=document.createElement("dialog");
-  dialog.id="selectChoiceDialog";
-  dialog.className="select-choice-dialog";
-  dialog.innerHTML=`<div class="select-dialog-sheet">
-    <div class="select-overlay-handle"></div>
-    <div class="sheet-head">
-      <div><h2>${esc(title)}</h2><p>${options.length} خيارات متاحة</p></div>
-      <button type="button" id="closeSelectChoice" aria-label="إغلاق"><i data-lucide="x"></i></button>
-    </div>
-    <div class="custom-select-search-wrap ${options.length>7?"":"hidden"}">
-      <i data-lucide="search"></i>
-      <input id="customSelectSearch" class="input" placeholder="بحث في الخيارات...">
-    </div>
-    <div id="customSelectOptions" class="custom-select-options">
-      ${options.map((option,index)=>`<button type="button" class="custom-select-option ${option.value===current?"selected":""}" data-select-index="${index}" ${option.disabled?"disabled":""}>
-        <span class="custom-radio"><i data-lucide="${option.value===current?"circle-dot":"circle"}"></i></span>
-        <span>${esc(option.textContent.trim())}</span>
-        ${option.disabled?`<small>غير متاح</small>`:""}
-      </button>`).join("")}
-    </div>
-  </div>`;
-
-  document.body.appendChild(dialog);
-
-  dialog.addEventListener("cancel",event=>{
-    event.preventDefault();
-    closeSelectOverlay();
-  });
-  dialog.addEventListener("click",event=>{
-    const rect=dialog.getBoundingClientRect();
-    const inside=
-      event.clientX>=rect.left&&event.clientX<=rect.right&&
-      event.clientY>=rect.top&&event.clientY<=rect.bottom;
-    if(!inside)closeSelectOverlay();
-  });
-
-  $("#closeSelectChoice",dialog).onclick=event=>{
-    event.preventDefault();
-    event.stopPropagation();
-    closeSelectOverlay();
-  };
-
-  $$("[data-select-index]",dialog).forEach(button=>{
-    button.onclick=event=>{
-      event.preventDefault();
-      event.stopPropagation();
-
-      const option=options[Number(button.dataset.selectIndex)];
-      if(!option||option.disabled||!document.body.contains(select))return;
-
-      select.value=option.value;
-      refreshStyledSelect(select);
-
-      // Notify the original form while it is still present.
-      select.dispatchEvent(new Event("change",{bubbles:true}));
-      closeSelectOverlay();
-    };
-  });
-
-  const search=$("#customSelectSearch",dialog);
-  if(search){
-    search.oninput=()=>{
-      const query=search.value.trim().toLowerCase();
-      $$("[data-select-index]",dialog).forEach(button=>{
-        const option=options[Number(button.dataset.selectIndex)];
-        button.classList.toggle(
-          "hidden",
-          !option.textContent.toLowerCase().includes(query)
-        );
-      });
-    };
-  }
-
-  dialog.showModal();
-  requestAnimationFrame(()=>dialog.classList.add("show"));
-  if(search)setTimeout(()=>search.focus(),120);
-  refreshIcons();
-}
-
-const selectObserver=new MutationObserver(mutations=>{
-  let needsScan=false;
-  for(const mutation of mutations){
-    mutation.addedNodes.forEach(node=>{
-      if(node.nodeType!==1)return;
-      if(node.matches?.("select,.styled-select")||node.querySelector?.("select"))needsScan=true;
-    });
-  }
-  if(needsScan)refreshAllStyledSelects();
-});
-
-
-function refreshAllStyledSelects(){
-  requestAnimationFrame(()=>{
-    styleAllSelects(document);
-    setTimeout(()=>styleAllSelects(document),80);
-  });
-}
-
-function initStyledControls(){
-  styleAllSelects(document);
-  selectObserver.observe(document.body,{childList:true,subtree:true});
-}
-
-
-const ORDER_DIRECT_CANCEL_SECONDS=10;
-
-function orderCancelMode(order){
-  const finalStatuses=["delivered","cancelled","refunded","completed"];
-  if(finalStatuses.includes(order.status))return "hidden";
-  if(order.cancel_request_status==="pending")return "requested";
-  if(!["pending","paid","processing"].includes(order.status))return "hidden";
-
-  const createdAt=new Date(order.created_at).getTime();
-  if(!Number.isFinite(createdAt))return "request";
-  const elapsed=Math.max(0,Math.floor((Date.now()-createdAt)/1000));
-  return elapsed<ORDER_DIRECT_CANCEL_SECONDS?"direct":"request";
-}
-
-function orderCancelSecondsLeft(order){
-  const createdAt=new Date(order.created_at).getTime();
-  if(!Number.isFinite(createdAt))return 0;
-  return Math.max(0,ORDER_DIRECT_CANCEL_SECONDS-Math.floor((Date.now()-createdAt)/1000));
-}
-
-function orderCancelButton(order){
-  const mode=orderCancelMode(order);
-  if(mode==="hidden")return "";
-  if(mode==="requested"){
-    return `<button class="order-cancel-action requested" disabled><i data-lucide="clock-3"></i><span>طلب الإلغاء مرسل</span></button>`;
-  }
-  if(mode==="direct"){
-    const left=orderCancelSecondsLeft(order);
-    return `<button class="order-cancel-action direct" data-direct-cancel="${order.id}" data-order-created="${esc(order.created_at)}"><i data-lucide="x"></i><span>إلغاء</span><b data-cancel-countdown="${order.id}">${left}</b></button>`;
-  }
-  return `<button class="order-cancel-action request" data-request-cancel="${order.id}"><i data-lucide="message-square-warning"></i><span>طلب الإلغاء</span></button>`;
-}
-
-function startOrderCancelCountdown(orders,rerender){
-  clearInterval(window.__orderCancelCountdown);
-  const active=orders.some(order=>orderCancelMode(order)==="direct");
-  if(!active)return;
-  window.__orderCancelCountdown=setInterval(()=>{
-    let needsRender=false;
-    orders.forEach(order=>{
-      const badge=$(`[data-cancel-countdown="${order.id}"]`);
-      if(!badge)return;
-      const left=orderCancelSecondsLeft(order);
-      badge.textContent=left;
-      if(left<=0)needsRender=true;
-    });
-    if(needsRender){
-      clearInterval(window.__orderCancelCountdown);
-      rerender();
-    }
-  },1000);
-}
-
-async function directCancelOrder(orderId){
-  const approved=await appConfirm({
-    title:"إلغاء الطلب",
-    message:"ما زلت ضمن مهلة الإلغاء الفوري. سيُلغى الطلب ويُعاد الرصيد مباشرة.",
-    confirmText:"إلغاء وإعادة الرصيد",
-    icon:"rotate-ccw",
-    danger:true
-  });
-  if(!approved)return;
-
-  const{data,error}=await supabase.rpc("cancel_order_within_grace_period",{
-    p_order_id:orderId
-  });
-  if(error)return toast(friendlyError(error),"error");
-  toast(data?.message||"تم إلغاء الطلب وإعادة الرصيد");
-  await loadIdentity();
-  orders();
-}
-
-async function requestCancelOrder(orderId){
-  const reason=await appPrompt({
-    title:"طلب إلغاء الطلب",
-    message:"انتهت مهلة الإلغاء الفوري. اكتب سبب الإلغاء ليتم مراجعته من الإدارة.",
-    placeholder:"سبب طلب الإلغاء",
-    confirmText:"إرسال الطلب",
-    icon:"message-square-warning",
-    danger:true
-  });
-  if(!reason)return;
-
-  const{data,error}=await supabase.rpc("request_order_cancel",{
-    p_order_id:orderId,
-    p_reason:reason
-  });
-  if(error)return toast(friendlyError(error),"error");
-  toast(data?.message||"تم إرسال طلب الإلغاء");
-  orders();
-}
-
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -808,8 +512,8 @@ function toast(m,t="success"){const e=document.createElement("div");e.className=
 function badge(s){const m={pending:["قيد المراجعة","warning"],approved:["مقبول","success"],rejected:["مرفوض","danger"],paid:["مدفوع","success"],processing:["قيد التنفيذ","warning"],delivered:["تم التسليم","success"],cancelled:["ملغي","danger"],refunded:["مسترد","warning"],active:["نشط","success"],blocked:["محظور","danger"],available:["متاح","success"],paused:["موقوف","warning"],sold_out:["نفد","danger"]};const[t,c]=m[s]||[s||"-",""];return`<span class="badge ${c}">${t}</span>`}
 function section(t,p,a=""){return`<div class="section"><div><h2>${t}</h2><p>${p}</p></div>${a}</div>`}
 function empty(t,p="لا توجد بيانات"){return`<div class="card empty"><h2>${t}</h2><p>${p}</p></div>`}
-function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(()=>{styleAllSelects(modal);refreshAllStyledSelects();refreshIcons()},0)}
-function closeModal(){closeSelectOverlay();modal.close();document.body.style.overflow=""}
+function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(refreshIcons,0)}
+function closeModal(){modal.close();document.body.style.overflow=""}
 function needUser(){if(!S.user){auth.showModal();toast("سجل الدخول أولًا","error");return false}return true}
 function needAdmin(){if(S.profile?.role!=="admin"){app.innerHTML=empty("غير مصرح");return false}return true}
 function pager(page,total,size){const pages=Math.max(1,Math.ceil(total/size)),start=Math.max(1,page-2),end=Math.min(pages,page+2);return`<div class="pagination"><button class="page-btn" data-page="${Math.max(1,page-1)}">‹</button>${Array.from({length:end-start+1},(_,i)=>start+i).map(n=>`<button class="page-btn ${n===page?"active":""}" data-page="${n}">${n}</button>`).join("")}<button class="page-btn" data-page="${Math.min(pages,page+1)}">›</button></div>`}
@@ -864,7 +568,7 @@ async function init(){
     navigator.serviceWorker.register("./service-worker.js").catch(console.error);
   }
 }
-function bind(){setTimeout(initStyledControls,0);$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
+function bind(){$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
 function setTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;$("#themeButton").innerHTML=`<i data-lucide="${t==="dark"?"sun":"moon"}"></i>`;setTimeout(refreshIcons,0)}
 function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#authTitle").textContent=r?"إنشاء حساب":"تسجيل الدخول";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا"}
 async function submitAuth(e){e.preventDefault();try{const email=$("#email").value.trim(),password=$("#password").value;if(S.authMode==="register"){const{error}=await supabase.auth.signUp({email,password,options:{data:{full_name:$("#fullName").value.trim(),phone:$("#phone").value.trim()}}});if(error)throw error}else{const{error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error}auth.close();toast("تمت العملية بنجاح")}catch(e){toast(e.message,"error")}}

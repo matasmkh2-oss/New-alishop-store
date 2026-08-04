@@ -888,3 +888,91 @@ label:has(.styled-select){
     border-radius:17px!important;
   }
 }
+
+/* =========================================================
+   ROOT FIX — Native Android selects
+   All previous custom select layers are disabled permanently.
+   ========================================================= */
+.styled-select,
+.styled-select-button,
+.styled-select-hitbox,
+.select-choice-dialog,
+.select-overlay,
+.custom-select-dialog{
+  display:none!important;
+}
+
+/* Repair selects that may still be wrapped by old cached markup. */
+.styled-select:has(>select){
+  display:block!important;
+  position:relative!important;
+  width:100%!important;
+  min-height:48px!important;
+}
+.styled-select:has(>select)>.styled-select-button,
+.styled-select:has(>select)>.styled-select-hitbox{
+  display:none!important;
+}
+.styled-select:has(>select)>select,
+select{
+  position:relative!important;
+  inset:auto!important;
+  z-index:1!important;
+  display:block!important;
+  visibility:visible!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:48px!important;
+  margin:0!important;
+  padding:11px 42px 11px 13px!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  clip:auto!important;
+  clip-path:none!important;
+  overflow:visible!important;
+  border:1px solid var(--b)!important;
+  border-radius:14px!important;
+  outline:0!important;
+  color:var(--control-text)!important;
+  background-color:var(--control-bg)!important;
+  background-image:
+    linear-gradient(45deg,transparent 50%,var(--icon) 50%),
+    linear-gradient(135deg,var(--icon) 50%,transparent 50%)!important;
+  background-position:
+    right 17px center,
+    right 11px center!important;
+  background-size:6px 6px,6px 6px!important;
+  background-repeat:no-repeat!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:rgba(8,127,130,.12)!important;
+  cursor:pointer!important;
+  font:inherit!important;
+}
+select:focus{
+  border-color:var(--p)!important;
+  box-shadow:0 0 0 4px rgba(8,127,130,.12)!important;
+}
+[data-theme=dark] select:focus{
+  box-shadow:0 0 0 4px rgba(94,234,212,.12)!important;
+}
+select:disabled{
+  opacity:.55!important;
+  pointer-events:none!important;
+}
+label:has(select){
+  position:relative!important;
+  overflow:visible!important;
+  pointer-events:auto!important;
+}
+@media(max-width:520px){
+  select,
+  .styled-select:has(>select)>select{
+    min-height:48px!important;
+    padding:10px 40px 10px 12px!important;
+    border-radius:13px!important;
+    font-size:12px!important;
+  }
+}
