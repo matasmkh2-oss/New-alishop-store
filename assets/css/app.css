@@ -683,3 +683,51 @@ body:has(.select-overlay){overflow:hidden}
     margin:auto;
   }
 }
+
+/* =========================================================
+   Reliable mobile tap area for custom selects
+   ========================================================= */
+.styled-select{
+  min-height:48px;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.styled-select-button{
+  position:relative;
+  z-index:3;
+  min-height:48px!important;
+  padding:12px 14px!important;
+  cursor:pointer;
+  touch-action:manipulation;
+  pointer-events:auto!important;
+}
+.styled-select-button::after{
+  content:"";
+  position:absolute;
+  inset:-7px -5px;
+  z-index:-1;
+  border-radius:18px;
+}
+.styled-select-text{
+  flex:1;
+  min-width:0;
+  pointer-events:none;
+}
+.styled-select-button svg{
+  pointer-events:none;
+}
+label:has(>.styled-select){
+  cursor:pointer;
+}
+@media(max-width:520px){
+  .styled-select{min-height:46px}
+  .styled-select-button{
+    min-height:46px!important;
+    padding:11px 13px!important;
+  }
+  .styled-select-button::after{
+    inset:-8px -6px;
+  }
+}

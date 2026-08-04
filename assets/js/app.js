@@ -428,19 +428,44 @@ function styleSelect(select){
   button.className="styled-select-button";
   button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
   wrapper.appendChild(button);
-  const stopSelectActivation=event=>{
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-  };
-  button.addEventListener("pointerdown",stopSelectActivation,true);
-  button.addEventListener("mousedown",stopSelectActivation,true);
-  button.addEventListener("touchstart",stopSelectActivation,{capture:true,passive:false});
-  button.addEventListener("click",event=>{
-    stopSelectActivation(event);
-    if(select.disabled)return;
+
+  const ownerLabel=wrapper.closest("label");
+  if(ownerLabel&&!ownerLabel.dataset.selectTapGuard){
+    ownerLabel.dataset.selectTapGuard="true";
+    ownerLabel.addEventListener("click",event=>{
+      const styled=event.target.closest?.(".styled-select");
+      if(styled){
+        event.preventDefault();
+      }
+    });
+  }
+  let selectOpening=false;
+  const openFromTap=event=>{
+    if(event){
+      event.stopPropagation();
+      if(event.type==="click")event.preventDefault();
+    }
+    if(select.disabled||selectOpening)return;
+    selectOpening=true;
     openStyledSelect(select);
-  },true);
+    setTimeout(()=>{selectOpening=false},280);
+  };
+
+  // pointerup is the most reliable mobile event. click remains a keyboard fallback.
+  button.addEventListener("pointerup",openFromTap);
+  button.addEventListener("click",openFromTap);
+  button.addEventListener("keydown",event=>{
+    if(event.key==="Enter"||event.key===" "){
+      event.preventDefault();
+      openFromTap(event);
+    }
+  });
+
+  // A tap anywhere inside the styled field opens the list.
+  wrapper.addEventListener("pointerup",event=>{
+    if(event.target===select||button.contains(event.target))return;
+    openFromTap(event);
+  });
   select.addEventListener("change",()=>refreshStyledSelect(select));
   refreshStyledSelect(select);
 }
