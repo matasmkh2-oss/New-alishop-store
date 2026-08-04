@@ -500,6 +500,99 @@ function initStyledControls(){
   selectObserver.observe(document.body,{childList:true,subtree:true});
 }
 
+
+const ORDER_DIRECT_CANCEL_SECONDS=10;
+
+function orderCancelMode(order){
+  const finalStatuses=["delivered","cancelled","refunded","completed"];
+  if(finalStatuses.includes(order.status))return "hidden";
+  if(order.cancel_request_status==="pending")return "requested";
+  if(!["pending","paid","processing"].includes(order.status))return "hidden";
+
+  const createdAt=new Date(order.created_at).getTime();
+  if(!Number.isFinite(createdAt))return "request";
+  const elapsed=Math.max(0,Math.floor((Date.now()-createdAt)/1000));
+  return elapsed<ORDER_DIRECT_CANCEL_SECONDS?"direct":"request";
+}
+
+function orderCancelSecondsLeft(order){
+  const createdAt=new Date(order.created_at).getTime();
+  if(!Number.isFinite(createdAt))return 0;
+  return Math.max(0,ORDER_DIRECT_CANCEL_SECONDS-Math.floor((Date.now()-createdAt)/1000));
+}
+
+function orderCancelButton(order){
+  const mode=orderCancelMode(order);
+  if(mode==="hidden")return "";
+  if(mode==="requested"){
+    return `<button class="order-cancel-action requested" disabled><i data-lucide="clock-3"></i><span>طلب الإلغاء مرسل</span></button>`;
+  }
+  if(mode==="direct"){
+    const left=orderCancelSecondsLeft(order);
+    return `<button class="order-cancel-action direct" data-direct-cancel="${order.id}" data-order-created="${esc(order.created_at)}"><i data-lucide="x"></i><span>إلغاء</span><b data-cancel-countdown="${order.id}">${left}</b></button>`;
+  }
+  return `<button class="order-cancel-action request" data-request-cancel="${order.id}"><i data-lucide="message-square-warning"></i><span>طلب الإلغاء</span></button>`;
+}
+
+function startOrderCancelCountdown(orders,rerender){
+  clearInterval(window.__orderCancelCountdown);
+  const active=orders.some(order=>orderCancelMode(order)==="direct");
+  if(!active)return;
+  window.__orderCancelCountdown=setInterval(()=>{
+    let needsRender=false;
+    orders.forEach(order=>{
+      const badge=$(`[data-cancel-countdown="${order.id}"]`);
+      if(!badge)return;
+      const left=orderCancelSecondsLeft(order);
+      badge.textContent=left;
+      if(left<=0)needsRender=true;
+    });
+    if(needsRender){
+      clearInterval(window.__orderCancelCountdown);
+      rerender();
+    }
+  },1000);
+}
+
+async function directCancelOrder(orderId){
+  const approved=await appConfirm({
+    title:"إلغاء الطلب",
+    message:"ما زلت ضمن مهلة الإلغاء الفوري. سيُلغى الطلب ويُعاد الرصيد مباشرة.",
+    confirmText:"إلغاء وإعادة الرصيد",
+    icon:"rotate-ccw",
+    danger:true
+  });
+  if(!approved)return;
+
+  const{data,error}=await supabase.rpc("cancel_order_within_grace_period",{
+    p_order_id:orderId
+  });
+  if(error)return toast(friendlyError(error),"error");
+  toast(data?.message||"تم إلغاء الطلب وإعادة الرصيد");
+  await loadIdentity();
+  orders();
+}
+
+async function requestCancelOrder(orderId){
+  const reason=await appPrompt({
+    title:"طلب إلغاء الطلب",
+    message:"انتهت مهلة الإلغاء الفوري. اكتب سبب الإلغاء ليتم مراجعته من الإدارة.",
+    placeholder:"سبب طلب الإلغاء",
+    confirmText:"إرسال الطلب",
+    icon:"message-square-warning",
+    danger:true
+  });
+  if(!reason)return;
+
+  const{data,error}=await supabase.rpc("request_order_cancel",{
+    p_order_id:orderId,
+    p_reason:reason
+  });
+  if(error)return toast(friendlyError(error),"error");
+  toast(data?.message||"تم إرسال طلب الإلغاء");
+  orders();
+}
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -672,24 +765,80 @@ function details(id){const p=S.products.find(x=>String(x.id)===String(id)),sold=
 async function buy(p){if(!needUser())return;const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${p.name}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});if(!approved)return;const code=$("#couponCode")?.value.trim()||null;const customerData={};$$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());const{error}=await supabase.rpc("purchase_product_v6",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData});if(error)return toast(error.message,"error");toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders"}
 async function orders(){
   if(!needUser())return app.innerHTML=empty("طلباتي","سجل الدخول");
-  const initial=new URLSearchParams(location.hash.split("?")[1]||"").get("tab")||S.orderTab||"digital";
-  S.orderTab=initial;
-  const[{data:digital},{data:social}]=await Promise.all([
-    supabase.from("orders").select("*,product:products(name,image_url)").order("created_at",{ascending:false}),
-    supabase.from("smm_orders").select("*,service:smm_services(name,platform:social_platforms(name,icon))").order("created_at",{ascending:false})
-  ]);
-  const draw=()=>{
-    const isDigital=S.orderTab==="digital";
-    app.innerHTML=`${section("طلباتي","طلبات المنتجات الرقمية وخدمات السوشل ميديا")}
-    <div class="segmented-control"><button class="${isDigital?"active":""}" data-order-tab="digital"><i data-lucide="package-open"></i> منتجات رقمية <span>${(digital||[]).length}</span></button><button class="${!isDigital?"active":""}" data-order-tab="social"><i data-lucide="messages-square"></i> طلبات السوشل <span>${(social||[]).length}</span></button></div>
-    <div class="list" style="margin-top:14px">${isDigital?((digital||[]).map(o=>`<div class="card item"><div class="order-thumb">${o.product?.image_url?`<img src="${esc(o.product.image_url)}">`:`<i data-lucide="package"></i>`}</div><div class="item-main"><h3>${esc(o.product?.name||"-")}</h3><p>${esc(o.order_number)} • ${money(o.total)}</p></div><div class="item-actions">${badge(o.status)}${iconButton("eye","التفاصيل",`data-digital-order="${o.id}"`)}</div></div>`).join("")||empty("لا توجد طلبات منتجات")):((social||[]).map(o=>`<div class="card item"><div class="order-thumb social"><i data-lucide="${o.service?.platform?.icon||"messages-square"}"></i></div><div class="item-main"><h3>${esc(o.service?.name||"-")}</h3><p>${esc(o.order_number)} • ${o.quantity} • ${money(o.total)}</p></div><div class="item-actions">${badge(o.status)}${iconButton("eye","التفاصيل",`data-social-order="${o.id}"`)}</div></div>`).join("")||empty("لا توجد طلبات سوشل ميديا"))}</div>`;
-    $$("[data-order-tab]").forEach(b=>b.onclick=()=>{S.orderTab=b.dataset.orderTab;draw()});
-    $$("[data-digital-order]").forEach(b=>b.onclick=()=>{const o=(digital||[]).find(x=>x.id===b.dataset.digitalOrder);openModal(`<div class="sheet-head"><h2>${esc(o.order_number)}</h2><button data-close>×</button></div><p>${badge(o.status)}</p><div class="note">${esc(o.delivery_data||"لم يتم التسليم بعد")}</div>`)});
-    $$("[data-social-order]").forEach(b=>b.onclick=()=>{const o=(social||[]).find(x=>x.id===b.dataset.socialOrder);openModal(`<div class="sheet-head"><h2>${esc(o.order_number)}</h2><button data-close>×</button></div><div class="note">الخدمة: ${esc(o.service?.name||"-")}<br>الرابط: ${esc(o.target_url)}<br>الكمية: ${o.quantity}<br>الحالة: ${badge(o.status)}${o.admin_note?`<br>ملاحظة الإدارة: ${esc(o.admin_note)}`:""}</div>`)});
-    refreshIcons();
-  };draw();
-}
 
+  const [digitalResult,socialResult,cancelResult]=await Promise.all([
+    supabase.from("orders")
+      .select("*,product:products(name,image_url)")
+      .eq("user_id",S.user.id)
+      .order("created_at",{ascending:false})
+      .limit(300),
+    supabase.from("smm_orders")
+      .select("*,service:smm_services(name,platform:social_platforms(name,icon))")
+      .eq("user_id",S.user.id)
+      .order("created_at",{ascending:false})
+      .limit(300),
+    supabase.from("order_cancel_requests")
+      .select("order_id,status")
+      .eq("user_id",S.user.id)
+  ]);
+
+  if(digitalResult.error||socialResult.error){
+    app.innerHTML=`${section("طلباتي","تعذر تحميل الطلبات")}
+      <div class="card empty"><h2>حدث خطأ</h2><p>${esc(friendlyError(digitalResult.error||socialResult.error))}</p><button id="retryOrders" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retryOrders").onclick=orders;
+    refreshIcons();
+    return;
+  }
+
+  const cancelMap=Object.fromEntries((cancelResult.data||[]).map(x=>[x.order_id,x.status]));
+  const digital=(digitalResult.data||[]).map(order=>({...order,cancel_request_status:cancelMap[order.id]||null}));
+  const social=socialResult.data||[];
+  const tab=S.orderTab||"digital";
+
+  const render=()=>{
+    const isDigital=(S.orderTab||"digital")==="digital";
+    app.innerHTML=`${section("طلباتي","متابعة المنتجات الرقمية ومنتجات السوشل")}
+      <div class="catalog-top-tabs">
+        <button class="${isDigital?"active":""}" data-user-order-tab="digital"><i data-lucide="package"></i><span>منتجات رقمية</span><b>${digital.length}</b></button>
+        <button class="${!isDigital?"active":""}" data-user-order-tab="social"><i data-lucide="messages-square"></i><span>منتجات السوشل</span><b>${social.length}</b></button>
+      </div>
+      <div class="list">${isDigital
+        ? digital.map(order=>`<div class="card order-card">
+            <button class="order-card-main" data-order-details="${order.id}">
+              <div class="order-thumb">${order.product?.image_url?`<img src="${esc(order.product.image_url)}">`:`<i data-lucide="package"></i>`}</div>
+              <div class="item-main"><h3>${esc(order.product?.name||"منتج رقمي")}</h3><p>${esc(order.order_number||"")} • ${money(order.total)} • ${dt(order.created_at)}</p></div>
+              ${badge(order.status)}
+            </button>
+            <div class="order-card-actions">${orderCancelButton(order)}</div>
+          </div>`).join("")||empty("لا توجد طلبات رقمية")
+        : social.map(order=>`<div class="card order-card">
+            <button class="order-card-main" data-social-order-details="${order.id}">
+              <div class="platform-list-icon"><i data-lucide="${order.service?.platform?.icon||"messages-square"}"></i></div>
+              <div class="item-main"><h3>${esc(order.service?.name||"منتج سوشل")}</h3><p>${order.quantity||0} • ${esc(order.order_number||"")} • ${dt(order.created_at)}</p></div>
+              ${badge(order.status)}
+            </button>
+          </div>`).join("")||empty("لا توجد طلبات سوشل")}
+      </div>`;
+
+    $$("[data-user-order-tab]").forEach(button=>button.onclick=()=>{
+      S.orderTab=button.dataset.userOrderTab;
+      render();
+    });
+    $$("[data-order-details]").forEach(button=>button.onclick=()=>{
+      const order=digital.find(x=>x.id===button.dataset.orderDetails);
+      if(order)orderDetails(order);
+    });
+    $$("[data-direct-cancel]").forEach(button=>button.onclick=()=>directCancelOrder(button.dataset.directCancel));
+    $$("[data-request-cancel]").forEach(button=>button.onclick=()=>requestCancelOrder(button.dataset.requestCancel));
+
+    if(isDigital)startOrderCancelCountdown(digital,render);
+    else clearInterval(window.__orderCancelCountdown);
+    refreshIcons();
+  };
+
+  S.orderTab=tab;
+  render();
+}
 async function wallet(){
   if(!needUser())return app.innerHTML=empty("المحفظة","سجل الدخول");
 

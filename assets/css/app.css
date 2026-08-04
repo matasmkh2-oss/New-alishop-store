@@ -533,3 +533,25 @@ input:disabled,textarea:disabled,button:disabled{opacity:.55;cursor:not-allowed}
 .choice-dialog-option>span{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;color:var(--icon);background:var(--p-soft)}
 .choice-dialog-option svg{width:18px;height:18px}
 .choice-dialog-option.selected{border-color:var(--p);background:linear-gradient(135deg,var(--p-soft),var(--s2))}
+
+/* Smart order cancellation */
+.order-card{overflow:hidden;padding:0!important}
+.order-card-main{
+  width:100%;padding:11px;display:flex;align-items:center;gap:10px;border:0;color:var(--t);background:transparent;text-align:right
+}
+.order-card-actions{display:flex;justify-content:flex-end;padding:0 10px 10px}
+.order-cancel-action{
+  min-height:35px;padding:7px 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  border:1px solid transparent;border-radius:12px;font:inherit;font-size:10px;font-weight:800
+}
+.order-cancel-action svg{width:15px;height:15px}
+.order-cancel-action.direct{color:#fff;background:linear-gradient(135deg,#D93650,#EF5A6F);box-shadow:0 7px 17px rgba(217,54,80,.18)}
+.order-cancel-action.direct b{
+  min-width:20px;height:20px;padding:0 4px;display:grid;place-items:center;border-radius:8px;background:rgba(255,255,255,.18);font-size:9px
+}
+.order-cancel-action.request{color:#B66D00;border-color:rgba(217,145,31,.25);background:rgba(217,145,31,.11)}
+.order-cancel-action.requested{color:var(--m);border-color:var(--b);background:var(--s2);opacity:.75}
+@media(max-width:520px){
+  .order-card-main{padding:9px}.order-card-actions{padding:0 9px 8px}
+  .order-cancel-action{min-height:32px;padding:6px 9px;font-size:9px}
+}
