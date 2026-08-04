@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#11B8B1"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>علي شوب</title>
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./assets/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/css/app.css">
+</head>
+<body>
+<div id="splash" class="splash">
+  <div class="splash-scene">
+    <span class="splash-ring ring-one"></span><span class="splash-ring ring-two"></span>
+    <div class="splash-logo">A</div>
+  </div>
+  <h1>علي شوب</h1><p>جارٍ تجهيز تجربتك...</p>
+  <div class="splash-progress"><span></span></div>
+</div>
+<div id="announcementBar" class="announcement-bar hidden"></div>
+<div id="toastRoot" class="toast-root"></div>
+<header class="app-header">
+<a href="#/home" class="brand"><span class="brand-logo">A</span><span><strong id="storeName">علي شوب</strong><small id="pageTitle">المنتجات الرقمية</small></span></a>
+<div class="header-actions">
+<button id="installButton" class="icon-btn hidden" title="تثبيت التطبيق"><i data-lucide="download"></i></button>
+<button id="themeButton" class="icon-btn"><i data-lucide="moon"></i></button>
+<button id="notificationButton" class="icon-btn hidden"><i data-lucide="bell"></i><i id="notificationCount" class="counter hidden">0</i></button>
+</div>
+</header>
+<main id="app" class="page"></main>
+<nav class="bottom-nav">
+<a href="#/home" data-route="home"><i data-lucide="house"></i><small>الرئيسية</small></a>
+<a href="#/products" data-route="products"><i data-lucide="layout-grid"></i><small>المنتجات</small></a>
+<a href="#/orders" data-route="orders"><i data-lucide="receipt-text"></i><small>طلباتي</small></a>
+<a href="#/wallet" data-route="wallet"><i data-lucide="wallet-cards"></i><small>المحفظة</small></a>
+<a href="#/account" data-route="account"><i data-lucide="circle-user-round"></i><small>حسابي</small></a>
+</nav>
+
+<dialog id="authDialog" class="sheet"><form id="authForm" class="sheet-body">
+<div class="grip"></div><div class="sheet-head"><div><h2 id="authTitle">تسجيل الدخول</h2><p>ادخل بيانات حسابك</p></div><button type="button" data-close-dialog="authDialog">×</button></div>
+<div id="registerFields" class="hidden"><label>الاسم الكامل<input id="fullName"></label><label>رقم الهاتف<input id="phone"></label></div>
+<label>البريد الإلكتروني<input id="email" type="email" required></label><label>كلمة المرور<input id="password" type="password" minlength="6" required></label>
+<button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn">ليس لديك حساب؟ أنشئ حسابًا</button>
+</form></dialog>
+<dialog id="modalDialog" class="sheet wide"></dialog>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script type="module" src="./assets/js/app.js"></script>
+</body></html>

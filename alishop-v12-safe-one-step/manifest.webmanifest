@@ -1,0 +1,28 @@
+{
+  "name": "AliShop - علي شوب",
+  "short_name": "AliShop",
+  "id": "/New-alishop-store/",
+  "start_url": "/New-alishop-store/index.html#/home",
+  "scope": "/New-alishop-store/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f18",
+  "theme_color": "#11B8B1",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "./assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": []
+}
