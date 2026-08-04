@@ -307,6 +307,47 @@ function appConfirm({
     refreshIcons();
   });
 }
+
+function appChoice({
+  title="اختر",
+  message="",
+  icon="list-checks",
+  options=[],
+  current=null,
+  confirmText="حفظ",
+  cancelText="إلغاء"
+}={}){
+  return new Promise(resolve=>{
+    let selected=current;
+    openModal(`<div class="app-dialog">
+      <div class="app-dialog-icon"><i data-lucide="${icon}"></i></div>
+      <div class="app-dialog-content">
+        <h2>${esc(title)}</h2>
+        ${message?`<p>${esc(message)}</p>`:""}
+        <div class="choice-dialog-options">
+          ${options.map(option=>`<button type="button" class="choice-dialog-option ${option.value===current?"selected":""}" data-choice="${esc(option.value)}">
+            <span><i data-lucide="${option.icon||"circle"}"></i></span>
+            <strong>${esc(option.label)}</strong>
+            <i data-lucide="${option.value===current?"circle-dot":"circle"}"></i>
+          </button>`).join("")}
+        </div>
+      </div>
+      <div class="app-dialog-actions">
+        <button id="appDialogCancel" class="btn soft">${esc(cancelText)}</button>
+        <button id="appDialogConfirm" class="btn primary">${esc(confirmText)}</button>
+      </div>
+    </div>`);
+    $$("[data-choice]",modal).forEach(button=>button.onclick=()=>{
+      selected=button.dataset.choice;
+      $$("[data-choice]",modal).forEach(item=>item.classList.toggle("selected",item===button));
+      refreshIcons();
+    });
+    $("#appDialogCancel").onclick=()=>{closeModal();resolve(null)};
+    $("#appDialogConfirm").onclick=()=>{if(!selected)return toast("اختر أحد الخيارات","error");closeModal();resolve(selected)};
+    refreshIcons();
+  });
+}
+
 function appPrompt({
   title="أدخل المعلومات",
   message="",
@@ -363,6 +404,102 @@ function appPrompt({
   });
 }
 
+
+function selectDisplayText(select){
+  const option=select.options[select.selectedIndex];
+  return option?.textContent?.trim()||select.getAttribute("placeholder")||"اختر";
+}
+function refreshStyledSelect(select){
+  const wrapper=select.closest(".styled-select");
+  if(!wrapper)return;
+  const text=wrapper.querySelector(".styled-select-text");
+  if(text)text.textContent=selectDisplayText(select);
+  wrapper.classList.toggle("disabled",select.disabled);
+}
+function styleSelect(select){
+  if(!select||select.dataset.customSelect==="true"||select.multiple||select.size>1)return;
+  select.dataset.customSelect="true";
+  const wrapper=document.createElement("div");
+  wrapper.className="styled-select";
+  select.parentNode.insertBefore(wrapper,select);
+  wrapper.appendChild(select);
+  const button=document.createElement("button");
+  button.type="button";
+  button.className="styled-select-button";
+  button.innerHTML=`<span class="styled-select-text"></span><i data-lucide="chevron-down"></i>`;
+  wrapper.appendChild(button);
+  button.onclick=event=>{
+    event.preventDefault();
+    event.stopPropagation();
+    if(select.disabled)return;
+    openStyledSelect(select);
+  };
+  select.addEventListener("change",()=>refreshStyledSelect(select));
+  refreshStyledSelect(select);
+}
+function styleAllSelects(scope=document){
+  scope.querySelectorAll("select").forEach(styleSelect);
+  refreshIcons();
+}
+function openStyledSelect(select){
+  const options=[...select.options].filter(option=>!option.hidden);
+  const current=select.value;
+  const title=select.closest("label")?.childNodes?.[0]?.textContent?.trim()||"اختر من القائمة";
+  openModal(`<div class="custom-select-dialog">
+    <div class="sheet-head">
+      <div><h2>${esc(title)}</h2><p>${options.length} خيارات متاحة</p></div>
+      <button data-close>×</button>
+    </div>
+    <div class="custom-select-search-wrap ${options.length>7?"":"hidden"}">
+      <i data-lucide="search"></i>
+      <input id="customSelectSearch" class="input" placeholder="بحث في الخيارات...">
+    </div>
+    <div id="customSelectOptions" class="custom-select-options">
+      ${options.map((option,index)=>`<button type="button" class="custom-select-option ${option.value===current?"selected":""}" data-select-index="${index}">
+        <span class="custom-radio"><i data-lucide="${option.value===current?"circle-dot":"circle"}"></i></span>
+        <span>${esc(option.textContent.trim())}</span>
+        ${option.disabled?`<small>غير متاح</small>`:""}
+      </button>`).join("")}
+    </div>
+  </div>`);
+  $$("[data-select-index]",modal).forEach(button=>{
+    const option=options[Number(button.dataset.selectIndex)];
+    button.disabled=option.disabled;
+    button.onclick=()=>{
+      if(option.disabled)return;
+      select.value=option.value;
+      select.dispatchEvent(new Event("change",{bubbles:true}));
+      refreshStyledSelect(select);
+      closeModal();
+    };
+  });
+  const search=$("#customSelectSearch",modal);
+  if(search){
+    search.oninput=()=>{
+      const query=search.value.trim().toLowerCase();
+      $$("[data-select-index]",modal).forEach(button=>{
+        const option=options[Number(button.dataset.selectIndex)];
+        button.classList.toggle("hidden",!option.textContent.toLowerCase().includes(query));
+      });
+    };
+    setTimeout(()=>search.focus(),80);
+  }
+  refreshIcons();
+}
+const selectObserver=new MutationObserver(mutations=>{
+  for(const mutation of mutations){
+    mutation.addedNodes.forEach(node=>{
+      if(node.nodeType!==1)return;
+      if(node.matches?.("select"))styleSelect(node);
+      node.querySelectorAll?.("select").forEach(styleSelect);
+    });
+  }
+});
+function initStyledControls(){
+  styleAllSelects(document);
+  selectObserver.observe(document.body,{childList:true,subtree:true});
+}
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -372,7 +509,7 @@ function toast(m,t="success"){const e=document.createElement("div");e.className=
 function badge(s){const m={pending:["قيد المراجعة","warning"],approved:["مقبول","success"],rejected:["مرفوض","danger"],paid:["مدفوع","success"],processing:["قيد التنفيذ","warning"],delivered:["تم التسليم","success"],cancelled:["ملغي","danger"],refunded:["مسترد","warning"],active:["نشط","success"],blocked:["محظور","danger"],available:["متاح","success"],paused:["موقوف","warning"],sold_out:["نفد","danger"]};const[t,c]=m[s]||[s||"-",""];return`<span class="badge ${c}">${t}</span>`}
 function section(t,p,a=""){return`<div class="section"><div><h2>${t}</h2><p>${p}</p></div>${a}</div>`}
 function empty(t,p="لا توجد بيانات"){return`<div class="card empty"><h2>${t}</h2><p>${p}</p></div>`}
-function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(refreshIcons,0)}
+function openModal(h){modal.innerHTML=`<div class="dialog-body"><div class="grip"></div>${h}</div>`;modal.showModal();document.body.style.overflow="hidden";$$("[data-close]",modal).forEach(b=>b.onclick=closeModal);setTimeout(()=>{styleAllSelects(modal);refreshIcons()},0)}
 function closeModal(){modal.close();document.body.style.overflow=""}
 function needUser(){if(!S.user){auth.showModal();toast("سجل الدخول أولًا","error");return false}return true}
 function needAdmin(){if(S.profile?.role!=="admin"){app.innerHTML=empty("غير مصرح");return false}return true}
@@ -428,7 +565,7 @@ async function init(){
     navigator.serviceWorker.register("./service-worker.js").catch(console.error);
   }
 }
-function bind(){$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
+function bind(){setTimeout(initStyledControls,0);$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
 function setTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;$("#themeButton").innerHTML=`<i data-lucide="${t==="dark"?"sun":"moon"}"></i>`;setTimeout(refreshIcons,0)}
 function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#authTitle").textContent=r?"إنشاء حساب":"تسجيل الدخول";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا"}
 async function submitAuth(e){e.preventDefault();try{const email=$("#email").value.trim(),password=$("#password").value;if(S.authMode==="register"){const{error}=await supabase.auth.signUp({email,password,options:{data:{full_name:$("#fullName").value.trim(),phone:$("#phone").value.trim()}}});if(error)throw error}else{const{error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error}auth.close();toast("تمت العملية بنجاح")}catch(e){toast(e.message,"error")}}
@@ -532,7 +669,7 @@ async function products(){
 }
 async function digitalProducts(){location.hash="#/products?tab=digital"}
 function details(id){const p=S.products.find(x=>String(x.id)===String(id)),sold=p.availability_status==="sold_out",fields=p.required_fields||[];openModal(`<div class="sheet-head"><div><h2>${esc(p.name)}</h2><p>${sold?"نفد المخزون":"متوفر الآن"}</p></div><button data-close>×</button></div><div class="product-image" style="height:230px;border-radius:19px">${p.image_url?`<img src="${esc(p.image_url)}">`:"🛍️"}</div><p style="line-height:1.9;color:var(--m)">${esc(p.description||"")}</p>${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" ${f.required?"required":""}></label>`).join("")}<label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label><div id="couponPreview" class="coupon-preview hidden"></div><div class="product-foot"><span class="price">${money(p.price)}</span><button id="buy" class="btn ${sold?"soft":"primary"}" ${sold?"disabled":""}>${sold?"غير متوفر حاليًا":"شراء الآن"}</button></div>`);if(!sold)$("#buy").onclick=()=>buy(p);$("#couponCode").oninput=debounce(()=>previewCoupon($("#couponCode").value.trim(),p),350)}
-async function buy(p){if(!needUser()||!confirm(`شراء ${p.name}؟`))return;const code=$("#couponCode")?.value.trim()||null;const customerData={};$$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());const{error}=await supabase.rpc("purchase_product_v6",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData});if(error)return toast(error.message,"error");toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders"}
+async function buy(p){if(!needUser())return;const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${p.name}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});if(!approved)return;const code=$("#couponCode")?.value.trim()||null;const customerData={};$$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());const{error}=await supabase.rpc("purchase_product_v6",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData});if(error)return toast(error.message,"error");toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders"}
 async function orders(){
   if(!needUser())return app.innerHTML=empty("طلباتي","سجل الدخول");
   const initial=new URLSearchParams(location.hash.split("?")[1]||"").get("tab")||S.orderTab||"digital";
@@ -725,7 +862,7 @@ async function adminOrders(){
 }
 function manageOrder(o){openModal(`<div class="sheet-head"><div><h2>${esc(o.order_number)}</h2><p>${esc(o.profile?.full_name||"-")} • ${esc(o.profile?.phone||"-")}</p></div><button data-close>×</button></div><div class="note">المنتج: ${esc(o.product?.name||"-")}<br>القيمة: ${money(o.total)}<br>الحالة: ${badge(o.status)}</div><form id="orderAdminForm" style="margin-top:14px"><label>بيانات التسليم<textarea id="delivery">${esc(o.delivery_data||"")}</textarea></label><label>الإجراء<select id="orderStatus"><option value="processing">قيد التنفيذ</option><option value="delivered">تم التسليم</option><option value="cancelled">إلغاء وإعادة الرصيد</option><option value="refunded">استرداد الرصيد</option></select></label><label>سبب العملية<textarea id="orderReason"></textarea></label><button class="btn primary block">حفظ</button></form>`);$("#orderAdminForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_process_order",{p_order_id:o.id,p_status:$("#orderStatus").value,p_delivery_data:$("#delivery").value||null,p_reason:$("#orderReason").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminOrders()}}
 async function adminCancelRequests(){const{data,count}=await listQuery("order_cancel_requests","*,order:orders(order_number,total,status),profile:profiles(full_name)",q=>{if(S.filter)q=q.eq("status",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("طلبات الإلغاء","مراجعة طلبات العملاء")}<div class="list">${r.map(x=>`<div class="card item"><div class="item-main"><h3>${esc(x.order?.order_number||"-")}</h3><p>${esc(x.profile?.full_name||"-")} • ${esc(x.reason)}</p></div><div class="item-actions">${badge(x.status)}${x.status==="pending"?`<button class="success" data-cancel-approve="${x.id}">قبول</button><button class="danger" data-cancel-reject="${x.id}">رفض</button>`:""}</div></div>`).join("")||empty("لا توجد طلبات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCancelRequests,[["pending","معلق"],["approved","مقبول"],["rejected","مرفوض"]]);bindPager(adminCancelRequests);$$("[data-cancel-approve]").forEach(b=>b.onclick=()=>reviewCancel(b.dataset.cancelApprove,true));$$("[data-cancel-reject]").forEach(b=>b.onclick=()=>reviewCancel(b.dataset.cancelReject,false))}
-async function reviewCancel(id,approve){const reason=approve?"قبول طلب الإلغاء":prompt("سبب الرفض:");if(!approve&&!reason)return;const{error}=await supabase.rpc("admin_review_cancel_request",{p_request_id:id,p_approve:approve,p_reason:reason});if(error)return toast(error.message,"error");toast("تمت معالجة الطلب");adminCancelRequests()}
+async function reviewCancel(id,approve){const reason=approve?"قبول طلب الإلغاء":await appPrompt({title:"رفض طلب الإلغاء",message:"اكتب سبب رفض طلب الإلغاء ليظهر للمستخدم.",placeholder:"سبب الرفض",confirmText:"رفض الطلب",icon:"circle-x",danger:true});if(!approve&&!reason)return;const{error}=await supabase.rpc("admin_review_cancel_request",{p_request_id:id,p_approve:approve,p_reason:reason});if(error)return toast(error.message,"error");toast("تمت معالجة الطلب");adminCancelRequests()}
 
 async function adminCatalogItems(){
   const digitalQuery=supabase.from("products_with_stock").select("*",{count:"exact"}).order("created_at",{ascending:false});
@@ -1143,7 +1280,7 @@ async function processDeposit(id,approve){
   await adminDeposits();
 }
 
-async function reviewDeposit(id,ok){const reason=ok?null:prompt("سبب الرفض:");if(!ok&&!reason)return;const{error}=await supabase.rpc(ok?"approve_deposit":"reject_deposit",ok?{p_deposit_id:id}:{p_deposit_id:id,p_reason:reason});if(error)return toast(error.message,"error");toast(ok?"تم القبول":"تم الرفض");await loadAdminBadges();adminDeposits()}
+async function reviewDeposit(id,ok){const reason=ok?null:await appPrompt({title:"رفض طلب الشحن",message:"اكتب سبب الرفض ليظهر للمستخدم.",placeholder:"سبب الرفض",confirmText:"رفض الطلب",icon:"circle-x",danger:true});if(!ok&&!reason)return;const{error}=await supabase.rpc(ok?"approve_deposit":"reject_deposit",ok?{p_deposit_id:id}:{p_deposit_id:id,p_reason:reason});if(error)return toast(error.message,"error");toast(ok?"تم القبول":"تم الرفض");await loadAdminBadges();adminDeposits()}
 
 async function adminTransactions(){
   const{data}=await supabase.from("wallet_transactions").select("*,profile:profiles(full_name,phone)").order("created_at",{ascending:false}).limit(1000);
@@ -1173,9 +1310,9 @@ function cardForm(){openModal(`<div class="sheet-head"><h2>توليد بطاقا
 async function adminCoupons(){const{data,count}=await listQuery("coupons","*",q=>{if(S.query)q=q.ilike("code",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الكوبونات","إضافة وتعديل وتعطيل",`<button id="addCoupon" class="btn primary">إضافة كوبون</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.code)}</h3><p>${c.discount_type==="percent"?c.discount_value+"%":money(c.discount_value)} • الاستخدام ${c.used_count}${c.usage_limit?"/"+c.usage_limit:""}</p></div><div class="item-actions">${c.is_active?badge("active"):badge("blocked")}<button class="small" data-coupon-edit="${c.id}">تعديل</button><button class="danger" data-coupon-delete="${c.id}">حذف</button></div></div>`).join("")||empty("لا توجد كوبونات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCoupons,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminCoupons);$("#addCoupon").onclick=()=>couponForm();$$("[data-coupon-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("coupons").select("*").eq("id",b.dataset.couponEdit).single();couponForm(data)});$$("[data-coupon-delete]").forEach(b=>b.onclick=()=>deleteRow("coupons",b.dataset.couponDelete,"الكوبون",adminCoupons))}
 function couponForm(c=null){openModal(`<div class="sheet-head"><h2>${c?"تعديل":"إضافة"} كوبون</h2><button data-close>×</button></div><form id="couponForm"><label>الرمز<input id="ccode" value="${esc(c?.code||"")}" required></label><label>نوع الخصم<select id="ctype"><option value="percent">نسبة</option><option value="fixed" ${c?.discount_type==="fixed"?"selected":""}>مبلغ ثابت</option></select></label><label>القيمة<input id="cvalue" type="number" min="0" step=".01" value="${c?.discount_value||0}" required></label><label>الحد الأدنى<input id="cmin" type="number" min="0" step=".01" value="${c?.minimum_order||0}"></label><label>الحد الأقصى للخصم<input id="cmax" type="number" min="0" step=".01" value="${c?.maximum_discount||""}"></label><label>حد الاستخدام<input id="climit" type="number" min="1" value="${c?.usage_limit||""}"></label><label>تاريخ الانتهاء<input id="cend" type="datetime-local"></label><label><input id="cactive" type="checkbox" ${c?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#couponForm").onsubmit=async e=>{e.preventDefault();const payload={code:$("#ccode").value.toUpperCase(),discount_type:$("#ctype").value,discount_value:+$("#cvalue").value,minimum_order:+$("#cmin").value,maximum_discount:$("#cmax").value?+$("#cmax").value:null,usage_limit:$("#climit").value?+$("#climit").value:null,ends_at:$("#cend").value||null,is_active:$("#cactive").checked};const q=c?supabase.from("coupons").update(payload).eq("id",c.id):supabase.from("coupons").insert({...payload,created_by:S.user.id});const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminCoupons()}}
 async function adminUsers(){let q=supabase.from("profiles").select("id,full_name,phone,role,status,created_at,wallets(balance)",{count:"exact"}).order("created_at",{ascending:false});if(S.query)q=q.ilike("full_name",`%${S.query}%`);if(S.filter)q=q.eq("status",S.filter);const from=(S.page-1)*CONFIG.PAGE_SIZE,{data,count}=await q.range(from,from+CONFIG.PAGE_SIZE-1),r=data||[];$("#adminContent").innerHTML=`${adminHeader("المستخدمون","الرصيد والحظر والدور",`<button id="exportUsers" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(u=>`<div class="card item"><div class="item-main"><h3>${esc(u.full_name||"-")}</h3><p>${money(u.wallets?.[0]?.balance||0)} • ${u.role} • ${esc(u.phone||"-")}</p></div><div class="item-actions">${badge(u.status)}${u.phone?`<a class="whatsapp-btn" href="https://wa.me/${String(u.phone).replace(/\D/g,"")}" target="_blank">◉ واتساب</a>`:""}<button class="small" data-user-wallet="${u.id}">الرصيد</button><button class="small" data-user-role="${u.id}">الدور</button><button class="${u.status==="blocked"?"success":"danger"}" data-user-status="${u.id}" data-current="${u.status}">${u.status==="blocked"?"فك الحظر":"حظر"}</button></div></div>`).join("")||empty("لا يوجد مستخدمون")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminUsers,[["active","نشط"],["blocked","محظور"]]);bindPager(adminUsers);$("#exportUsers").onclick=()=>exportCsv("profiles","users.csv");$$("[data-user-wallet]").forEach(b=>b.onclick=()=>adjustWallet(b.dataset.userWallet));$$("[data-user-role]").forEach(b=>b.onclick=()=>changeRole(b.dataset.userRole));$$("[data-user-status]").forEach(b=>b.onclick=()=>changeStatus(b.dataset.userStatus,b.dataset.current))}
-async function adjustWallet(id){const amount=Number(prompt("موجب للإضافة وسالب للخصم:"));if(!amount)return;const reason=prompt("سبب العملية:");if(!reason)return;const{error}=await supabase.rpc("admin_adjust_wallet",{p_user_id:id,p_amount:amount,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تعديل الرصيد");adminUsers()}
-async function changeRole(id){const role=prompt("اكتب user أو admin:","user");if(!["user","admin"].includes(role))return;const{error}=await supabase.from("profiles").update({role}).eq("id",id);if(error)return toast(error.message,"error");toast("تم تغيير الدور");adminUsers()}
-async function changeStatus(id,current){const status=current==="blocked"?"active":"blocked",reason=prompt("سبب التغيير:")||"تحديث بواسطة الإدارة";const{error}=await supabase.rpc("admin_set_user_status",{p_user_id:id,p_status:status,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تحديث الحالة");adminUsers()}
+async function adjustWallet(id){const amountText=await appPrompt({title:"تعديل رصيد المستخدم",message:"أدخل مبلغًا موجبًا للإضافة أو سالبًا للخصم.",placeholder:"مثال: 10 أو -5",confirmText:"متابعة",icon:"wallet-cards",multiline:false});if(amountText===null)return;const amount=Number(amountText);if(!Number.isFinite(amount)||amount===0)return toast("أدخل مبلغًا صالحًا","error");const reason=await appPrompt({title:"سبب تعديل الرصيد",message:"سيُحفظ السبب في سجل الحركات المالية.",placeholder:"سبب العملية",confirmText:"تنفيذ العملية",icon:"message-square-text"});if(!reason)return;const{error}=await supabase.rpc("admin_adjust_wallet",{p_user_id:id,p_amount:amount,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تعديل الرصيد");adminUsers()}
+async function changeRole(id){const role=await appChoice({title:"تغيير دور المستخدم",message:"اختر الصلاحية الجديدة.",icon:"shield-check",options:[{value:"user",label:"مستخدم",icon:"user"},{value:"admin",label:"مدير",icon:"shield"}],current:"user",confirmText:"حفظ الدور"});if(!role)return;const{error}=await supabase.from("profiles").update({role}).eq("id",id);if(error)return toast(error.message,"error");toast("تم تغيير الدور");adminUsers()}
+async function changeStatus(id,current){const status=current==="blocked"?"active":"blocked";const reason=await appPrompt({title:status==="blocked"?"حظر المستخدم":"إلغاء حظر المستخدم",message:"اكتب سبب تغيير حالة الحساب.",placeholder:"سبب التغيير",confirmText:status==="blocked"?"حظر":"إلغاء الحظر",icon:status==="blocked"?"ban":"unlock",danger:status==="blocked"});if(reason===null)return;const{error}=await supabase.rpc("admin_set_user_status",{p_user_id:id,p_status:status,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تحديث الحالة");adminUsers()}
 async function adminSlides(){const{data,count}=await listQuery("store_slides","*",q=>{if(S.query)q=q.ilike("title",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("السلايدر","إضافة وتعديل وحذف وترتيب",`<button id="addSlide" class="btn primary">إضافة سلايد</button>`)}<div class="list">${r.map(s=>`<div class="card item"><div class="item-main"><h3>${esc(s.title)}</h3><p>الترتيب ${s.sort_order} • ${esc(s.button_text||"-")}</p></div><div class="item-actions">${s.is_active?badge("active"):badge("blocked")}${iconButton("eye","معاينة",`data-slide-preview="${s.id}"`)}${iconButton("pencil","تعديل",`data-slide-edit="${s.id}"`)}${iconButton("trash-2","حذف",`data-slide-delete="${s.id}"`)}</div></div>`).join("")||empty("لا توجد شرائح")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminSlides,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminSlides);$("#addSlide").onclick=()=>slideForm();$$("[data-slide-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("store_slides").select("*").eq("id",b.dataset.slideEdit).single();slideForm(data)});$$("[data-slide-preview]").forEach(b=>b.onclick=()=>previewSlide(r.find(x=>x.id===b.dataset.slidePreview)));$$("[data-slide-delete]").forEach(b=>b.onclick=()=>deleteRow("store_slides",b.dataset.slideDelete,"السلايد",adminSlides))}
 function slideForm(s=null){openModal(`<div class="sheet-head"><h2>${s?"تعديل":"إضافة"} سلايد</h2><button data-close>×</button></div><form id="slideForm"><label>العنوان<input id="st" value="${esc(s?.title||"")}" required></label><label>النص<textarea id="ss">${esc(s?.subtitle||"")}</textarea></label>${imagePicker("slideImageFile",s?.image_url||"")}<label>نص الزر<input id="sb" value="${esc(s?.button_text||"استكشف")}"></label><label>رابط الزر<input id="su" value="${esc(s?.button_url||"#/products")}"></label><label>الترتيب<input id="so" type="number" value="${s?.sort_order||0}"></label><label><input id="sa" type="checkbox" ${s?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#slideForm").onsubmit=async e=>{e.preventDefault();let imageUrl=s?.image_url||null;const imageFile=$("#slideImageFile").files[0];if(imageFile)imageUrl=await uploadFile(imageFile,"slides");const payload={title:$("#st").value,subtitle:$("#ss").value,image_url:imageUrl,button_text:$("#sb").value,button_url:$("#su").value,sort_order:+$("#so").value,is_active:$("#sa").checked};const q=s?supabase.from("store_slides").update(payload).eq("id",s.id):supabase.from("store_slides").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminSlides()}}
 function previewSlide(s){openModal(`<div class="sheet-head"><h2>معاينة السلايد</h2><button data-close>×</button></div><section class="slide active" style="${s.image_url?`background-image:linear-gradient(90deg,rgba(23,19,55,.72),rgba(23,19,55,.25)),url('${esc(s.image_url)}')`:""}"><div class="slide-overlay"><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><span class="btn primary">${esc(s.button_text||"استكشف")}</span></div></section>`)}
@@ -1410,10 +1547,10 @@ async function adminLogs(){
   const r=data||[];
   $("#adminContent").innerHTML=`${adminHeader("سجل المدير","عمليات الإدارة مترجمة وقابلة للتحكم",`<button id="exportLogs" class="btn soft">تصدير CSV</button><button id="clearLogs" class="btn danger">مسح الكل</button>`)}<div class="list">${r.map(l=>`<div class="card item"><div class="item-main"><h3>${esc(logLabel(l.action))}</h3><p>${esc(l.admin?.full_name||"مدير")} • ${esc(l.target_type||"النظام")} • ${dt(l.created_at)}</p></div><button class="danger" data-log-delete="${l.id}">حذف</button></div>`).join("")||empty("لا توجد سجلات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;
   bindAdminSearch(adminLogs);bindPager(adminLogs);$("#exportLogs").onclick=()=>exportCsv("admin_activity_logs","admin-logs.csv");
-  $("#clearLogs").onclick=async()=>{if(!confirm("مسح جميع السجلات؟"))return;const{error}=await supabase.from("admin_activity_logs").delete().neq("id","00000000-0000-0000-0000-000000000000");if(error)return toast(error.message,"error");toast("تم مسح السجل");adminLogs()};
+  $("#clearLogs").onclick=async()=>{if(!await appConfirm({title:"تأكيد العملية",message:"مسح جميع السجلات؟"}))return;const{error}=await supabase.from("admin_activity_logs").delete().neq("id","00000000-0000-0000-0000-000000000000");if(error)return toast(error.message,"error");toast("تم مسح السجل");adminLogs()};
   $$("[data-log-delete]").forEach(b=>b.onclick=()=>deleteRow("admin_activity_logs",b.dataset.logDelete,"السجل",adminLogs))
 }
-async function deleteRow(table,id,label,render){if(!confirm(`تأكيد حذف ${label}؟`))return;const{error}=await supabase.from(table).delete().eq("id",id);if(error)return toast(error.message,"error");toast("تم الحذف");render()}
+async function deleteRow(table,id,label,render){const approved=await appConfirm({title:`حذف ${label}`,message:"لا يمكن التراجع عن هذه العملية بعد تنفيذها.",confirmText:"حذف",icon:"trash-2",danger:true});if(!approved)return;const{error}=await supabase.from(table).delete().eq("id",id);if(error)return toast(error.message,"error");toast("تم الحذف");render()}
 async function exportCsv(table,filename){const{data,error}=await supabase.from(table).select("*").limit(5000);if(error)return toast(error.message,"error");if(!data?.length)return toast("لا توجد بيانات","error");const keys=Object.keys(data[0]),csv=[keys.join(","),...data.map(r=>keys.map(k=>`"${String(r[k]??"").replaceAll('"','""')}"`).join(","))].join("\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();URL.revokeObjectURL(a.href)}
 renderAuthMode();init();
 
@@ -1425,3 +1562,5 @@ window.addEventListener("load",()=>setTimeout(()=>{
   clearTimeout(v12SplashSafety);
   document.querySelector("#splash")?.classList.add("hide");
 },300));
+
+window.alert=message=>toast(String(message||""),"info");
