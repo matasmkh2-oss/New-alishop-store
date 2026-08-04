@@ -310,3 +310,39 @@ form button[disabled]{opacity:.72;cursor:wait;pointer-events:none}
 .switch-label{display:flex!important;align-items:center;gap:8px;padding:10px 11px;border:1px solid var(--b);border-radius:13px;background:var(--s2)}
 .switch-label input{width:auto!important;margin:0!important}
 #prequired{direction:ltr;text-align:left;font-family:monospace;min-height:120px}
+
+/* =========================================================
+   AliShop Ultimate V13 — stability and mobile admin polish
+   ========================================================= */
+.admin-content-loading{
+  min-height:180px;
+  display:grid;
+  place-items:center;
+  color:var(--m);
+}
+.item-main h3,.item-main p{
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.item-main h3{white-space:nowrap}
+.item-main p{
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+}
+@media(max-width:520px){
+  .admin-toolbar{
+    grid-template-columns:minmax(0,1fr) 92px!important;
+  }
+  .admin-toolbar #clearFilters{
+    grid-column:1/-1;
+    min-height:34px;
+  }
+  .item-actions{
+    max-width:98px;
+    justify-content:flex-end;
+  }
+  .item-actions .icon-action{
+    flex:0 0 28px;
+  }
+}

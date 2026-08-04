@@ -1,5 +1,5 @@
 {
-  "name": "AliShop - علي شوب",
+  "name": "AliShop Ultimate",
   "short_name": "AliShop",
   "id": "/New-alishop-store/",
   "start_url": "/New-alishop-store/index.html#/home",
@@ -24,5 +24,6 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": []
+  "screenshots": [],
+  "description": "متجر المنتجات الرقمية وخدمات السوشل ميديا"
 }

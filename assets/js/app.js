@@ -1,5 +1,5 @@
 import{CONFIG}from"./config.js";import{supabase}from"./supabase-client.js";
-const APP_BUILD="12.0.0";
+const APP_BUILD="13.0.0";
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
 const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
 const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],settings:{},authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
@@ -264,6 +264,8 @@ window.addEventListener("unhandledrejection",event=>{
 });
 window.addEventListener("error",event=>{
   console.error("Application error:",event.error||event.message);
+  const message=event.error?.message||event.message;
+  if(message&&!String(message).includes("ResizeObserver"))toast(friendlyError(message),"error");
 });
 
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
@@ -483,7 +485,37 @@ function smmOrderForm(){location.hash="#/social-services"}
 function account(){if(!S.user){app.innerHTML=`${section("حسابي","سجل الدخول")}<div class="card empty"><h2>أهلًا بك</h2><button id="openAuth" class="btn primary">تسجيل الدخول</button></div>`;$("#openAuth").onclick=()=>auth.showModal();return}app.innerHTML=`${section("حسابي","المعلومات والإعدادات")}<div class="card item"><div class="item-main"><h3>${esc(S.profile?.full_name||"مستخدم")}</h3><p>${esc(S.user.email)}</p></div>${badge(S.profile?.status)}</div>${S.profile?.role==="admin"?`<a href="#/admin" class="card item" style="margin-top:11px"><div class="item-main"><h3>لوحة الإدارة</h3><p>إدارة المتجر بالكامل</p></div><span>›</span></a>`:""}<button id="logout" class="card item" style="width:100%;margin-top:11px;color:var(--bad)"><h3>تسجيل الخروج</h3></button>`;$("#logout").onclick=()=>supabase.auth.signOut()}
 
 /* ---------- ADMIN ---------- */
-async function admin(){if(!needAdmin())return;if(S.adminGroup==="dashboard"){app.innerHTML=`${section("لوحة الإدارة","اختر القسم المطلوب")}<div class="admin-groups">${[["sales","المبيعات","الطلبات والإلغاء والاسترداد"],["catalog","الكتالوج","المنتجات والتصنيفات والمخزون"],["finance","الأموال","الشحن وطرق الدفع والبطاقات والكوبونات"],["users","المستخدمون","الحسابات والأرصدة والحظر"],["marketing","التسويق","السلايدر والإعلانات والإشعارات"],["system","النظام","إعدادات المتجر والسجلات"]].map(([id,t,p])=>`<button class="card admin-tile" data-group="${id}"><span class="tile-icon"><i data-lucide="${ADMIN_ICONS[id]||"circle-dot"}"></i>${adminBadge(id)}</span><h3>${t}</h3><p>${p}</p></button>`).join("")}</div>`;$$("[data-group]").forEach(b=>b.onclick=()=>{S.adminGroup=b.dataset.group;S.adminPage={sales:"orders",catalog:"catalog_items",finance:"deposits",users:"users",marketing:"slides",system:"settings"}[S.adminGroup];S.page=1;S.query="";S.filter="";admin()});return}const pages={sales:[["orders","الطلبات"],["cancel_requests","طلبات الإلغاء"]],catalog:[["catalog_items","الكتالوج"],["categories","التصنيفات"],["inventory","المخزون"]],finance:[["deposits","طلبات الشحن"],["transactions","الحركات المالية"],["payment_methods","طرق الدفع"],["cards","بطاقات الشحن"],["coupons","الكوبونات"]],users:[["users","المستخدمون"]],marketing:[["slides","السلايدر"],["announcements","الإعلانات"],["notifications","الإشعارات"]],system:[["settings","الإعدادات"],["support","الدعم"],["logs","سجل المدير"]]}[S.adminGroup];app.innerHTML=`${section("لوحة الإدارة",S.adminGroup,`<button id="backAdmin" class="btn soft">الرئيسية</button>`)}<div class="tabs">${pages.map(([id,n])=>`<button class="tab ${S.adminPage===id?"active":""}" data-admin-page="${id}">${n}${adminBadge(id)}</button>`).join("")}</div><div id="adminContent"></div>`;$("#backAdmin").onclick=()=>{S.adminGroup="dashboard";admin()};$$("[data-admin-page]").forEach(b=>b.onclick=()=>{S.adminPage=b.dataset.adminPage;S.page=1;S.query="";S.filter="";renderAdminPage()});renderAdminPage()}
+async function admin(){if(!needAdmin())return;if(!validateAdminRegistry())return;if(S.adminGroup==="dashboard"){app.innerHTML=`${section("لوحة الإدارة","اختر القسم المطلوب")}<div class="admin-groups">${[["sales","المبيعات","الطلبات والإلغاء والاسترداد"],["catalog","الكتالوج","المنتجات والتصنيفات والمخزون"],["finance","الأموال","الشحن وطرق الدفع والبطاقات والكوبونات"],["users","المستخدمون","الحسابات والأرصدة والحظر"],["marketing","التسويق","السلايدر والإعلانات والإشعارات"],["system","النظام","إعدادات المتجر والسجلات"]].map(([id,t,p])=>`<button class="card admin-tile" data-group="${id}"><span class="tile-icon"><i data-lucide="${ADMIN_ICONS[id]||"circle-dot"}"></i>${adminBadge(id)}</span><h3>${t}</h3><p>${p}</p></button>`).join("")}</div>`;$$("[data-group]").forEach(b=>b.onclick=()=>{S.adminGroup=b.dataset.group;S.adminPage={sales:"orders",catalog:"catalog_items",finance:"deposits",users:"users",marketing:"slides",system:"settings"}[S.adminGroup];S.page=1;S.query="";S.filter="";admin()});return}const pages={sales:[["orders","الطلبات"],["cancel_requests","طلبات الإلغاء"]],catalog:[["catalog_items","الكتالوج"],["categories","التصنيفات"],["inventory","المخزون"]],finance:[["deposits","طلبات الشحن"],["transactions","الحركات المالية"],["payment_methods","طرق الدفع"],["cards","بطاقات الشحن"],["coupons","الكوبونات"]],users:[["users","المستخدمون"]],marketing:[["slides","السلايدر"],["announcements","الإعلانات"],["notifications","الإشعارات"]],system:[["settings","الإعدادات"],["support","الدعم"],["logs","سجل المدير"]]}[S.adminGroup];app.innerHTML=`${section("لوحة الإدارة",S.adminGroup,`<button id="backAdmin" class="btn soft">الرئيسية</button>`)}<div class="tabs">${pages.map(([id,n])=>`<button class="tab ${S.adminPage===id?"active":""}" data-admin-page="${id}">${n}${adminBadge(id)}</button>`).join("")}</div><div id="adminContent"></div>`;$("#backAdmin").onclick=()=>{S.adminGroup="dashboard";admin()};$$("[data-admin-page]").forEach(b=>b.onclick=()=>{S.adminPage=b.dataset.adminPage;S.page=1;S.query="";S.filter="";renderAdminPage()});renderAdminPage()}
+
+function validateAdminRegistry(){
+  const required={
+    orders:adminOrders,
+    cancel_requests:adminCancelRequests,
+    catalog_items:adminCatalogItems,
+    categories:adminCategories,
+    inventory:adminInventory,
+    deposits:adminDeposits,
+    transactions:adminTransactions,
+    payment_methods:adminPaymentMethods,
+    cards:adminCards,
+    coupons:adminCoupons,
+    users:adminUsers,
+    slides:adminSlides,
+    announcements:adminAnnouncements,
+    notifications:adminNotifications,
+    settings:adminSettings,
+    support:adminSupport,
+    logs:adminLogs
+  };
+  const missing=Object.entries(required).filter(([,handler])=>typeof handler!=="function").map(([name])=>name);
+  if(missing.length){
+    console.error("Missing admin handlers:",missing);
+    toast(`صفحات إدارة غير متاحة: ${missing.join(", ")}`,"error");
+    return false;
+  }
+  return true;
+}
+
 function renderAdminPage(){({orders:adminOrders,cancel_requests:adminCancelRequests,catalog_items:adminCatalogItems,products:adminProducts,categories:adminCategories,inventory:adminInventory,deposits:adminDeposits,transactions:adminTransactions,payment_methods:adminPaymentMethods,cards:adminCards,coupons:adminCoupons,users:adminUsers,slides:adminSlides,announcements:adminAnnouncements,notifications:adminNotifications,settings:adminSettings,support:adminSupport,logs:adminLogs}[S.adminPage]||adminOrders)()}
 async function listQuery(table,select="*",filterFn=null){let q=supabase.from(table).select(select,{count:"exact"}).order("created_at",{ascending:false});if(filterFn)q=filterFn(q);const from=(S.page-1)*CONFIG.PAGE_SIZE,to=from+CONFIG.PAGE_SIZE-1;return await q.range(from,to)}
 function bindAdminSearch(render,filterOptions=[]){const s=$("#adminSearch"),f=$("#adminFilter");if(f&&filterOptions.length)f.innerHTML=`<option value="">الكل</option>${filterOptions.map(([v,n])=>`<option value="${v}" ${S.filter===v?"selected":""}>${n}</option>`).join("")}`;if(s)s.oninput=debounce(()=>{S.query=s.value.trim();S.page=1;render()});if(f)f.onchange=()=>{S.filter=f.value;S.page=1;render()};$("#clearFilters").onclick=()=>{S.query="";S.filter="";S.page=1;render()}}
@@ -701,7 +733,141 @@ async function productForm(p=null){
   };
   refreshIcons();
 }
-async function categoryForm(c=null){const{data:allCats}=await supabase.from("categories").select("id,name").order("name");openModal(`<div class="sheet-head"><h2>${c?"تعديل":"إضافة"} تصنيف</h2><button data-close>×</button></div><form id="catForm"><label>الاسم<input id="cn" value="${esc(c?.name||"")}" required></label><label>الوصف<textarea id="cd">${esc(c?.description||"")}</textarea></label>${imagePicker("categoryImageFile",c?.image_url||"")}<label>القسم الأب<select id="categoryParent"><option value="">قسم رئيسي</option></select></label><label>الترتيب<input id="co" type="number" value="${c?.sort_order||0}"></label><label><input id="ca" type="checkbox" ${c?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#categoryParent").innerHTML=`<option value="">قسم رئيسي</option>${(allCats||[]).filter(x=>x.id!==c?.id).map(x=>`<option value="${x.id}" ${c?.parent_id===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}`;$("#catForm").onsubmit=async e=>{e.preventDefault();let categoryImage=c?.image_url||null;const categoryFile=$("#categoryImageFile").files[0];if(categoryFile)categoryImage=await uploadFile(categoryFile,"categories");const payload={name:$("#cn").value,description:$("#cd").value,image_url:categoryImage,parent_id:$("#categoryParent").value||null,sort_order:+$("#co").value,is_active:$("#ca").checked};const q=c?supabase.from("categories").update(payload).eq("id",c.id):supabase.from("categories").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminCategories()}}
+
+async function adminCategories(){
+  let query=supabase
+    .from("categories")
+    .select("*",{count:"exact"})
+    .order("sort_order",{ascending:true})
+    .order("created_at",{ascending:false});
+
+  if(S.query)query=query.ilike("name",`%${S.query}%`);
+  if(S.filter==="active")query=query.eq("is_active",true);
+  if(S.filter==="inactive")query=query.eq("is_active",false);
+  if(S.filter==="root")query=query.is("parent_id",null);
+  if(S.filter==="child")query=query.not("parent_id","is",null);
+
+  const from=(S.page-1)*CONFIG.PAGE_SIZE;
+  const [result,parentsResult]=await Promise.all([
+    query.range(from,from+CONFIG.PAGE_SIZE-1),
+    supabase.from("categories").select("id,name")
+  ]);
+
+  if(result.error){
+    $("#adminContent").innerHTML=`${section("التصنيفات","تعذر تحميل التصنيفات")}
+      <div class="card empty"><h2>حدث خطأ أثناء تحميل التصنيفات</h2><p>${esc(friendlyError(result.error))}</p><button id="retryCategories" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retryCategories").onclick=adminCategories;
+    refreshIcons();
+    return;
+  }
+
+  const parentNames=Object.fromEntries((parentsResult.data||[]).map(item=>[item.id,item.name]));
+  const rows=result.data||[];
+  $("#adminContent").innerHTML=`${adminHeader("التصنيفات","الأقسام الرئيسية والفرعية للمنتجات الرقمية",`<button id="addCategory" class="btn primary"><i data-lucide="folder-plus"></i><span>إضافة تصنيف</span></button>`)}
+  <div class="list">${rows.map(category=>`<div class="card item">
+    <div class="order-thumb">${category.image_url?`<img src="${esc(category.image_url)}" alt="">`:`<i data-lucide="${category.parent_id?"folder":"folders"}"></i>`}</div>
+    <div class="item-main"><h3>${esc(category.name)}</h3><p>${category.parent_id?`داخل ${esc(parentNames[category.parent_id]||"قسم فرعي")}`:"قسم رئيسي"} • الترتيب ${category.sort_order||0}</p></div>
+    <div class="item-actions">${category.is_active?badge("active"):badge("blocked")}${iconButton("pencil","تعديل",`data-category-edit="${category.id}"`)}${iconButton("trash-2","حذف",`data-category-delete="${category.id}"`)}</div>
+  </div>`).join("")||empty("لا توجد تصنيفات")}</div>${pager(S.page,result.count||0,CONFIG.PAGE_SIZE)}`;
+
+  bindAdminSearch(adminCategories,[["active","المفعلة"],["inactive","الموقوفة"],["root","الرئيسية"],["child","الفرعية"]]);
+  bindPager(adminCategories);
+  $("#addCategory").onclick=()=>categoryForm();
+  $$('[data-category-edit]').forEach(button=>button.onclick=async()=>{
+    const record=await supabase.from("categories").select("*").eq("id",button.dataset.categoryEdit).single();
+    if(record.error)return toast(friendlyError(record.error),"error");
+    categoryForm(record.data);
+  });
+  $$('[data-category-delete]').forEach(button=>button.onclick=()=>deleteRow("categories",button.dataset.categoryDelete,"التصنيف",adminCategories));
+  refreshIcons();
+}
+async function categoryForm(category=null){
+  const allResult=await supabase
+    .from("categories")
+    .select("id,name,parent_id")
+    .order("name");
+
+  if(allResult.error)return toast(friendlyError(allResult.error),"error");
+  const allCategories=allResult.data||[];
+
+  openModal(`<div class="sheet-head">
+    <div><h2>${category?"تعديل":"إضافة"} تصنيف</h2><p>قسم رئيسي أو فرعي داخل المنتجات الرقمية</p></div>
+    <button data-close>×</button>
+  </div>
+  <form id="categoryForm">
+    <label>اسم التصنيف
+      <input id="categoryName" value="${esc(category?.name||"")}" required maxlength="120">
+    </label>
+    <label>الوصف
+      <textarea id="categoryDescription" maxlength="1000">${esc(category?.description||"")}</textarea>
+    </label>
+    ${imagePicker("categoryImageFile",category?.image_url||"")}
+    <label>القسم الأب
+      <select id="categoryParent">
+        <option value="">قسم رئيسي</option>
+        ${allCategories
+          .filter(item=>item.id!==category?.id)
+          .map(item=>`<option value="${item.id}" ${category?.parent_id===item.id?"selected":""}>${esc(item.name)}</option>`)
+          .join("")}
+      </select>
+    </label>
+    <label>ترتيب الظهور
+      <input id="categoryOrder" type="number" value="${category?.sort_order||0}">
+    </label>
+    <label class="switch-label">
+      <input id="categoryActive" type="checkbox" ${category?.is_active!==false?"checked":""}>
+      التصنيف مفعّل
+    </label>
+    <button type="submit" class="btn primary block">
+      <i data-lucide="save"></i><span>حفظ التصنيف</span>
+    </button>
+  </form>`);
+
+  $("#categoryForm").onsubmit=async event=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    if(!form.reportValidity())return;
+
+    setFormBusy(form,true);
+    try{
+      const name=$("#categoryName").value.trim();
+      if(name.length<2)throw new Error("اسم التصنيف قصير جدًا.");
+
+      let imageUrl=category?.image_url||null;
+      const imageFile=$("#categoryImageFile").files?.[0];
+      if(imageFile)imageUrl=await uploadFile(imageFile,"categories");
+
+      const payload={
+        name,
+        description:$("#categoryDescription").value.trim()||null,
+        image_url:imageUrl,
+        parent_id:$("#categoryParent").value||null,
+        sort_order:Number($("#categoryOrder").value||0),
+        is_active:$("#categoryActive").checked,
+        updated_at:new Date().toISOString()
+      };
+
+      const result=category?.id
+        ? await supabase.from("categories").update(payload).eq("id",category.id).select("id").single()
+        : await supabase.from("categories").insert(payload).select("id").single();
+
+      if(result.error)throw result.error;
+
+      toast(category?"تم تعديل التصنيف":"تمت إضافة التصنيف");
+      closeModal();
+      S.page=1;S.query="";S.filter="";
+      await adminCategories();
+    }catch(error){
+      console.error("Category save error:",error);
+      toast(friendlyError(error),"error");
+    }finally{
+      setFormBusy(form,false);
+    }
+  };
+
+  refreshIcons();
+}
+
 async function adminInventory(){let q=supabase.from("digital_inventory").select("*,product:products(name)",{count:"exact"}).order("created_at",{ascending:false});if(S.filter)q=q.eq("is_used",S.filter==="used");const from=(S.page-1)*CONFIG.PAGE_SIZE,{data,count}=await q.range(from,from+CONFIG.PAGE_SIZE-1),r=data||[];$("#adminContent").innerHTML=`${adminHeader("المخزون الرقمي","إضافة وحذف وتصدير",`<button id="addInventory" class="btn primary">إضافة مخزون</button><button id="exportInventory" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(i=>`<div class="card item"><div class="item-main"><h3>${esc(i.product?.name||"-")}</h3><p>${i.is_used?"مستخدم":"متاح"} • ${dt(i.created_at)}</p></div><div class="item-actions">${i.is_used?badge("delivered"):badge("available")}${!i.is_used?`<button class="danger" data-inv-delete="${i.id}">حذف</button>`:""}</div></div>`).join("")||empty("لا يوجد مخزون")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminInventory,[["available","متاح"],["used","مستخدم"]]);bindPager(adminInventory);$("#addInventory").onclick=inventoryForm;$("#exportInventory").onclick=()=>exportCsv("digital_inventory","inventory.csv");$$("[data-inv-delete]").forEach(b=>b.onclick=()=>deleteRow("digital_inventory",b.dataset.invDelete,"عنصر المخزون",adminInventory))}
 async function inventoryForm(){const{data:p}=await supabase.from("products").select("id,name").eq("delivery_type","automatic").order("name");openModal(`<div class="sheet-head"><h2>إضافة مخزون</h2><button data-close>×</button></div><form id="invForm"><label>المنتج<select id="ip">${(p||[]).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label><label>كل كود في سطر<textarea id="iv" required></textarea></label><button class="btn primary block">إضافة</button></form>`);$("#invForm").onsubmit=async e=>{e.preventDefault();const vals=$("#iv").value.split("\n").map(x=>x.trim()).filter(Boolean);const{error}=await supabase.from("digital_inventory").insert(vals.map(secret_value=>({product_id:$("#ip").value,secret_value})));if(error)return toast(error.message,"error");toast(`تمت إضافة ${vals.length} عناصر`);closeModal();adminInventory()}}
 async function adminDeposits(){const{data,count}=await listQuery("deposit_requests","*,profile:profiles(full_name),payment_method:payment_methods(name)",q=>{if(S.filter)q=q.eq("status",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("طلبات الشحن","قبول ورفض الطلبات")}<div class="list">${r.map(d=>`<div class="card item"><div class="item-main"><h3>${esc(d.profile?.full_name||"-")}</h3><p>${money(d.amount)} • ${esc(d.payment_method?.name||"-")} • ${esc(d.transfer_reference)}</p></div><div class="item-actions">${badge(d.status)}${d.status==="pending"?`<button class="success" data-dep-ok="${d.id}">قبول</button><button class="danger" data-dep-no="${d.id}">رفض</button>`:""}</div></div>`).join("")||empty("لا توجد طلبات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminDeposits,[["pending","معلق"],["approved","مقبول"],["rejected","مرفوض"]]);bindPager(adminDeposits);$$("[data-dep-ok]").forEach(b=>b.onclick=()=>reviewDeposit(b.dataset.depOk,true));$$("[data-dep-no]").forEach(b=>b.onclick=()=>reviewDeposit(b.dataset.depNo,false))}
