@@ -346,3 +346,25 @@ form button[disabled]{opacity:.72;cursor:wait;pointer-events:none}
     flex:0 0 28px;
   }
 }
+
+/* Deposit actions/history hotfix */
+.deposit-proof-image{
+  width:100%;
+  max-height:58vh;
+  margin-bottom:12px;
+  border:1px solid var(--b);
+  border-radius:18px;
+  object-fit:contain;
+  background:var(--s2);
+}
+.transaction-icon.pending{
+  color:#B97712;
+  background:rgba(217,145,31,.13);
+}
+.deposit-admin-note{
+  display:block;
+  margin-top:5px;
+  color:var(--m);
+  line-height:1.5;
+}
+.deposit-history .item{align-items:flex-start}

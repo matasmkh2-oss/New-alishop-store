@@ -460,24 +460,90 @@ async function orders(){
 
 async function wallet(){
   if(!needUser())return app.innerHTML=empty("المحفظة","سجل الدخول");
-  const[{data:t},{data:d}]=await Promise.all([
+
+  const [txResult,depositResult,methodsResult]=await Promise.all([
     supabase.from("wallet_transactions").select("*").order("created_at",{ascending:false}).limit(300),
-    supabase.from("deposit_requests").select("*,payment_method:payment_methods(name)").order("created_at",{ascending:false})
+    supabase.from("deposit_requests").select("*").eq("user_id",S.user.id).order("created_at",{ascending:false}).limit(100),
+    supabase.from("payment_methods").select("id,name")
   ]);
-  const tx=t||[];
+
+  if(txResult.error||depositResult.error){
+    app.innerHTML=`${section("المحفظة","تعذر تحميل السجل")}<div class="card empty"><h2>حدث خطأ</h2><p>${esc(friendlyError(txResult.error||depositResult.error))}</p><button id="retryWallet" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retryWallet").onclick=wallet;
+    refreshIcons();
+    return;
+  }
+
+  const tx=txResult.data||[];
+  const methods=Object.fromEntries((methodsResult.data||[]).map(x=>[x.id,x.name]));
+  const deposits=(depositResult.data||[]).map(d=>({...d,payment_method_name:methods[d.payment_method_id]||"طريقة دفع"}));
+
   const draw=()=>{
     const rows=tx.filter(x=>!S.walletType||x.type===S.walletType);
     app.innerHTML=`${section("المحفظة","الرصيد والحركات المالية",`<button id="deposit" class="btn primary"><i data-lucide="plus"></i> شحن</button>`)}
-    <div class="stats"><div class="card stat"><small>الرصيد</small><strong>${money(S.wallet.balance)}</strong></div><div class="card stat"><small>طلبات الشحن</small><strong>${(d||[]).length}</strong></div></div>
-    <div class="card item" style="margin-top:10px"><div class="item-main"><h3>استخدام بطاقة شحن</h3><p>أدخل الرمز لإضافة الرصيد</p></div><button id="redeemCard" class="icon-action"><i data-lucide="scan-line"></i></button></div>
+    <div class="stats">
+      <div class="card stat"><small>الرصيد</small><strong>${money(S.wallet.balance)}</strong></div>
+      <div class="card stat"><small>طلبات الشحن</small><strong>${deposits.length}</strong></div>
+    </div>
+
+    <div class="card item" style="margin-top:10px">
+      <div class="item-main"><h3>استخدام بطاقة شحن</h3><p>أدخل الرمز لإضافة الرصيد</p></div>
+      <button id="redeemCard" class="icon-action"><i data-lucide="scan-line"></i></button>
+    </div>
+
+    ${section("طلبات الشحن","تابع حالة الطلبات والإثباتات")}
+    <div class="list deposit-history">
+      ${deposits.map(d=>`<div class="card item">
+        <div class="transaction-icon ${d.status==="approved"?"in":d.status==="rejected"?"out":"pending"}"><i data-lucide="${d.status==="approved"?"check":d.status==="rejected"?"x":"clock-3"}"></i></div>
+        <div class="item-main">
+          <h3>${money(d.amount)} • ${esc(d.payment_method_name)}</h3>
+          <p>${esc(d.transfer_reference||d.reference_code||"-")} • ${dt(d.created_at)}</p>
+          ${d.admin_note?`<small class="deposit-admin-note">${esc(d.admin_note)}</small>`:""}
+        </div>
+        <div class="item-actions">
+          ${badge(d.status)}
+          ${(d.receipt_url||d.proof_url)?iconButton("eye","معاينة الإثبات",`data-user-deposit-proof="${d.id}"`):""}
+        </div>
+      </div>`).join("")||empty("لا توجد طلبات شحن")}
+    </div>
+
     ${section("الحركات المالية","فرز حسب نوع العملية")}
-    <div class="wallet-filter-tabs"><button class="${!S.walletType?"active":""}" data-wallet-type="">الكل</button><button class="${S.walletType==="purchase"?"active":""}" data-wallet-type="purchase">مشتريات</button><button class="${S.walletType==="refund"?"active":""}" data-wallet-type="refund">استرداد</button><button class="${S.walletType==="deposit"?"active":""}" data-wallet-type="deposit">شحن</button><button class="${S.walletType==="recharge_card"?"active":""}" data-wallet-type="recharge_card">بطاقات</button></div>
-    <div class="list">${rows.map(x=>`<div class="card item"><div class="transaction-icon ${Number(x.amount)>=0?"in":"out"}"><i data-lucide="${Number(x.amount)>=0?"arrow-down-left":"arrow-up-right"}"></i></div><div class="item-main"><h3>${esc(x.description||x.type)}</h3><p>${dt(x.created_at)}</p></div><strong class="${Number(x.amount)>=0?"amount-in":"amount-out"}">${Number(x.amount)>=0?"+":""}${money(x.amount)}</strong></div>`).join("")||empty("لا توجد حركات")}</div>`;
+    <div class="wallet-filter-tabs">
+      <button class="${!S.walletType?"active":""}" data-wallet-type="">الكل</button>
+      <button class="${S.walletType==="purchase"?"active":""}" data-wallet-type="purchase">مشتريات</button>
+      <button class="${S.walletType==="refund"?"active":""}" data-wallet-type="refund">استرداد</button>
+      <button class="${S.walletType==="deposit"?"active":""}" data-wallet-type="deposit">شحن</button>
+      <button class="${S.walletType==="recharge_card"?"active":""}" data-wallet-type="recharge_card">بطاقات</button>
+    </div>
+    <div class="list">
+      ${rows.map(x=>`<div class="card item">
+        <div class="transaction-icon ${Number(x.amount)>=0?"in":"out"}"><i data-lucide="${Number(x.amount)>=0?"arrow-down-left":"arrow-up-right"}"></i></div>
+        <div class="item-main"><h3>${esc(x.description||x.type)}</h3><p>${dt(x.created_at)}</p></div>
+        <strong class="${Number(x.amount)>=0?"amount-in":"amount-out"}">${Number(x.amount)>=0?"+":""}${money(x.amount)}</strong>
+      </div>`).join("")||empty("لا توجد حركات")}
+    </div>`;
+
     $("#deposit").onclick=depositForm;
-    $("#redeemCard").onclick=async()=>{const code=prompt("أدخل رمز بطاقة الشحن:");if(!code)return;const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});if(error)return toast(error.message,"error");toast(data.message||"تم شحن الرصيد");await loadIdentity();wallet()};
+    $("#redeemCard").onclick=async()=>{
+      const code=prompt("أدخل رمز بطاقة الشحن:");
+      if(!code)return;
+      const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});
+      if(error)return toast(friendlyError(error),"error");
+      toast(data.message||"تم شحن الرصيد");
+      await loadIdentity();
+      wallet();
+    };
+
     $$("[data-wallet-type]").forEach(b=>b.onclick=()=>{S.walletType=b.dataset.walletType;draw()});
+    $$("[data-user-deposit-proof]").forEach(button=>button.onclick=()=>{
+      const d=deposits.find(x=>x.id===button.dataset.userDepositProof);
+      const proof=d?.receipt_url||d?.proof_url;
+      if(!proof)return toast("لا يوجد إثبات مرفوع","error");
+      openModal(`<div class="sheet-head"><div><h2>إثبات الدفع</h2><p>${money(d.amount)} • ${esc(d.payment_method_name)}</p></div><button data-close>×</button></div><img class="deposit-proof-image" src="${esc(proof)}" alt="إثبات الدفع"><a class="btn soft block" href="${esc(proof)}" target="_blank"><i data-lucide="external-link"></i> فتح بالحجم الكامل</a>`);
+    });
     refreshIcons();
-  };draw();
+  };
+  draw();
 }
 async function depositForm(){const{data}=await supabase.from("payment_methods").select("*").eq("is_active",true).order("sort_order"),m=data||[];if(!m.length)return toast("لا توجد طرق دفع","error");openModal(`<div class="sheet-head"><h2>طلب شحن</h2><button data-close>×</button></div><form id="df"><label>طريقة الدفع<select id="method">${m.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label><label>المبلغ<input id="amount" type="number" min="1" required></label><label>رقم التحويل<input id="ref" required></label><label>إثبات الدفع${imagePicker("receiptFile")}</label><button id="depositSubmit" class="btn primary block">إرسال</button></form>`);$("#df").onsubmit=async e=>{e.preventDefault();const btn=$("#depositSubmit");btn.disabled=true;try{const receipt=await uploadFile($("#receiptFile").files[0],"receipts");const{error}=await supabase.from("deposit_requests").insert({user_id:S.user.id,payment_method_id:$("#method").value,amount:+$("#amount").value,transfer_reference:$("#ref").value,receipt_url:receipt});if(error)throw error;toast("تم إرسال الطلب");closeModal();wallet()}catch(err){toast(err.message,"error")}finally{btn.disabled=false}}}
 async function socialServices(){location.hash="#/products?tab=social"}
@@ -928,11 +994,11 @@ async function adminDeposits(){
     <div class="list">${rows.map(d=>`<div class="card item">
       <div class="item-main">
         <h3>${esc(d.profile?.full_name||"مستخدم")}</h3>
-        <p>${money(d.amount)} • ${esc(d.payment_method?.name||"طريقة دفع")} • ${dt(d.created_at)}</p>
+        <p>${money(d.amount)} • ${esc(d.payment_method?.name||"طريقة دفع")} • ${esc(d.transfer_reference||d.reference_code||"-")} • ${dt(d.created_at)}</p>
       </div>
       <div class="item-actions">
         ${badge(d.status)}
-        ${d.proof_url?`<a class="icon-action" href="${esc(d.proof_url)}" target="_blank" title="عرض الإثبات"><i data-lucide="image"></i></a>`:""}
+        ${(d.receipt_url||d.proof_url)?iconButton("eye","معاينة إثبات الدفع",`data-deposit-proof="${d.id}"`):""}
         ${d.status==="pending"?iconButton("check","قبول",`data-deposit-approve="${d.id}"`):""}
         ${d.status==="pending"?iconButton("x","رفض",`data-deposit-reject="${d.id}"`):""}
       </div>
@@ -943,10 +1009,30 @@ async function adminDeposits(){
   $("#depositUser").oninput=debounce(()=>{S.adminUserFilter=$("#depositUser").value.trim();adminDeposits()},220);
   $("#depositStatus").onchange=()=>{S.filter=$("#depositStatus").value;adminDeposits()};
 
+  $$("[data-deposit-proof]").forEach(button=>button.onclick=()=>{
+    const deposit=rows.find(x=>x.id===button.dataset.depositProof);
+    const proof=deposit?.receipt_url||deposit?.proof_url;
+    if(!proof)return toast("لا يوجد إثبات مرفوع","error");
+    openModal(`<div class="sheet-head"><div><h2>إثبات الدفع</h2><p>${esc(deposit.profile?.full_name||"مستخدم")} • ${money(deposit.amount)}</p></div><button data-close>×</button></div><img class="deposit-proof-image" src="${esc(proof)}" alt="إثبات الدفع"><a class="btn soft block" href="${esc(proof)}" target="_blank"><i data-lucide="external-link"></i> فتح بالحجم الكامل</a>`);
+  });
   $$("[data-deposit-approve]").forEach(button=>button.onclick=()=>processDeposit(button.dataset.depositApprove,true));
   $$("[data-deposit-reject]").forEach(button=>button.onclick=()=>processDeposit(button.dataset.depositReject,false));
   refreshIcons();
 }
+
+async function processDeposit(id,approve){
+  const note=approve?null:(prompt("سبب الرفض:")||"تم رفض الطلب");
+  const{data,error}=await supabase.rpc("admin_process_deposit_v13",{
+    p_deposit_id:id,
+    p_approve:approve,
+    p_note:note
+  });
+  if(error)return toast(friendlyError(error),"error");
+  toast(data?.message||(approve?"تم قبول طلب الشحن":"تم رفض طلب الشحن"));
+  await loadAdminBadges();
+  await adminDeposits();
+}
+
 async function reviewDeposit(id,ok){const reason=ok?null:prompt("سبب الرفض:");if(!ok&&!reason)return;const{error}=await supabase.rpc(ok?"approve_deposit":"reject_deposit",ok?{p_deposit_id:id}:{p_deposit_id:id,p_reason:reason});if(error)return toast(error.message,"error");toast(ok?"تم القبول":"تم الرفض");await loadAdminBadges();adminDeposits()}
 
 async function adminTransactions(){
