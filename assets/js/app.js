@@ -870,7 +870,83 @@ async function categoryForm(category=null){
 
 async function adminInventory(){let q=supabase.from("digital_inventory").select("*,product:products(name)",{count:"exact"}).order("created_at",{ascending:false});if(S.filter)q=q.eq("is_used",S.filter==="used");const from=(S.page-1)*CONFIG.PAGE_SIZE,{data,count}=await q.range(from,from+CONFIG.PAGE_SIZE-1),r=data||[];$("#adminContent").innerHTML=`${adminHeader("المخزون الرقمي","إضافة وحذف وتصدير",`<button id="addInventory" class="btn primary">إضافة مخزون</button><button id="exportInventory" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(i=>`<div class="card item"><div class="item-main"><h3>${esc(i.product?.name||"-")}</h3><p>${i.is_used?"مستخدم":"متاح"} • ${dt(i.created_at)}</p></div><div class="item-actions">${i.is_used?badge("delivered"):badge("available")}${!i.is_used?`<button class="danger" data-inv-delete="${i.id}">حذف</button>`:""}</div></div>`).join("")||empty("لا يوجد مخزون")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminInventory,[["available","متاح"],["used","مستخدم"]]);bindPager(adminInventory);$("#addInventory").onclick=inventoryForm;$("#exportInventory").onclick=()=>exportCsv("digital_inventory","inventory.csv");$$("[data-inv-delete]").forEach(b=>b.onclick=()=>deleteRow("digital_inventory",b.dataset.invDelete,"عنصر المخزون",adminInventory))}
 async function inventoryForm(){const{data:p}=await supabase.from("products").select("id,name").eq("delivery_type","automatic").order("name");openModal(`<div class="sheet-head"><h2>إضافة مخزون</h2><button data-close>×</button></div><form id="invForm"><label>المنتج<select id="ip">${(p||[]).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("")}</select></label><label>كل كود في سطر<textarea id="iv" required></textarea></label><button class="btn primary block">إضافة</button></form>`);$("#invForm").onsubmit=async e=>{e.preventDefault();const vals=$("#iv").value.split("\n").map(x=>x.trim()).filter(Boolean);const{error}=await supabase.from("digital_inventory").insert(vals.map(secret_value=>({product_id:$("#ip").value,secret_value})));if(error)return toast(error.message,"error");toast(`تمت إضافة ${vals.length} عناصر`);closeModal();adminInventory()}}
-async function adminDeposits(){const{data,count}=await listQuery("deposit_requests","*,profile:profiles(full_name),payment_method:payment_methods(name)",q=>{if(S.filter)q=q.eq("status",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("طلبات الشحن","قبول ورفض الطلبات")}<div class="list">${r.map(d=>`<div class="card item"><div class="item-main"><h3>${esc(d.profile?.full_name||"-")}</h3><p>${money(d.amount)} • ${esc(d.payment_method?.name||"-")} • ${esc(d.transfer_reference)}</p></div><div class="item-actions">${badge(d.status)}${d.status==="pending"?`<button class="success" data-dep-ok="${d.id}">قبول</button><button class="danger" data-dep-no="${d.id}">رفض</button>`:""}</div></div>`).join("")||empty("لا توجد طلبات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminDeposits,[["pending","معلق"],["approved","مقبول"],["rejected","مرفوض"]]);bindPager(adminDeposits);$$("[data-dep-ok]").forEach(b=>b.onclick=()=>reviewDeposit(b.dataset.depOk,true));$$("[data-dep-no]").forEach(b=>b.onclick=()=>reviewDeposit(b.dataset.depNo,false))}
+async function adminDeposits(){
+  const depositsResult=await supabase
+    .from("deposit_requests")
+    .select("*")
+    .order("created_at",{ascending:false})
+    .limit(500);
+
+  if(depositsResult.error){
+    $("#adminContent").innerHTML=`${section("طلبات الشحن","تعذر تحميل الطلبات")}
+      <div class="card empty">
+        <h2>حدث خطأ أثناء تحميل طلبات الشحن</h2>
+        <p>${esc(friendlyError(depositsResult.error))}</p>
+        <button id="retryDeposits" class="btn primary">إعادة المحاولة</button>
+      </div>`;
+    $("#retryDeposits").onclick=adminDeposits;
+    refreshIcons();
+    return;
+  }
+
+  const deposits=depositsResult.data||[];
+  const userIds=[...new Set(deposits.map(x=>x.user_id).filter(Boolean))];
+  const methodIds=[...new Set(deposits.map(x=>x.payment_method_id).filter(Boolean))];
+
+  const [profilesResult,methodsResult]=await Promise.all([
+    userIds.length
+      ? supabase.from("profiles").select("id,full_name,phone").in("id",userIds)
+      : Promise.resolve({data:[],error:null}),
+    methodIds.length
+      ? supabase.from("payment_methods").select("id,name").in("id",methodIds)
+      : Promise.resolve({data:[],error:null})
+  ]);
+
+  const profiles=Object.fromEntries((profilesResult.data||[]).map(x=>[x.id,x]));
+  const methods=Object.fromEntries((methodsResult.data||[]).map(x=>[x.id,x]));
+
+  const rows=deposits
+    .map(x=>({...x,profile:profiles[x.user_id]||null,payment_method:methods[x.payment_method_id]||null}))
+    .filter(x=>{
+      const text=`${x.profile?.full_name||""} ${x.reference_code||""}`.toLowerCase();
+      return (!S.query||text.includes(S.query.toLowerCase())) &&
+             (!S.adminUserFilter||(x.profile?.full_name||"").toLowerCase().includes(S.adminUserFilter.toLowerCase())) &&
+             (!S.filter||x.status===S.filter);
+    });
+
+  $("#adminContent").innerHTML=`${section("طلبات الشحن","مراجعة الإثباتات واعتماد الرصيد")}
+    <div class="catalog-filter-bar">
+      <input id="depositSearch" class="input" placeholder="بحث بالاسم أو المرجع" value="${esc(S.query||"")}">
+      <input id="depositUser" class="input" placeholder="اسم المستخدم" value="${esc(S.adminUserFilter||"")}">
+      <select id="depositStatus" class="input">
+        <option value="">كل الحالات</option>
+        <option value="pending">معلقة</option>
+        <option value="approved">مقبولة</option>
+        <option value="rejected">مرفوضة</option>
+      </select>
+    </div>
+    <div class="list">${rows.map(d=>`<div class="card item">
+      <div class="item-main">
+        <h3>${esc(d.profile?.full_name||"مستخدم")}</h3>
+        <p>${money(d.amount)} • ${esc(d.payment_method?.name||"طريقة دفع")} • ${dt(d.created_at)}</p>
+      </div>
+      <div class="item-actions">
+        ${badge(d.status)}
+        ${d.proof_url?`<a class="icon-action" href="${esc(d.proof_url)}" target="_blank" title="عرض الإثبات"><i data-lucide="image"></i></a>`:""}
+        ${d.status==="pending"?iconButton("check","قبول",`data-deposit-approve="${d.id}"`):""}
+        ${d.status==="pending"?iconButton("x","رفض",`data-deposit-reject="${d.id}"`):""}
+      </div>
+    </div>`).join("")||empty("لا توجد طلبات شحن")}</div>`;
+
+  $("#depositStatus").value=S.filter||"";
+  $("#depositSearch").oninput=debounce(()=>{S.query=$("#depositSearch").value.trim();adminDeposits()},220);
+  $("#depositUser").oninput=debounce(()=>{S.adminUserFilter=$("#depositUser").value.trim();adminDeposits()},220);
+  $("#depositStatus").onchange=()=>{S.filter=$("#depositStatus").value;adminDeposits()};
+
+  $$("[data-deposit-approve]").forEach(button=>button.onclick=()=>processDeposit(button.dataset.depositApprove,true));
+  $$("[data-deposit-reject]").forEach(button=>button.onclick=()=>processDeposit(button.dataset.depositReject,false));
+  refreshIcons();
+}
 async function reviewDeposit(id,ok){const reason=ok?null:prompt("سبب الرفض:");if(!ok&&!reason)return;const{error}=await supabase.rpc(ok?"approve_deposit":"reject_deposit",ok?{p_deposit_id:id}:{p_deposit_id:id,p_reason:reason});if(error)return toast(error.message,"error");toast(ok?"تم القبول":"تم الرفض");await loadAdminBadges();adminDeposits()}
 
 async function adminTransactions(){
