@@ -1,7 +1,7 @@
 import{CONFIG}from"./config.js";import{supabase}from"./supabase-client.js";
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
 const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
-const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],settings:{},authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[]};
+const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],settings:{},authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
 const debounce=(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
@@ -51,6 +51,98 @@ async function previewCoupon(code,product){
   refreshIcons();
 }
 
+
+
+function adminBadge(key){
+  const n=Number(S.adminBadges?.[key]||0);
+  return n>0?`<i class="admin-notice-badge">${n>99?"99+":n}</i>`:"";
+}
+function playChatSound(incoming=true){
+  try{
+    const C=window.AudioContext||window.webkitAudioContext;
+    if(!C)return;
+    const ctx=new C(),gain=ctx.createGain(),osc=ctx.createOscillator();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type="sine";
+    osc.frequency.setValueAtTime(incoming?740:520,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(incoming?980:680,ctx.currentTime+.09);
+    gain.gain.setValueAtTime(.0001,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(.095,ctx.currentTime+.012);
+    gain.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.16);
+    osc.start();osc.stop(ctx.currentTime+.17);
+  }catch{}
+}
+async function loadAdminBadges(){
+  S.adminBadges={};
+  S.supportUnread=0;
+  if(S.profile?.role!=="admin")return;
+
+  const safeCount=async(query)=>{
+    try{
+      const result=await query;
+      return result.error?0:Number(result.count||0);
+    }catch{return 0}
+  };
+
+  const [orders,socialOrders,deposits,cancels,support,lowStock]=await Promise.all([
+    safeCount(supabase.from("orders").select("*",{count:"exact",head:true}).in("status",["paid","processing"])),
+    safeCount(supabase.from("smm_orders").select("*",{count:"exact",head:true}).in("status",["pending","processing"])),
+    safeCount(supabase.from("deposit_requests").select("*",{count:"exact",head:true}).eq("status","pending")),
+    safeCount(supabase.from("order_cancel_requests").select("*",{count:"exact",head:true}).eq("status","pending")),
+    safeCount(supabase.from("support_threads").select("*",{count:"exact",head:true}).gt("admin_unread_count",0)),
+    safeCount(supabase.from("products_with_stock").select("*",{count:"exact",head:true}).eq("availability_status","sold_out"))
+  ]);
+
+  S.adminBadges={
+    sales:orders+socialOrders+cancels,
+    orders:orders+socialOrders,
+    cancel_requests:cancels,
+    finance:deposits,
+    deposits,
+    catalog:lowStock,
+    inventory:lowStock,
+    system:support,
+    support
+  };
+  S.supportUnread=support;
+}
+function setupFloatingAutoHide(){
+  const root=$("#floatingContacts"),toggle=$("#floatingContactsToggle");
+  if(!root)return;
+  clearTimeout(window.__floatingTimer);
+  const show=()=>{
+    root.classList.remove("auto-hidden");
+    toggle?.classList.add("hidden");
+    window.__floatingTimer=setTimeout(()=>{
+      root.classList.add("auto-hidden");
+      toggle?.classList.remove("hidden");
+    },5000);
+  };
+  root.onpointerdown=show;
+  root.onmouseenter=show;
+  if(toggle)toggle.onclick=show;
+  show();
+}
+function emojiPicker(targetId){
+  const emojis=["😀","😊","😍","👍","🙏","❤️","🔥","🎉","✅","❓","📦","💳","🚀","✨","😢","😡"];
+  return `<div class="emoji-picker hidden" data-emoji-box="${targetId}">${emojis.map(e=>`<button type="button" data-emoji="${e}" data-emoji-target="${targetId}">${e}</button>`).join("")}</div>`;
+}
+function bindEmojiPicker(){
+  $$("[data-toggle-emoji]").forEach(b=>b.onclick=()=>{
+    const box=$(`[data-emoji-box="${b.dataset.toggleEmoji}"]`);
+    box?.classList.toggle("hidden");
+  });
+  $$("[data-emoji]").forEach(b=>b.onclick=()=>{
+    const input=$("#"+b.dataset.emojiTarget);
+    if(input){input.value+=b.dataset.emoji;input.focus()}
+  });
+}
+async function uploadSupportImage(file){
+  if(!file)return null;
+  if(!file.type.startsWith("image/"))throw new Error("يسمح برفع الصور فقط");
+  if(file.size>5*1024*1024)throw new Error("حجم الصورة أكبر من 5MB");
+  return await uploadFile(file,"support");
+}
 
 function renderFloatingContacts(){
   let root=$("#floatingContacts");
@@ -113,7 +205,55 @@ function needAdmin(){if(S.profile?.role!=="admin"){app.innerHTML=empty("غير �
 function pager(page,total,size){const pages=Math.max(1,Math.ceil(total/size)),start=Math.max(1,page-2),end=Math.min(pages,page+2);return`<div class="pagination"><button class="page-btn" data-page="${Math.max(1,page-1)}">‹</button>${Array.from({length:end-start+1},(_,i)=>start+i).map(n=>`<button class="page-btn ${n===page?"active":""}" data-page="${n}">${n}</button>`).join("")}<button class="page-btn" data-page="${Math.min(pages,page+1)}">›</button></div>`}
 function bindPager(render){$$("[data-page]").forEach(b=>b.onclick=()=>{S.page=+b.dataset.page;render()})}
 function adminHeader(title,sub,actions=""){return`${section(title,sub,actions)}<div class="admin-toolbar"><input id="adminSearch" class="input" placeholder="بحث..." value="${esc(S.query)}"><select id="adminFilter" class="input"><option value="">الكل</option></select><button id="clearFilters" class="btn soft">مسح</button></div>`}
-async function init(){bind();setTheme(localStorage.theme||"dark");const{data}=await supabase.auth.getSession();S.user=data.session?.user||null;await loadIdentity();await loadPublic();await loadNotes();await loadAdminBadges();updateHeader();subscribeRealtime();supabase.auth.onAuthStateChange(async(_,s)=>{S.user=s?.user||null;await loadIdentity();await loadNotes();await loadAdminBadges();updateHeader();renderFloatingContacts();route()});setTimeout(()=>$("#splash").classList.add("hide"),500);route();if("serviceWorker"in navigator)navigator.serviceWorker.register("./service-worker.js").catch(()=>{})}
+async function init(){
+  bind();
+  setTheme(localStorage.theme||"dark");
+
+  const splashTimer=setTimeout(()=>{
+    $("#splash")?.classList.add("hide");
+  },3500);
+
+  try{
+    const{data}=await supabase.auth.getSession();
+    S.user=data.session?.user||null;
+
+    await loadIdentity();
+    await loadPublic();
+    await loadNotes();
+    await loadAdminBadges();
+
+    updateHeader();
+    renderFloatingContacts();
+    subscribeRealtime();
+
+    supabase.auth.onAuthStateChange(async(_,session)=>{
+      try{
+        S.user=session?.user||null;
+        await loadIdentity();
+        await loadNotes();
+        await loadAdminBadges();
+        updateHeader();
+        renderFloatingContacts();
+        route();
+      }catch(error){
+        console.error("Auth refresh error:",error);
+      }
+    });
+
+    route();
+  }catch(error){
+    console.error("AliShop initialization error:",error);
+    app.innerHTML=`<div class="card empty"><h2>تعذر تحميل بعض البيانات</h2><p>تحقق من الاتصال ثم أعد المحاولة.</p><button id="retryApp" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retryApp")?.addEventListener("click",()=>location.reload());
+  }finally{
+    clearTimeout(splashTimer);
+    setTimeout(()=>$("#splash")?.classList.add("hide"),350);
+  }
+
+  if("serviceWorker"in navigator){
+    navigator.serviceWorker.register("./service-worker.js").catch(console.error);
+  }
+}
 function bind(){$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
 function setTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;$("#themeButton").innerHTML=`<i data-lucide="${t==="dark"?"sun":"moon"}"></i>`;setTimeout(refreshIcons,0)}
 function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#authTitle").textContent=r?"إنشاء حساب":"تسجيل الدخول";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا"}
