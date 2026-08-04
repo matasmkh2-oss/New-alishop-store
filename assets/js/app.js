@@ -2,7 +2,7 @@ import{CONFIG}from"./config.js";import{supabase}from"./supabase-client.js";
 const APP_BUILD="13.0.0";
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
 const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
-const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],settings:{},authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
+const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
 const debounce=(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
@@ -503,6 +503,125 @@ function appPrompt({
 }
 
 
+
+const ORDER_DIRECT_CANCEL_SECONDS=10;
+
+function orderCancelMode(order){
+  const finalStatuses=["delivered","cancelled","refunded","completed"];
+  if(finalStatuses.includes(order.status))return "hidden";
+  if(order.cancel_request_status==="pending")return "requested";
+  if(!["pending","paid","processing"].includes(order.status))return "hidden";
+
+  const createdAt=new Date(order.created_at).getTime();
+  if(!Number.isFinite(createdAt))return "request";
+
+  const elapsed=Math.max(0,Math.floor((Date.now()-createdAt)/1000));
+  return elapsed<ORDER_DIRECT_CANCEL_SECONDS?"direct":"request";
+}
+
+function orderCancelSecondsLeft(order){
+  const createdAt=new Date(order.created_at).getTime();
+  if(!Number.isFinite(createdAt))return 0;
+  return Math.max(
+    0,
+    ORDER_DIRECT_CANCEL_SECONDS-Math.floor((Date.now()-createdAt)/1000)
+  );
+}
+
+function orderCancelButton(order){
+  const mode=orderCancelMode(order);
+
+  if(mode==="hidden")return "";
+
+  if(mode==="requested"){
+    return `<button class="order-cancel-action requested" disabled>
+      <i data-lucide="clock-3"></i>
+      <span>طلب الإلغاء مرسل</span>
+    </button>`;
+  }
+
+  if(mode==="direct"){
+    const left=orderCancelSecondsLeft(order);
+    return `<button class="order-cancel-action direct" data-direct-cancel="${order.id}">
+      <i data-lucide="x"></i>
+      <span>إلغاء</span>
+      <b data-cancel-countdown="${order.id}">${left}</b>
+    </button>`;
+  }
+
+  return `<button class="order-cancel-action request" data-request-cancel="${order.id}">
+    <i data-lucide="message-square-warning"></i>
+    <span>طلب الإلغاء</span>
+  </button>`;
+}
+
+function startOrderCancelCountdown(ordersList,rerender){
+  clearInterval(window.__orderCancelCountdown);
+
+  if(!ordersList.some(order=>orderCancelMode(order)==="direct"))return;
+
+  window.__orderCancelCountdown=setInterval(()=>{
+    let mustRender=false;
+
+    ordersList.forEach(order=>{
+      const counter=$(`[data-cancel-countdown="${order.id}"]`);
+      if(!counter)return;
+
+      const left=orderCancelSecondsLeft(order);
+      counter.textContent=left;
+      if(left<=0)mustRender=true;
+    });
+
+    if(mustRender){
+      clearInterval(window.__orderCancelCountdown);
+      rerender();
+    }
+  },1000);
+}
+
+async function directCancelOrder(orderId){
+  const approved=await appConfirm({
+    title:"إلغاء الطلب",
+    message:"سيتم إلغاء الطلب فورًا وإعادة الرصيد إلى المحفظة.",
+    confirmText:"إلغاء وإعادة الرصيد",
+    icon:"rotate-ccw",
+    danger:true
+  });
+  if(!approved)return;
+
+  const{data,error}=await supabase.rpc("cancel_order_within_grace_period",{
+    p_order_id:orderId
+  });
+
+  if(error)return toast(friendlyError(error),"error");
+
+  toast(data?.message||"تم إلغاء الطلب وإعادة الرصيد");
+  await loadIdentity();
+  await orders();
+}
+
+async function requestCancelOrder(orderId){
+  const reason=await appPrompt({
+    title:"طلب إلغاء الطلب",
+    message:"اكتب سبب الإلغاء ليتم مراجعته من الإدارة.",
+    placeholder:"سبب طلب الإلغاء",
+    confirmText:"إرسال الطلب",
+    icon:"message-square-warning",
+    danger:true
+  });
+  if(!reason)return;
+
+  const{data,error}=await supabase.rpc("request_order_cancel",{
+    p_order_id:orderId,
+    p_reason:reason
+  });
+
+  if(error)return toast(friendlyError(error),"error");
+
+  toast(data?.message||"تم إرسال طلب الإلغاء");
+  await orders();
+}
+
 function refreshIcons(){if(window.lucide)window.lucide.createIcons({attrs:{"stroke-width":1.9}})}
 function iconButton(name,label,attrs=""){return `<button class="icon-action" title="${esc(label)}" aria-label="${esc(label)}" ${attrs}><i data-lucide="${name}"></i></button>`}
 function playNotificationSound(){try{const A=window.AudioContext||window.webkitAudioContext;if(!A)return;const c=new A(),g=c.createGain(),o1=c.createOscillator(),o2=c.createOscillator();g.connect(c.destination);o1.connect(g);o2.connect(g);o1.frequency.value=880;o2.frequency.value=1320;g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.1,c.currentTime+.012);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.18);o1.start();o2.start(c.currentTime+.045);o1.stop(c.currentTime+.17);o2.stop(c.currentTime+.19)}catch{}}
@@ -573,7 +692,92 @@ function setTheme(t){document.documentElement.dataset.theme=t;localStorage.theme
 function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#authTitle").textContent=r?"إنشاء حساب":"تسجيل الدخول";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا"}
 async function submitAuth(e){e.preventDefault();try{const email=$("#email").value.trim(),password=$("#password").value;if(S.authMode==="register"){const{error}=await supabase.auth.signUp({email,password,options:{data:{full_name:$("#fullName").value.trim(),phone:$("#phone").value.trim()}}});if(error)throw error}else{const{error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error}auth.close();toast("تمت العملية بنجاح")}catch(e){toast(e.message,"error")}}
 async function loadIdentity(){S.profile=null;S.wallet={balance:0};if(!S.user)return;const[{data:p},{data:w}]=await Promise.all([supabase.from("profiles").select("*").eq("id",S.user.id).maybeSingle(),supabase.from("wallets").select("balance").eq("user_id",S.user.id).maybeSingle()]);S.profile=p;S.wallet=w||{balance:0}}
-async function loadPublic(){const[{data:s},{data:a},{data:st}]=await Promise.all([supabase.from("store_slides").select("*").eq("is_active",true).order("sort_order"),supabase.from("announcements").select("*").eq("is_active",true).eq("kind","bar").order("created_at",{ascending:false}).limit(1),supabase.from("store_settings").select("*").limit(1).maybeSingle()]);S.slides=s||[];S.settings=st||{};applyBranding();renderFloatingContacts();const bar=$("#announcementBar");if(a?.[0]){bar.innerHTML=`${esc(a[0].message)}<button>×</button>`;bar.classList.remove("hidden");bar.classList.remove("news-enter");void bar.offsetWidth;bar.classList.add("news-enter");bar.querySelector("button").onclick=()=>bar.classList.add("hidden")}else bar.classList.add("hidden")}
+async function loadPublic(){
+  const now=new Date().toISOString();
+
+  const [slidesResult,announcementsResult,settingsResult]=await Promise.all([
+    supabase
+      .from("store_slides")
+      .select("*")
+      .eq("is_active",true)
+      .order("sort_order")
+      .order("created_at"),
+
+    supabase
+      .from("announcements")
+      .select("*")
+      .eq("is_active",true)
+      .eq("kind","bar")
+      .lte("starts_at",now)
+      .or(`ends_at.is.null,ends_at.gte.${now}`)
+      .order("created_at",{ascending:false}),
+
+    supabase
+      .from("store_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle()
+  ]);
+
+  if(slidesResult.error)console.error("Slides load error:",slidesResult.error);
+  if(announcementsResult.error)console.error("Announcements load error:",announcementsResult.error);
+
+  S.slides=slidesResult.data||[];
+  S.announcements=announcementsResult.data||[];
+  S.settings=settingsResult.data||{};
+
+  applyBranding();
+  renderFloatingContacts();
+  startAnnouncementRotation();
+}
+
+function startAnnouncementRotation(){
+  clearInterval(window.__announcementRotation);
+
+  const bar=$("#announcementBar");
+  if(!bar)return;
+
+  const announcements=S.announcements||[];
+  if(!announcements.length){
+    bar.classList.add("hidden");
+    bar.innerHTML="";
+    return;
+  }
+
+  let index=0;
+
+  const renderAnnouncement=()=>{
+    const item=announcements[index];
+    if(!item)return;
+
+    bar.classList.remove("hidden","news-enter","news-leave");
+    bar.classList.add("news-leave");
+
+    setTimeout(()=>{
+      bar.innerHTML=`<span class="announcement-message">${esc(item.message)}</span>
+        ${announcements.length>1?`<small class="announcement-counter">${index+1}/${announcements.length}</small>`:""}
+        <button type="button" aria-label="إغلاق الإعلان">×</button>`;
+
+      bar.classList.remove("news-leave");
+      void bar.offsetWidth;
+      bar.classList.add("news-enter");
+
+      bar.querySelector("button").onclick=()=>{
+        clearInterval(window.__announcementRotation);
+        bar.classList.add("hidden");
+      };
+    },180);
+  };
+
+  renderAnnouncement();
+
+  if(announcements.length>1){
+    window.__announcementRotation=setInterval(()=>{
+      index=(index+1)%announcements.length;
+      renderAnnouncement();
+    },4500);
+  }
+}
 async function loadNotes(){S.notes=[];if(!S.user)return;const{data}=await supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50);S.notes=data||[]}
 function updateHeader(){$("#notificationButton").classList.toggle("hidden",!S.user);const n=S.notes.filter(x=>!x.is_read).length;$("#notificationCount").textContent=n;$("#notificationCount").classList.toggle("hidden",!n)}
 function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();toast(p.new.title);await loadNotes();updateHeader()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts()}}).subscribe()}
@@ -614,7 +818,10 @@ function bindProducts(){
   $$("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});
   refreshIcons();
 }
-async function home(){await catalog();const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];app.innerHTML=`<div class="hero-slider">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}" style="${s.image_url?`background-image:linear-gradient(90deg,rgba(23,19,55,.72),rgba(23,19,55,.25)),url('${esc(s.image_url)}')`:""}"><div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div><div class="wallet-strip">
+async function home(){await catalog();const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];app.innerHTML=`<div class="hero-slider">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}">
+  ${s.image_url?`<img class="slide-background-image" src="${esc(s.image_url)}" alt="${esc(s.title||"سلايدر")}" loading="${i===0?"eager":"lazy"}">`:""}
+  <div class="slide-shade"></div>
+  <div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div><div class="wallet-strip">
   <div class="wallet-main"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>الرصيد المتاح</small><strong>${money(S.wallet.balance)}</strong></div></div>
   <a href="#/wallet" class="wallet-charge-btn"><i data-lucide="plus"></i><span>شحن</span></a>
 </div>${section("خدمات السوشل ميديا","خدمات السوشل ميديا",`<a class="btn soft" href="#/social-services"><i data-lucide="rocket"></i> عرض الخدمات</a>`)}<div class="card item"><div class="item-main"><h3>خدمات السوشل ميديا سريعة</h3><p>متابعون، مشاهدات وتفاعل مع متابعة الطلب.</p></div><a href="#/social-services" class="icon-action"><i data-lucide="arrow-left"></i></a></div>${section("منتجات مميزة","أحدث المنتجات المتاحة")}<div class="grid">${S.products.slice(0,6).map(pcard).join("")||empty("لا توجد منتجات")}</div>`;let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{const prev=cur;els[prev].classList.remove("active");els[prev].classList.add("leaving");dots[prev].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active");setTimeout(()=>els[prev].classList.remove("leaving"),650)};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);bindProducts()}
@@ -1380,8 +1587,114 @@ async function adjustWallet(id){const amountText=await appPrompt({title:"تعد�
 async function changeRole(id){const role=await appChoice({title:"تغيير دور المستخدم",message:"اختر الصلاحية الجديدة.",icon:"shield-check",options:[{value:"user",label:"مستخدم",icon:"user"},{value:"admin",label:"مدير",icon:"shield"}],current:"user",confirmText:"حفظ الدور"});if(!role)return;const{error}=await supabase.from("profiles").update({role}).eq("id",id);if(error)return toast(error.message,"error");toast("تم تغيير الدور");adminUsers()}
 async function changeStatus(id,current){const status=current==="blocked"?"active":"blocked";const reason=await appPrompt({title:status==="blocked"?"حظر المستخدم":"إلغاء حظر المستخدم",message:"اكتب سبب تغيير حالة الحساب.",placeholder:"سبب التغيير",confirmText:status==="blocked"?"حظر":"إلغاء الحظر",icon:status==="blocked"?"ban":"unlock",danger:status==="blocked"});if(reason===null)return;const{error}=await supabase.rpc("admin_set_user_status",{p_user_id:id,p_status:status,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تحديث الحالة");adminUsers()}
 async function adminSlides(){const{data,count}=await listQuery("store_slides","*",q=>{if(S.query)q=q.ilike("title",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("السلايدر","إضافة وتعديل وحذف وترتيب",`<button id="addSlide" class="btn primary">إضافة سلايد</button>`)}<div class="list">${r.map(s=>`<div class="card item"><div class="item-main"><h3>${esc(s.title)}</h3><p>الترتيب ${s.sort_order} • ${esc(s.button_text||"-")}</p></div><div class="item-actions">${s.is_active?badge("active"):badge("blocked")}${iconButton("eye","معاينة",`data-slide-preview="${s.id}"`)}${iconButton("pencil","تعديل",`data-slide-edit="${s.id}"`)}${iconButton("trash-2","حذف",`data-slide-delete="${s.id}"`)}</div></div>`).join("")||empty("لا توجد شرائح")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminSlides,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminSlides);$("#addSlide").onclick=()=>slideForm();$$("[data-slide-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("store_slides").select("*").eq("id",b.dataset.slideEdit).single();slideForm(data)});$$("[data-slide-preview]").forEach(b=>b.onclick=()=>previewSlide(r.find(x=>x.id===b.dataset.slidePreview)));$$("[data-slide-delete]").forEach(b=>b.onclick=()=>deleteRow("store_slides",b.dataset.slideDelete,"السلايد",adminSlides))}
-function slideForm(s=null){openModal(`<div class="sheet-head"><h2>${s?"تعديل":"إضافة"} سلايد</h2><button data-close>×</button></div><form id="slideForm"><label>العنوان<input id="st" value="${esc(s?.title||"")}" required></label><label>النص<textarea id="ss">${esc(s?.subtitle||"")}</textarea></label>${imagePicker("slideImageFile",s?.image_url||"")}<label>نص الزر<input id="sb" value="${esc(s?.button_text||"استكشف")}"></label><label>رابط الزر<input id="su" value="${esc(s?.button_url||"#/products")}"></label><label>الترتيب<input id="so" type="number" value="${s?.sort_order||0}"></label><label><input id="sa" type="checkbox" ${s?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#slideForm").onsubmit=async e=>{e.preventDefault();let imageUrl=s?.image_url||null;const imageFile=$("#slideImageFile").files[0];if(imageFile)imageUrl=await uploadFile(imageFile,"slides");const payload={title:$("#st").value,subtitle:$("#ss").value,image_url:imageUrl,button_text:$("#sb").value,button_url:$("#su").value,sort_order:+$("#so").value,is_active:$("#sa").checked};const q=s?supabase.from("store_slides").update(payload).eq("id",s.id):supabase.from("store_slides").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminSlides()}}
-function previewSlide(s){openModal(`<div class="sheet-head"><h2>معاينة السلايد</h2><button data-close>×</button></div><section class="slide active" style="${s.image_url?`background-image:linear-gradient(90deg,rgba(23,19,55,.72),rgba(23,19,55,.25)),url('${esc(s.image_url)}')`:""}"><div class="slide-overlay"><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><span class="btn primary">${esc(s.button_text||"استكشف")}</span></div></section>`)}
+function slideForm(s=null){
+  openModal(`<div class="sheet-head">
+    <div><h2>${s?"تعديل":"إضافة"} سلايد</h2><p>ارفع الصورة مباشرة من الهاتف</p></div>
+    <button data-close>×</button>
+  </div>
+  <form id="slideForm">
+    <label>العنوان
+      <input id="st" value="${esc(s?.title||"")}" required>
+    </label>
+    <label>النص
+      <textarea id="ss">${esc(s?.subtitle||"")}</textarea>
+    </label>
+    ${imagePicker("slideImageFile",s?.image_url||"")}
+    <label>نص الزر
+      <input id="sb" value="${esc(s?.button_text||"استكشف")}">
+    </label>
+    <label>رابط الزر
+      <input id="su" value="${esc(s?.button_url||"#/products")}">
+    </label>
+    <label>الترتيب
+      <input id="so" type="number" value="${s?.sort_order||0}">
+    </label>
+    <label>
+      <input id="sa" type="checkbox" ${s?.is_active!==false?"checked":""}>
+      مفعّل
+    </label>
+    <button id="saveSlideButton" class="btn primary block">حفظ</button>
+  </form>`);
+
+  const fileInput=$("#slideImageFile");
+  const uploadBox=fileInput?.closest(".upload-box");
+
+  if(fileInput&&uploadBox){
+    fileInput.onchange=()=>{
+      const file=fileInput.files?.[0];
+      if(!file)return;
+
+      const url=URL.createObjectURL(file);
+      let preview=uploadBox.querySelector(".upload-preview");
+
+      if(!preview){
+        uploadBox.querySelector(".upload-placeholder")?.remove();
+        preview=document.createElement("img");
+        preview.className="upload-preview";
+        uploadBox.prepend(preview);
+      }
+
+      preview.src=url;
+      preview.onload=()=>URL.revokeObjectURL(url);
+    };
+  }
+
+  $("#slideForm").onsubmit=async event=>{
+    event.preventDefault();
+
+    const button=$("#saveSlideButton");
+    button.disabled=true;
+
+    try{
+      let imageUrl=s?.image_url||null;
+      const imageFile=fileInput?.files?.[0];
+
+      if(imageFile){
+        imageUrl=await uploadFile(imageFile,"slides");
+        if(!imageUrl)throw new Error("تعذر إنشاء رابط الصورة");
+      }
+
+      const payload={
+        title:$("#st").value.trim(),
+        subtitle:$("#ss").value.trim()||null,
+        image_url:imageUrl,
+        button_text:$("#sb").value.trim()||"استكشف",
+        button_url:$("#su").value.trim()||"#/products",
+        sort_order:Number($("#so").value||0),
+        is_active:$("#sa").checked
+      };
+
+      const query=s?.id
+        ? supabase.from("store_slides").update(payload).eq("id",s.id)
+        : supabase.from("store_slides").insert(payload);
+
+      const{error}=await query;
+      if(error)throw error;
+
+      await loadPublic();
+      toast("تم حفظ السلايد والصورة");
+      closeModal();
+      await adminSlides();
+    }catch(error){
+      console.error("Slide save error:",error);
+      toast(friendlyError(error),"error");
+    }finally{
+      button.disabled=false;
+    }
+  };
+}
+function previewSlide(s){
+  openModal(`<div class="sheet-head"><h2>معاينة السلايد</h2><button data-close>×</button></div>
+    <section class="slide active slide-preview-card">
+      ${s.image_url?`<img class="slide-background-image" src="${esc(s.image_url)}" alt="${esc(s.title||"سلايدر")}">`:""}
+      <div class="slide-shade"></div>
+      <div class="slide-overlay">
+        <h1>${esc(s.title)}</h1>
+        <p>${esc(s.subtitle||"")}</p>
+        <span class="btn primary">${esc(s.button_text||"استكشف")}</span>
+      </div>
+    </section>`);
+}
 async function adminAnnouncements(){const{data,count}=await listQuery("announcements","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,message.ilike.%${S.query}%`);if(S.filter)q=q.eq("kind",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإعلانات","شريط علوي وإعلانات عامة",`<button id="addAnnouncement" class="btn primary">إضافة إعلان</button>`)}<div class="list">${r.map(a=>`<div class="card item"><div class="item-main"><h3>${esc(a.title||"إعلان")}</h3><p>${esc(a.message)} • ${a.kind}</p></div><div class="item-actions">${a.is_active?badge("active"):badge("blocked")}<button class="small" data-ann-edit="${a.id}">تعديل</button><button class="danger" data-ann-delete="${a.id}">حذف</button></div></div>`).join("")||empty("لا توجد إعلانات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminAnnouncements,[["bar","شريط علوي"],["notification","إشعار عام"]]);bindPager(adminAnnouncements);$("#addAnnouncement").onclick=()=>announcementForm();$$("[data-ann-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("announcements").select("*").eq("id",b.dataset.annEdit).single();announcementForm(data)});$$("[data-ann-delete]").forEach(b=>b.onclick=()=>deleteRow("announcements",b.dataset.annDelete,"الإعلان",adminAnnouncements))}
 function announcementForm(a=null){openModal(`<div class="sheet-head"><h2>${a?"تعديل":"إضافة"} إعلان</h2><button data-close>×</button></div><form id="annForm"><label>العنوان<input id="at" value="${esc(a?.title||"")}"></label><label>النص<textarea id="am" required>${esc(a?.message||"")}</textarea></label><label>النوع<select id="ak"><option value="bar">شريط علوي</option><option value="notification" ${a?.kind==="notification"?"selected":""}>إشعار عام</option></select></label><label>تاريخ البداية<input id="as" type="datetime-local"></label><label>تاريخ النهاية<input id="ae" type="datetime-local"></label><label><input id="aa" type="checkbox" ${a?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#annForm").onsubmit=async e=>{e.preventDefault();const payload={title:$("#at").value,message:$("#am").value,kind:$("#ak").value,starts_at:$("#as").value||new Date().toISOString(),ends_at:$("#ae").value||null,is_active:$("#aa").checked,created_by:S.user.id};const q=a?supabase.from("announcements").update(payload).eq("id",a.id):supabase.from("announcements").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");if(!a&&payload.kind==="notification")await supabase.from("notifications").insert({user_id:null,title:payload.title||"إعلان",body:payload.message,type:"announcement"});toast("تم الحفظ");closeModal();adminAnnouncements()}}
 async function adminNotifications(){const{data,count}=await listQuery("notifications","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,body.ilike.%${S.query}%`);if(S.filter==="global")q=q.is("user_id",null);if(S.filter==="personal")q=q.not("user_id","is",null);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإشعارات","إرسال عام أو خاص",`<button id="sendNotification" class="btn primary">إرسال إشعار</button>`)}<div class="list">${r.map(n=>`<div class="card item"><div class="item-main"><h3>${esc(n.title)}</h3><p>${esc(n.body)} • ${n.user_id?"خاص":"عام"}</p></div><div class="item-actions"><button class="danger" data-note-delete="${n.id}">حذف</button></div></div>`).join("")||empty("لا توجد إشعارات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminNotifications,[["global","عامة"],["personal","خاصة"]]);bindPager(adminNotifications);$("#sendNotification").onclick=notificationForm;$$("[data-note-delete]").forEach(b=>b.onclick=()=>deleteRow("notifications",b.dataset.noteDelete,"الإشعار",adminNotifications))}
