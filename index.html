@@ -16,18 +16,18 @@
 <header class="app-header">
 <a href="#/home" class="brand"><span class="brand-logo">A</span><span><strong id="storeName">علي شوب</strong><small id="pageTitle">المنتجات الرقمية</small></span></a>
 <div class="header-actions">
-<button id="installButton" class="icon-btn hidden" title="تثبيت التطبيق">⬇</button>
-<button id="themeButton" class="icon-btn">☾</button>
-<button id="notificationButton" class="icon-btn hidden">🔔<i id="notificationCount" class="counter hidden">0</i></button>
+<button id="installButton" class="icon-btn hidden" title="تثبيت التطبيق"><i data-lucide="download"></i></button>
+<button id="themeButton" class="icon-btn"><i data-lucide="moon"></i></button>
+<button id="notificationButton" class="icon-btn hidden"><i data-lucide="bell"></i><i id="notificationCount" class="counter hidden">0</i></button>
 </div>
 </header>
 <main id="app" class="page"></main>
 <nav class="bottom-nav">
-<a href="#/home" data-route="home"><span>⌂</span><small>الرئيسية</small></a>
-<a href="#/products" data-route="products"><span>▦</span><small>المنتجات</small></a>
-<a href="#/orders" data-route="orders"><span>▣</span><small>طلباتي</small></a>
-<a href="#/wallet" data-route="wallet"><span>◉</span><small>المحفظة</small></a>
-<a href="#/account" data-route="account"><span>●</span><small>حسابي</small></a>
+<a href="#/home" data-route="home"><i data-lucide="house"></i><small>الرئيسية</small></a>
+<a href="#/products" data-route="products"><i data-lucide="layout-grid"></i><small>المنتجات</small></a>
+<a href="#/orders" data-route="orders"><i data-lucide="receipt-text"></i><small>طلباتي</small></a>
+<a href="#/wallet" data-route="wallet"><i data-lucide="wallet-cards"></i><small>المحفظة</small></a>
+<a href="#/account" data-route="account"><i data-lucide="circle-user-round"></i><small>حسابي</small></a>
 </nav>
 
 <dialog id="authDialog" class="sheet"><form id="authForm" class="sheet-body">
@@ -37,5 +37,6 @@
 <button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn">ليس لديك حساب؟ أنشئ حسابًا</button>
 </form></dialog>
 <dialog id="modalDialog" class="sheet wide"></dialog>
+<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script type="module" src="./assets/js/app.js"></script>
 </body></html>
