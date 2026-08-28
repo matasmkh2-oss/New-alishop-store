@@ -39,7 +39,7 @@
 
 <dialog id="authDialog" class="sheet"><form id="authForm" class="sheet-body">
 <div class="grip"></div><div class="sheet-head"><div><h2 id="authTitle">تسجيل الدخول</h2><p>ادخل بيانات حسابك</p></div><button type="button" data-close-dialog="authDialog">×</button></div>
-<div id="registerFields" class="hidden"><label>الاسم الكامل<input id="fullName"></label><label>رقم الهاتف<input id="phone"></label></div>
+<div id="registerFields" class="hidden"><label>الاسم الكامل<input id="fullName"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
 <label>البريد الإلكتروني<input id="email" type="email" required></label><label>كلمة المرور<input id="password" type="password" minlength="6" required></label>
 <button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn">ليس لديك حساب؟ أنشئ حسابًا</button>
 </form></dialog>
