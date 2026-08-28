@@ -1111,30 +1111,51 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 .user-role-label.user-role{color:var(--m)!important}
 .user-role-label.primary-admin{color:var(--ok)!important}
 
-
-/* Admin users professional list */
-.admin-users-list{gap:14px}
-.admin-user-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:14px;padding:18px!important}
-.admin-user-main{min-width:0;display:grid;gap:12px}
-.admin-user-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.admin-user-name{margin:0;font-size:16px;font-weight:800;color:var(--text-strong,var(--t))}
-.admin-user-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.admin-user-field{min-width:0;padding:11px 12px;border:1px solid var(--control-border,var(--b));border-radius:14px;background:var(--control-bg-soft,var(--s2))}
-.admin-user-field.admin-user-field-wide{grid-column:1/-1}
-.admin-user-field small{display:block;margin-bottom:4px;font-size:11px;color:var(--text-soft,var(--m))!important}
-.admin-user-field strong{display:block;font-size:13px;line-height:1.8;color:var(--text-strong,var(--t));white-space:normal;overflow-wrap:anywhere;word-break:break-word}
-.admin-user-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-content:flex-start;gap:8px;min-width:132px}
-.admin-user-actions .icon-action,.admin-user-actions .whatsapp-btn{width:40px;height:40px;border-radius:13px!important;border:1px solid var(--control-border,var(--b));background:var(--control-bg-strong,var(--s))!important;color:var(--panel-text,var(--t))!important;display:inline-grid;place-items:center;padding:0!important;box-shadow:none!important}
+/* Compact admin users */
+.admin-users-list{gap:12px}
+.admin-user-card.compact{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px 16px!important}
+.admin-user-summary{display:flex;align-items:center;gap:12px;min-width:0}
+.admin-user-avatar{width:46px;height:46px;flex:0 0 46px;border-radius:16px;display:grid;place-items:center;font-weight:800;color:var(--accent-text);background:linear-gradient(135deg,var(--p),var(--p2));box-shadow:0 10px 24px rgba(105,88,245,.18)}
+.admin-user-identity{min-width:0}
+.admin-user-name{margin:0 0 6px;font-size:15px;font-weight:800;color:var(--panel-text,var(--t));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-user-badges{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mini-chip{display:inline-flex;align-items:center;padding:5px 9px;border-radius:999px;font-size:11px;font-weight:800}
+.mini-chip.positive{color:#fff;background:var(--ok)}
+.mini-chip.neutral{color:var(--m);background:var(--control-bg-soft,var(--s2))}
+.admin-user-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.admin-user-actions .icon-action,.admin-user-actions .whatsapp-btn{width:38px;height:38px;border-radius:13px!important;border:1px solid var(--control-border,var(--b));background:var(--control-bg-strong,var(--s))!important;display:inline-grid;place-items:center;padding:0!important;box-shadow:none!important}
 .admin-user-actions .icon-action svg,.admin-user-actions .whatsapp-btn svg{width:18px;height:18px}
-.admin-user-actions .whatsapp-btn{background:#20b65a!important;color:#fff!important;border-color:#20b65a!important}
-.admin-user-actions .icon-action:hover,.admin-user-actions .whatsapp-btn:hover{transform:translateY(-1px)}
-@media(max-width:720px){
-  .admin-user-card{grid-template-columns:1fr}
-  .admin-user-actions{justify-content:flex-start;min-width:0}
-}
-@media(max-width:520px){
-  .admin-user-card{padding:14px!important;gap:10px!important}
-  .admin-user-grid{grid-template-columns:1fr}
-  .admin-user-actions .icon-action,.admin-user-actions .whatsapp-btn{width:38px;height:38px}
-  .admin-user-name{font-size:15px}
-}
+.admin-user-actions [data-user-details]{color:#2563eb!important;background:rgba(37,99,235,.1)!important;border-color:rgba(37,99,235,.22)!important}
+.admin-user-actions [data-user-reset-email]{color:#7c3aed!important;background:rgba(124,58,237,.1)!important;border-color:rgba(124,58,237,.22)!important}
+.admin-user-actions [data-user-wallet]{color:#0f9f9a!important;background:rgba(15,159,154,.1)!important;border-color:rgba(15,159,154,.22)!important}
+.admin-user-actions [data-user-role]{color:#6958f5!important;background:rgba(105,88,245,.1)!important;border-color:rgba(105,88,245,.22)!important}
+.admin-user-actions [data-user-status]{color:#d97706!important;background:rgba(217,119,6,.1)!important;border-color:rgba(217,119,6,.22)!important}
+.admin-user-actions [data-current="blocked"]{color:#16a34a!important;background:rgba(22,163,74,.1)!important;border-color:rgba(22,163,74,.22)!important}
+.admin-user-actions [data-user-delete]{color:#fff!important;background:var(--bad)!important;border-color:var(--bad)!important}
+.admin-user-actions .whatsapp-btn{background:#20b65a!important;border-color:#20b65a!important;color:#fff!important}
+.admin-user-details-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.admin-user-detail-card{padding:12px;border:1px solid var(--control-border,var(--b));border-radius:15px;background:var(--control-bg-soft,var(--s2))}
+.admin-user-detail-card small{display:block;margin-bottom:5px;color:var(--m)}
+.admin-user-detail-card strong{display:block;line-height:1.8;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.admin-user-detail-wide{grid-column:1/-1}
+@media(max-width:720px){.admin-user-card.compact{grid-template-columns:1fr}.admin-user-actions{justify-content:flex-start}}
+@media(max-width:520px){.admin-user-card.compact{padding:12px!important}.admin-user-avatar{width:42px;height:42px;flex-basis:42px;border-radius:14px}.admin-user-actions .icon-action,.admin-user-actions .whatsapp-btn{width:36px;height:36px}.admin-user-details-grid{grid-template-columns:1fr}}
+
+/* Professional auth dialog */
+.auth-sheet{max-width:540px!important}
+.auth-sheet-body{padding-top:14px!important}
+.auth-head{align-items:center}
+.auth-heading{display:flex;align-items:center;gap:12px;min-width:0}
+.auth-mark{width:52px;height:52px;border-radius:18px;display:grid;place-items:center;font-size:24px;font-weight:900;color:#fff;background:linear-gradient(135deg,var(--p),var(--p2));box-shadow:0 14px 30px rgba(105,88,245,.22)}
+.auth-head h2{margin:0;font-size:24px}
+.auth-head p{margin:5px 0 0;color:var(--m);line-height:1.7}
+.auth-google-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 16px;border:1px solid var(--control-border,var(--b));border-radius:18px;color:var(--panel-text,var(--t));background:var(--control-bg-strong,var(--s));font-weight:800;transition:transform .15s ease,box-shadow .15s ease}
+.auth-google-btn:hover{transform:translateY(-1px);box-shadow:0 12px 26px rgba(0,0,0,.08)}
+.auth-google-mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:18px;font-weight:900;color:#ea4335;background:linear-gradient(135deg,#fff,#f8fafc);border:1px solid rgba(0,0,0,.06)}
+.auth-divider{position:relative;text-align:center;margin:16px 0;color:var(--m);font-size:12px;font-weight:700}
+.auth-divider:before{content:"";position:absolute;inset:50% 0 auto;border-top:1px solid var(--control-border,var(--b))}
+.auth-divider span{position:relative;padding:0 12px;background:var(--s)}
+.auth-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.auth-grid-main{margin-top:2px}
+.auth-switch{margin-top:8px;font-weight:800}
+@media(max-width:520px){.auth-mark{width:46px;height:46px;border-radius:16px;font-size:21px}.auth-head h2{font-size:21px}.auth-grid{grid-template-columns:1fr}.auth-google-btn{padding:13px 14px;border-radius:16px}}

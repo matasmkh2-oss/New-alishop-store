@@ -695,10 +695,11 @@ async function init(){
     navigator.serviceWorker.register("./service-worker.js").catch(console.error);
   }
 }
-function bind(){$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
+function bind(){$("#themeButton").onclick=()=>setTheme(document.documentElement.dataset.theme==="dark"?"light":"dark");$("#notificationButton").onclick=showNotes;$("#authForm").onsubmit=submitAuth;$("#authGoogle")?.addEventListener("click",signInWithGoogle);$("#switchAuth").onclick=()=>{S.authMode=S.authMode==="login"?"register":"login";renderAuthMode()};$$("[data-close-dialog]").forEach(b=>b.onclick=()=>document.getElementById(b.dataset.closeDialog).close());window.addEventListener("hashchange",route);window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();S.deferredInstall=e;$("#installButton").classList.remove("hidden")});$("#installButton").onclick=async()=>{if(!S.deferredInstall)return toast("استخدم خيار تثبيت التطبيق من قائمة Chrome","error");S.deferredInstall.prompt();await S.deferredInstall.userChoice;S.deferredInstall=null;$("#installButton").classList.add("hidden")}}
 function setTheme(t){document.documentElement.dataset.theme=t;localStorage.theme=t;$("#themeButton").innerHTML=`<i data-lucide="${t==="dark"?"sun":"moon"}"></i>`;setTimeout(refreshIcons,0)}
-function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#fullName").required=r;$("#phone").required=r;$("#authTitle").textContent=r?"إنشاء حساب":"تسجيل الدخول";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا"}
+function renderAuthMode(){const r=S.authMode==="register";$("#registerFields").classList.toggle("hidden",!r);$("#fullName").required=r;$("#phone").required=r;$("#authTitle").textContent=r?"إنشاء حساب جديد":"تسجيل الدخول";$("#authHint").textContent=r?"أنشئ حسابك في دقائق وابدأ الطلب مباشرة":"أدخل بياناتك للوصول إلى حسابك بسرعة";$("#authSubmit").textContent=r?"إنشاء الحساب":"دخول";$("#switchAuth").textContent=r?"لديك حساب بالفعل؟ سجل الدخول":"ليس لديك حساب؟ أنشئ حسابًا";const g=$("#authGoogleText");if(g)g.textContent=r?"المتابعة باستخدام Google":"الدخول باستخدام Google"}
 async function submitAuth(e){e.preventDefault();try{const email=$("#email").value.trim(),password=$("#password").value;if(S.authMode==="register"){const fullName=$("#fullName").value.trim(),phoneRaw=$("#phone").value.trim(),phone=phoneRaw.replace(/\D/g,"");if(!fullName)return toast("الاسم الكامل مطلوب","error");if(phone.length<8)return toast("أدخل رقم واتساب صحيحًا مع مفتاح الدولة","error");const{error}=await supabase.auth.signUp({email,password,options:{data:{full_name:fullName,phone}}});if(error)throw error}else{const{error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error}auth.close();toast("تمت العملية بنجاح")}catch(e){toast(e.message,"error")}}
+async function signInWithGoogle(){try{const redirectTo=`${location.origin}${location.pathname}`;const{error}=await supabase.auth.signInWithOAuth({provider:"google",options:{redirectTo}});if(error)throw error}catch(e){const m=String(e?.message||e||"");if(/provider|google|oauth/i.test(m))return toast("تأكد من تفعيل تسجيل الدخول عبر Google في إعدادات Supabase ثم أعد المحاولة","error");toast(m||"تعذر بدء تسجيل الدخول عبر Google","error")}}
 async function loadIdentity(){S.profile=null;S.wallet={balance:0};if(!S.user)return;const[{data:p},{data:w}]=await Promise.all([supabase.from("profiles").select("*").eq("id",S.user.id).maybeSingle(),supabase.from("wallets").select("balance").eq("user_id",S.user.id).maybeSingle()]);S.profile=p;S.wallet=w||{balance:0}}
 async function loadPublic(){
   const now=new Date().toISOString();
@@ -1596,40 +1597,19 @@ async function adminUsers(){
   const filtered=(data||[]).filter(u=>(!S.query||`${u.full_name||""} ${u.email||""} ${u.phone||""}`.toLowerCase().includes(S.query.toLowerCase()))&&(!S.filter||u.status===S.filter));
   const rows=filtered.sort((a,b)=>walletBalanceOf(b)-walletBalanceOf(a)||(new Date(b.created_at)-new Date(a.created_at)));
   const from=(S.page-1)*CONFIG.PAGE_SIZE,r=rows.slice(from,from+CONFIG.PAGE_SIZE);
-  $("#adminContent").innerHTML=`${adminHeader("المستخدمون","قائمة احترافية مرتبة حسب أعلى رصيد",`<button id="exportUsers" class="btn soft">تصدير CSV</button>`)}
+  $("#adminContent").innerHTML=`${adminHeader("المستخدمون","قائمة مختصرة أنيقة مع إجراءات سريعة",`<button id="exportUsers" class="btn soft">تصدير CSV</button>`)}
     <div class="list admin-users-list">${r.map(u=>{
       const protectedAdmin=isPrimaryAdmin(u.id),balance=walletBalanceOf(u),phoneDigits=String(u.phone||"").replace(/\D/g,"");
-      return `<article class="card item admin-user-card">
-        <div class="admin-user-main">
-          <div class="admin-user-top">
+      return `<article class="card item admin-user-card compact">
+        <div class="admin-user-summary">
+          <div class="admin-user-avatar">${esc((u.full_name||"م").trim().charAt(0)||"م")}</div>
+          <div class="admin-user-identity">
             <h3 class="admin-user-name">${esc(u.full_name||"-")}</h3>
-            ${protectedAdmin?`<span class="badge success">المدير الأساسي</span>`:""}
-            ${badge(u.status)}
-          </div>
-          <div class="admin-user-grid">
-            <div class="admin-user-field admin-user-field-wide">
-              <small>البريد الإلكتروني</small>
-              <strong>${esc(u.email||"-")}</strong>
-            </div>
-            <div class="admin-user-field">
-              <small>واتساب</small>
-              <strong dir="ltr">${esc(u.phone||"-")}</strong>
-            </div>
-            <div class="admin-user-field">
-              <small>الدور</small>
-              <strong class="user-role-label ${userRoleTone(u)}">${userRoleLabel(u)}</strong>
-            </div>
-            <div class="admin-user-field">
-              <small>الرصيد</small>
-              <strong class="user-balance ${balance>0?"positive":"zero"}">${money(balance)}</strong>
-            </div>
-            <div class="admin-user-field admin-user-field-wide">
-              <small>تاريخ التسجيل</small>
-              <strong>${dt(u.created_at)}</strong>
-            </div>
+            <div class="admin-user-badges">${protectedAdmin?`<span class="badge success">المدير الأساسي</span>`:""}${badge(u.status)}<span class="mini-chip ${balance>0?"positive":"neutral"}">${money(balance)}</span></div>
           </div>
         </div>
         <div class="admin-user-actions">
+          ${iconButton("info","تفاصيل المستخدم",`data-user-details="${u.id}"`)}
           ${phoneDigits?`<a class="icon-action whatsapp-btn" href="https://wa.me/${phoneDigits}" target="_blank" title="واتساب" aria-label="واتساب"><i data-lucide="message-circle"></i></a>`:""}
           ${u.email?iconButton("key-round","إرسال رابط إعادة تعيين كلمة المرور",`data-user-reset-email="${esc(u.email)}"`):""}
           ${iconButton("wallet-cards","تعديل الرصيد",`data-user-wallet="${u.id}"`)}
@@ -1642,6 +1622,7 @@ async function adminUsers(){
   bindAdminSearch(adminUsers,[["active","نشط"],["blocked","محظور"]]);
   bindPager(adminUsers);
   $("#exportUsers").onclick=()=>exportCsv("profiles","users.csv");
+  $$("[data-user-details]").forEach(b=>b.onclick=()=>showUserDetails(rows.find(u=>String(u.id)===String(b.dataset.userDetails))));
   $$("[data-user-reset-email]").forEach(b=>b.onclick=()=>sendPasswordReset(b.dataset.userResetEmail));
   $$("[data-user-wallet]").forEach(b=>b.onclick=()=>adjustWallet(b.dataset.userWallet));
   $$("[data-user-role]").forEach(b=>b.onclick=()=>changeRole(b.dataset.userRole));
@@ -1651,6 +1632,7 @@ async function adminUsers(){
 }
 
 async function sendPasswordReset(email){if(!email)return toast("لا يوجد بريد إلكتروني لهذا المستخدم","error");const ok=typeof appConfirm==="function"?await appConfirm({title:"إعادة تعيين كلمة المرور",message:`سيتم إرسال رابط إعادة تعيين كلمة المرور إلى ${email}.`,confirmText:"إرسال الرابط",cancelText:"إلغاء",icon:"mail"}):confirm(`سيتم إرسال رابط إعادة تعيين كلمة المرور إلى ${email}`);if(!ok)return;const redirectTo=`${location.origin}${location.pathname}`;let result=await supabase.auth.resetPasswordForEmail(email,{redirectTo});if(result.error&&/redirect/i.test(result.error.message||""))result=await supabase.auth.resetPasswordForEmail(email);if(result.error)return toast(result.error.message,"error");toast("تم إرسال رابط إعادة التعيين إلى بريد المستخدم")}
+function showUserDetails(u){if(!u)return;const balance=walletBalanceOf(u),phone=String(u.phone||"-");openModal(`<div class="sheet-head"><div><h2>تفاصيل المستخدم</h2><p>عرض جميع بيانات الحساب بشكل واضح</p></div><button data-close>×</button></div><div class="admin-user-details-grid"><div class="admin-user-detail-card"><small>الاسم</small><strong>${esc(u.full_name||"-")}</strong></div><div class="admin-user-detail-card"><small>البريد الإلكتروني</small><strong>${esc(u.email||"-")}</strong></div><div class="admin-user-detail-card"><small>واتساب</small><strong dir="ltr">${esc(phone)}</strong></div><div class="admin-user-detail-card"><small>الدور</small><strong class="user-role-label ${userRoleTone(u)}">${userRoleLabel(u)}</strong></div><div class="admin-user-detail-card"><small>الحالة</small><strong>${badge(u.status)}</strong></div><div class="admin-user-detail-card"><small>الرصيد</small><strong class="user-balance ${balance>0?"positive":"zero"}">${money(balance)}</strong></div><div class="admin-user-detail-card admin-user-detail-wide"><small>تاريخ التسجيل</small><strong>${dt(u.created_at)}</strong></div></div>`);refreshIcons()}
 async function adjustWallet(id){const amountText=await appPrompt({title:"تعديل رصيد المستخدم",message:"أدخل مبلغًا موجبًا للإضافة أو سالبًا للخصم.",placeholder:"مثال: 10 أو -5",confirmText:"متابعة",icon:"wallet-cards",multiline:false});if(amountText===null)return;const amount=Number(amountText);if(!Number.isFinite(amount)||amount===0)return toast("أدخل مبلغًا صالحًا","error");const reason=await appPrompt({title:"سبب تعديل الرصيد",message:"سيُحفظ السبب في سجل الحركات المالية.",placeholder:"سبب العملية",confirmText:"تنفيذ العملية",icon:"message-square-text"});if(!reason)return;const{error}=await supabase.rpc("admin_adjust_wallet",{p_user_id:id,p_amount:amount,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تعديل الرصيد");adminUsers()}
 async function changeRole(id){if(isPrimaryAdmin(id))return toast("لا يمكن تغيير دور المدير الأساسي","error");const role=await appChoice({title:"تغيير دور المستخدم",message:"اختر الصلاحية الجديدة.",icon:"shield-check",options:[{value:"user",label:"مستخدم",icon:"user"},{value:"admin",label:"مدير",icon:"shield"}],current:"user",confirmText:"حفظ الدور"});if(!role)return;const reason=await appPrompt({title:"سبب تغيير الدور",message:"سيتم حفظ السبب في سجل المدير.",placeholder:"سبب التغيير",confirmText:"تنفيذ التغيير",icon:"shield-check",multiline:false});if(reason===null)return;const{error}=await supabase.rpc("admin_set_user_role",{p_user_id:id,p_role:role,p_reason:reason||null});if(error)return toast(error.message,"error");toast("تم تغيير الدور");adminUsers()}
 async function changeStatus(id,current){if(isPrimaryAdmin(id))return toast("لا يمكن تغيير حالة المدير الأساسي","error");const status=current==="blocked"?"active":"blocked";const reason=await appPrompt({title:status==="blocked"?"حظر المستخدم":"إلغاء حظر المستخدم",message:"اكتب سبب تغيير حالة الحساب.",placeholder:"سبب التغيير",confirmText:status==="blocked"?"حظر":"إلغاء الحظر",icon:status==="blocked"?"ban":"unlock",danger:status==="blocked"});if(reason===null)return;const{error}=await supabase.rpc("admin_set_user_status",{p_user_id:id,p_status:status,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تحديث الحالة");adminUsers()}

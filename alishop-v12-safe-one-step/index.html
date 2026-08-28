@@ -37,11 +37,14 @@
 <a href="#/account" data-route="account"><i data-lucide="circle-user-round"></i><small>حسابي</small></a>
 </nav>
 
-<dialog id="authDialog" class="sheet"><form id="authForm" class="sheet-body">
-<div class="grip"></div><div class="sheet-head"><div><h2 id="authTitle">تسجيل الدخول</h2><p>ادخل بيانات حسابك</p></div><button type="button" data-close-dialog="authDialog">×</button></div>
-<div id="registerFields" class="hidden"><label>الاسم الكامل<input id="fullName"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
-<label>البريد الإلكتروني<input id="email" type="email" required></label><label>كلمة المرور<input id="password" type="password" minlength="6" required></label>
-<button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn">ليس لديك حساب؟ أنشئ حسابًا</button>
+<dialog id="authDialog" class="sheet auth-sheet"><form id="authForm" class="sheet-body auth-sheet-body">
+<div class="grip"></div>
+<div class="sheet-head auth-head"><div class="auth-heading"><div class="auth-mark">A</div><div><h2 id="authTitle">تسجيل الدخول</h2><p id="authHint">أدخل بياناتك للوصول إلى حسابك بسرعة</p></div></div><button type="button" data-close-dialog="authDialog">×</button></div>
+<button id="authGoogle" type="button" class="auth-google-btn"><span class="auth-google-mark">G</span><span id="authGoogleText">الدخول باستخدام Google</span></button>
+<div class="auth-divider"><span>أو باستخدام البريد الإلكتروني</span></div>
+<div id="registerFields" class="hidden auth-grid"><label>الاسم الكامل<input id="fullName"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
+<div class="auth-grid auth-grid-main"><label>البريد الإلكتروني<input id="email" type="email" required placeholder="name@example.com"></label><label>كلمة المرور<input id="password" type="password" minlength="6" required placeholder="••••••••"></label></div>
+<button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn auth-switch">ليس لديك حساب؟ أنشئ حسابًا</button>
 </form></dialog>
 <dialog id="modalDialog" class="sheet wide"></dialog>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
