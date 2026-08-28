@@ -310,3 +310,68 @@ form button[disabled]{opacity:.72;cursor:wait;pointer-events:none}
 .switch-label{display:flex!important;align-items:center;gap:8px;padding:10px 11px;border:1px solid var(--b);border-radius:13px;background:var(--s2)}
 .switch-label input{width:auto!important;margin:0!important}
 #prequired{direction:ltr;text-align:left;font-family:monospace;min-height:120px}
+
+
+/* =========================================================
+   V14 contrast hotfix: light/dark text readability
+   ========================================================= */
+:root{
+  --text-strong:#10282C;
+  --text-soft:#527076;
+  --control-bg-strong:rgba(255,255,255,.94);
+  --control-bg-soft:rgba(255,255,255,.84);
+  --control-border:rgba(8,127,130,.16);
+  --panel-text:#12343A;
+  --panel-muted:#5B7379;
+  --accent-text:#FFFFFF;
+}
+[data-theme=dark]{
+  --text-strong:#F2FFFD;
+  --text-soft:#AFC8C7;
+  --control-bg-strong:#14262D;
+  --control-bg-soft:#102127;
+  --control-border:rgba(94,234,212,.18);
+  --panel-text:#EEFFFD;
+  --panel-muted:#A8C7C6;
+  --accent-text:#062D30;
+}
+body,.section h1,.section h2,.item h3,.admin-tile h3,.sheet-head h2,.service-info-head h3,
+.mini-product-preview strong,.mini-social-preview strong,.custom-select-option,.styled-select-button,
+.app-dialog-input,.catalog-type-choice button,.filter-chip,.page-btn,.catalog-admin-tabs button,
+.catalog-top-tabs button,.segmented-control button,.platform-choice{
+  color:var(--text-strong)!important;
+}
+.brand small,.section p,.item p,.empty,.note,.sheet-head p,.admin-tile p,.service-info-head p,
+.service-stat-row,.chosen-platform small,.mini-product-preview small,.mini-social-preview small,
+.coupon-preview small,.custom-select-option small,.note-card p,.catalog-category,.stat small,
+label,.transaction-card small,.wallet-main small{
+  color:var(--text-soft)!important;
+}
+.icon-btn,.sheet-head button,.page-btn,.filter-chip,.tab,.btn.soft,.small,
+.input,label input,label select,label textarea,.styled-select-button,.app-dialog-input,
+.platform-choice,.service-info-card,.calculation-card,.catalog-type-choice button,
+.mini-product-preview,.mini-social-preview,.chosen-platform,.field-builder,
+.catalog-admin-tabs,.catalog-top-tabs,.segmented-control,.note,.coupon-preview.loading{
+  background:var(--control-bg-strong)!important;
+  border-color:var(--control-border)!important;
+}
+.icon-btn,.sheet-head button,.page-btn,.filter-chip,.tab,.btn.soft,.small,
+.input,label input,label select,label textarea,.styled-select-button,.app-dialog-input,
+.platform-choice,.service-info-card,.calculation-card,.catalog-type-choice button,
+.mini-product-preview,.mini-social-preview,.chosen-platform,.field-builder{
+  color:var(--panel-text)!important;
+}
+.catalog-admin-tabs,.catalog-top-tabs,.segmented-control,.note,.coupon-preview.loading{
+  background:var(--control-bg-soft)!important;
+}
+.tab.active,.page-btn.active,.catalog-top-tabs button.active,.catalog-admin-tabs button.active,
+.segmented-control button.active,.platform-choice.active,.primary{
+  color:var(--accent-text)!important;
+}
+input::placeholder,textarea::placeholder,.app-dialog-input::placeholder{
+  color:color-mix(in srgb,var(--panel-muted) 76%, transparent)!important;
+  opacity:1!important;
+}
+input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
+  color:color-mix(in srgb,var(--panel-text) 58%, transparent)!important;
+}
