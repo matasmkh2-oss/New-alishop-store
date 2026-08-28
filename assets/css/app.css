@@ -1102,3 +1102,11 @@ input::placeholder,textarea::placeholder,.app-dialog-input::placeholder{
 input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
   color:color-mix(in srgb,var(--panel-text) 58%, transparent)!important;
 }
+
+.user-balance{font-weight:800}
+.user-balance.positive{color:var(--ok)!important}
+.user-balance.zero{color:var(--m)!important}
+.user-role-label{font-weight:700}
+.user-role-label.admin-role{color:var(--p)!important}
+.user-role-label.user-role{color:var(--m)!important}
+.user-role-label.primary-admin{color:var(--ok)!important}
