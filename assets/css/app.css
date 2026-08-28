@@ -1110,3 +1110,31 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 .user-role-label.admin-role{color:var(--p)!important}
 .user-role-label.user-role{color:var(--m)!important}
 .user-role-label.primary-admin{color:var(--ok)!important}
+
+
+/* Admin users professional list */
+.admin-users-list{gap:14px}
+.admin-user-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:14px;padding:18px!important}
+.admin-user-main{min-width:0;display:grid;gap:12px}
+.admin-user-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.admin-user-name{margin:0;font-size:16px;font-weight:800;color:var(--text-strong,var(--t))}
+.admin-user-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.admin-user-field{min-width:0;padding:11px 12px;border:1px solid var(--control-border,var(--b));border-radius:14px;background:var(--control-bg-soft,var(--s2))}
+.admin-user-field.admin-user-field-wide{grid-column:1/-1}
+.admin-user-field small{display:block;margin-bottom:4px;font-size:11px;color:var(--text-soft,var(--m))!important}
+.admin-user-field strong{display:block;font-size:13px;line-height:1.8;color:var(--text-strong,var(--t));white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+.admin-user-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-content:flex-start;gap:8px;min-width:132px}
+.admin-user-actions .icon-action,.admin-user-actions .whatsapp-btn{width:40px;height:40px;border-radius:13px!important;border:1px solid var(--control-border,var(--b));background:var(--control-bg-strong,var(--s))!important;color:var(--panel-text,var(--t))!important;display:inline-grid;place-items:center;padding:0!important;box-shadow:none!important}
+.admin-user-actions .icon-action svg,.admin-user-actions .whatsapp-btn svg{width:18px;height:18px}
+.admin-user-actions .whatsapp-btn{background:#20b65a!important;color:#fff!important;border-color:#20b65a!important}
+.admin-user-actions .icon-action:hover,.admin-user-actions .whatsapp-btn:hover{transform:translateY(-1px)}
+@media(max-width:720px){
+  .admin-user-card{grid-template-columns:1fr}
+  .admin-user-actions{justify-content:flex-start;min-width:0}
+}
+@media(max-width:520px){
+  .admin-user-card{padding:14px!important;gap:10px!important}
+  .admin-user-grid{grid-template-columns:1fr}
+  .admin-user-actions .icon-action,.admin-user-actions .whatsapp-btn{width:38px;height:38px}
+  .admin-user-name{font-size:15px}
+}

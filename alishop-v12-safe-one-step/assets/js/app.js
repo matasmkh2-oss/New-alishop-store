@@ -738,7 +738,66 @@ async function adminCards(){const{data,count}=await listQuery("recharge_cards","
 function cardForm(){openModal(`<div class="sheet-head"><h2>توليد بطاقات</h2><button data-close>×</button></div><form id="cardForm"><label>القيمة<input id="cardAmount" type="number" min="1" required></label><label>العدد<input id="cardCount" type="number" min="1" max="100" value="1"></label><label>البادئة<input id="cardPrefix" value="ALI"></label><button class="btn primary block">توليد</button></form>`);$("#cardForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("generate_recharge_cards",{p_amount:+$("#cardAmount").value,p_count:+$("#cardCount").value,p_prefix:$("#cardPrefix").value});if(error)return toast(error.message,"error");toast("تم التوليد");closeModal();adminCards()}}
 async function adminCoupons(){const{data,count}=await listQuery("coupons","*",q=>{if(S.query)q=q.ilike("code",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الكوبونات","إضافة وتعديل وتعطيل",`<button id="addCoupon" class="btn primary">إضافة كوبون</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.code)}</h3><p>${c.discount_type==="percent"?c.discount_value+"%":money(c.discount_value)} • الاستخدام ${c.used_count}${c.usage_limit?"/"+c.usage_limit:""}</p></div><div class="item-actions">${c.is_active?badge("active"):badge("blocked")}<button class="small" data-coupon-edit="${c.id}">تعديل</button><button class="danger" data-coupon-delete="${c.id}">حذف</button></div></div>`).join("")||empty("لا توجد كوبونات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCoupons,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminCoupons);$("#addCoupon").onclick=()=>couponForm();$$("[data-coupon-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("coupons").select("*").eq("id",b.dataset.couponEdit).single();couponForm(data)});$$("[data-coupon-delete]").forEach(b=>b.onclick=()=>deleteRow("coupons",b.dataset.couponDelete,"الكوبون",adminCoupons))}
 function couponForm(c=null){openModal(`<div class="sheet-head"><h2>${c?"تعديل":"إضافة"} كوبون</h2><button data-close>×</button></div><form id="couponForm"><label>الرمز<input id="ccode" value="${esc(c?.code||"")}" required></label><label>نوع الخصم<select id="ctype"><option value="percent">نسبة</option><option value="fixed" ${c?.discount_type==="fixed"?"selected":""}>مبلغ ثابت</option></select></label><label>القيمة<input id="cvalue" type="number" min="0" step=".01" value="${c?.discount_value||0}" required></label><label>الحد الأدنى<input id="cmin" type="number" min="0" step=".01" value="${c?.minimum_order||0}"></label><label>الحد الأقصى للخصم<input id="cmax" type="number" min="0" step=".01" value="${c?.maximum_discount||""}"></label><label>حد الاستخدام<input id="climit" type="number" min="1" value="${c?.usage_limit||""}"></label><label>تاريخ الانتهاء<input id="cend" type="datetime-local"></label><label><input id="cactive" type="checkbox" ${c?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#couponForm").onsubmit=async e=>{e.preventDefault();const payload={code:$("#ccode").value.toUpperCase(),discount_type:$("#ctype").value,discount_value:+$("#cvalue").value,minimum_order:+$("#cmin").value,maximum_discount:$("#cmax").value?+$("#cmax").value:null,usage_limit:$("#climit").value?+$("#climit").value:null,ends_at:$("#cend").value||null,is_active:$("#cactive").checked};const q=c?supabase.from("coupons").update(payload).eq("id",c.id):supabase.from("coupons").insert({...payload,created_by:S.user.id});const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminCoupons()}}
-async function adminUsers(){const{data,error}=await supabase.rpc("admin_list_users");if(error)return toast(error.message,"error");const filtered=(data||[]).filter(u=>(!S.query||`${u.full_name||""} ${u.email||""} ${u.phone||""}`.toLowerCase().includes(S.query.toLowerCase()))&&(!S.filter||u.status===S.filter));const rows=filtered.sort((a,b)=>walletBalanceOf(b)-walletBalanceOf(a)||(new Date(b.created_at)-new Date(a.created_at)));const from=(S.page-1)*CONFIG.PAGE_SIZE,r=rows.slice(from,from+CONFIG.PAGE_SIZE);$("#adminContent").innerHTML=`${adminHeader("المستخدمون","الرصيد والحظر والدور • مرتبة حسب أعلى رصيد",`<button id="exportUsers" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(u=>{const protectedAdmin=isPrimaryAdmin(u.id),balance=walletBalanceOf(u);return`<div class="card item"><div class="item-main"><h3>${esc(u.full_name||"-")}${protectedAdmin?` <span class="badge success">المدير الأساسي</span>`:""}</h3><p><span class="user-balance ${balance>0?"positive":"zero"}">${money(balance)}</span> • <span class="user-role-label ${userRoleTone(u)}">${userRoleLabel(u)}</span> • واتساب: ${esc(u.phone||"-")}</p><p>${esc(u.email||"-")}</p></div><div class="item-actions">${badge(u.status)}${u.phone?`<a class="whatsapp-btn" href="https://wa.me/${String(u.phone).replace(/\D/g,"")}" target="_blank">◉ واتساب</a>`:""}${u.email?`<button class="small" data-user-reset-email="${esc(u.email)}">إعادة التعيين</button>`:""}<button class="small" data-user-wallet="${u.id}">الرصيد</button>${protectedAdmin?"":`<button class="small" data-user-role="${u.id}">الدور</button><button class="${u.status==="blocked"?"success":"danger"}" data-user-status="${u.id}" data-current="${u.status}">${u.status==="blocked"?"فك الحظر":"حظر"}</button><button class="danger" data-user-delete="${u.id}">حذف</button>`}</div></div>`}).join("")||empty("لا يوجد مستخدمون")}</div>${pager(S.page,rows.length,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminUsers,[["active","نشط"],["blocked","محظور"]]);bindPager(adminUsers);$("#exportUsers").onclick=()=>exportCsv("profiles","users.csv");$$("[data-user-reset-email]").forEach(b=>b.onclick=()=>sendPasswordReset(b.dataset.userResetEmail));$$("[data-user-wallet]").forEach(b=>b.onclick=()=>adjustWallet(b.dataset.userWallet));$$("[data-user-role]").forEach(b=>b.onclick=()=>changeRole(b.dataset.userRole));$$("[data-user-status]").forEach(b=>b.onclick=()=>changeStatus(b.dataset.userStatus,b.dataset.current));$$("[data-user-delete]").forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete))}
+async function adminUsers(){
+  const{data,error}=await supabase.rpc("admin_list_users");
+  if(error)return toast(error.message,"error");
+  const filtered=(data||[]).filter(u=>(!S.query||`${u.full_name||""} ${u.email||""} ${u.phone||""}`.toLowerCase().includes(S.query.toLowerCase()))&&(!S.filter||u.status===S.filter));
+  const rows=filtered.sort((a,b)=>walletBalanceOf(b)-walletBalanceOf(a)||(new Date(b.created_at)-new Date(a.created_at)));
+  const from=(S.page-1)*CONFIG.PAGE_SIZE,r=rows.slice(from,from+CONFIG.PAGE_SIZE);
+  $("#adminContent").innerHTML=`${adminHeader("المستخدمون","قائمة احترافية مرتبة حسب أعلى رصيد",`<button id="exportUsers" class="btn soft">تصدير CSV</button>`)}
+    <div class="list admin-users-list">${r.map(u=>{
+      const protectedAdmin=isPrimaryAdmin(u.id),balance=walletBalanceOf(u),phoneDigits=String(u.phone||"").replace(/\D/g,"");
+      return `<article class="card item admin-user-card">
+        <div class="admin-user-main">
+          <div class="admin-user-top">
+            <h3 class="admin-user-name">${esc(u.full_name||"-")}</h3>
+            ${protectedAdmin?`<span class="badge success">المدير الأساسي</span>`:""}
+            ${badge(u.status)}
+          </div>
+          <div class="admin-user-grid">
+            <div class="admin-user-field admin-user-field-wide">
+              <small>البريد الإلكتروني</small>
+              <strong>${esc(u.email||"-")}</strong>
+            </div>
+            <div class="admin-user-field">
+              <small>واتساب</small>
+              <strong dir="ltr">${esc(u.phone||"-")}</strong>
+            </div>
+            <div class="admin-user-field">
+              <small>الدور</small>
+              <strong class="user-role-label ${userRoleTone(u)}">${userRoleLabel(u)}</strong>
+            </div>
+            <div class="admin-user-field">
+              <small>الرصيد</small>
+              <strong class="user-balance ${balance>0?"positive":"zero"}">${money(balance)}</strong>
+            </div>
+            <div class="admin-user-field admin-user-field-wide">
+              <small>تاريخ التسجيل</small>
+              <strong>${dt(u.created_at)}</strong>
+            </div>
+          </div>
+        </div>
+        <div class="admin-user-actions">
+          ${phoneDigits?`<a class="icon-action whatsapp-btn" href="https://wa.me/${phoneDigits}" target="_blank" title="واتساب" aria-label="واتساب"><i data-lucide="message-circle"></i></a>`:""}
+          ${u.email?iconButton("key-round","إرسال رابط إعادة تعيين كلمة المرور",`data-user-reset-email="${esc(u.email)}"`):""}
+          ${iconButton("wallet-cards","تعديل الرصيد",`data-user-wallet="${u.id}"`)}
+          ${protectedAdmin?"":iconButton("shield","تغيير الدور",`data-user-role="${u.id}"`)}
+          ${protectedAdmin?"":iconButton(u.status==="blocked"?"unlock":"ban",u.status==="blocked"?"فك الحظر":"حظر",`data-user-status="${u.id}" data-current="${u.status}"`)}
+          ${protectedAdmin?"":iconButton("trash-2","حذف المستخدم",`data-user-delete="${u.id}"`)}
+        </div>
+      </article>`}).join("")||empty("لا يوجد مستخدمون")}</div>
+    ${pager(S.page,rows.length,CONFIG.PAGE_SIZE)}`;
+  bindAdminSearch(adminUsers,[["active","نشط"],["blocked","محظور"]]);
+  bindPager(adminUsers);
+  $("#exportUsers").onclick=()=>exportCsv("profiles","users.csv");
+  $$("[data-user-reset-email]").forEach(b=>b.onclick=()=>sendPasswordReset(b.dataset.userResetEmail));
+  $$("[data-user-wallet]").forEach(b=>b.onclick=()=>adjustWallet(b.dataset.userWallet));
+  $$("[data-user-role]").forEach(b=>b.onclick=()=>changeRole(b.dataset.userRole));
+  $$("[data-user-status]").forEach(b=>b.onclick=()=>changeStatus(b.dataset.userStatus,b.dataset.current));
+  $$("[data-user-delete]").forEach(b=>b.onclick=()=>deleteUser(b.dataset.userDelete));
+  refreshIcons();
+}
+
 async function sendPasswordReset(email){if(!email)return toast("لا يوجد بريد إلكتروني لهذا المستخدم","error");const ok=typeof appConfirm==="function"?await appConfirm({title:"إعادة تعيين كلمة المرور",message:`سيتم إرسال رابط إعادة تعيين كلمة المرور إلى ${email}.`,confirmText:"إرسال الرابط",cancelText:"إلغاء",icon:"mail"}):confirm(`سيتم إرسال رابط إعادة تعيين كلمة المرور إلى ${email}`);if(!ok)return;const redirectTo=`${location.origin}${location.pathname}`;let result=await supabase.auth.resetPasswordForEmail(email,{redirectTo});if(result.error&&/redirect/i.test(result.error.message||""))result=await supabase.auth.resetPasswordForEmail(email);if(result.error)return toast(result.error.message,"error");toast("تم إرسال رابط إعادة التعيين إلى بريد المستخدم")}
 async function adjustWallet(id){const amount=Number(prompt("موجب للإضافة وسالب للخصم:"));if(!amount)return;const reason=prompt("سبب العملية:");if(!reason)return;const{error}=await supabase.rpc("admin_adjust_wallet",{p_user_id:id,p_amount:amount,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تعديل الرصيد");adminUsers()}
 async function changeRole(id){if(isPrimaryAdmin(id))return toast("لا يمكن تغيير دور المدير الأساسي","error");const role=prompt("اكتب user أو admin:","user");if(!["user","admin"].includes(role))return;const reason=prompt("سبب تغيير الدور:")||"تحديث بواسطة الإدارة";const{error}=await supabase.rpc("admin_set_user_role",{p_user_id:id,p_role:role,p_reason:reason});if(error)return toast(error.message,"error");toast("تم تغيير الدور");adminUsers()}
