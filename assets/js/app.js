@@ -956,22 +956,37 @@ function relativeTime(value){
   if(days<30)return`منذ ${days} يوم`;
   return dt(value);
 }
+function noteDetailClass(item){
+  const k=String(item.key||"");
+  const v=String(item.value||"");
+  if(/بيانات التسليم/.test(k))return" delivery";
+  if(/حالة/.test(k)){
+    let tone="";
+    if(/مكتمل|مقبول|نشط/.test(v))tone="ok";
+    else if(/قيد التنفيذ/.test(v))tone="run";
+    else if(/معلق/.test(v))tone="wait";
+    else if(/ملغي|مرفوض|محظور|مسترد/.test(v))tone="bad";
+    return tone?` status st-${tone}`:" status";
+  }
+  return"";
+}
 function formatNotificationCard(note,context={}){
   const {info,audience,summary,details}=deriveNotificationInsights(note,context);
-  return `<article class="card notification-card pro ${note.is_read?"":"unread"} tone-${info.tone}">
+  const ordered=[...details.filter(d=>/بيانات التسليم/.test(d.key)),...details.filter(d=>!/بيانات التسليم/.test(d.key))];
+  return `<article class="card notification-card pro ${note.is_read?"":"unread"} tone-${info.tone}" data-note-id="${note.id}">
     <div class="notification-card-head">
       <span class="notification-icon-badge"><i data-lucide="${info.icon}"></i></span>
       <div class="notification-head-copy">
         <div class="notification-kicker-row">
           <span class="notification-kicker">${esc(audience)}</span>
-          ${note.is_read?"":"<span class=\"mini-chip positive\">جديد</span>"}
+          ${note.is_read?"":"<span class=\"note-new-chip\">جديد</span>"}
         </div>
         <h3>${esc(note.title||"إشعار")}</h3>
       </div>
       <time class="notification-time">${relativeTime(note.created_at)}</time>
     </div>
     <p class="notification-summary">${esc(summary)}</p>
-    ${details.length?`<div class="notification-details-list">${details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
+    ${ordered.length?`<div class="notification-details-list">${ordered.map(item=>`<div class="notification-detail-item${noteDetailClass(item)}"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
   </article>`;
 }
 function toastNotificationMessage(note){
@@ -1002,14 +1017,18 @@ async function showNotes(){
     tabs.forEach(tab=>$("#note"+tab.key,modal).classList.toggle("hidden",b.dataset.noteTab!==tab.key));
     b.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
   });
+  $$(".notification-card",modal).forEach(card=>card.addEventListener("click",()=>{
+    card.classList.remove("unread");
+    card.querySelector(".note-new-chip")?.remove();
+  }));
   $("#markAllNotes",modal)?.addEventListener("click",async()=>{
     const ids=S.notes.filter(n=>!n.is_read&&n.user_id===S.user.id).map(n=>n.id);
+    $$(".notification-card",modal).forEach(card=>{card.classList.remove("unread");card.querySelector(".note-new-chip")?.remove();});
+    $("#markAllNotes",modal)?.remove();
     if(!ids.length)return;
     await supabase.from("notifications").update({is_read:true}).in("id",ids);
     await loadNotes();
     updateHeader();
-    closeModal();
-    showNotes();
   });
   refreshIcons();
 }
