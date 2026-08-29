@@ -845,14 +845,113 @@ function parseNotificationBody(body=""){
   });
   return {summary,details:cleaned};
 }
+function isGenericNotificationSummary(text=""){
+  const s=String(text||"").trim();
+  if(!s)return true;
+  const generic=[
+    "تم التحديث","تم تحديث الطلب","تم تنفيذ العملية","تمت العملية","إشعار جديد","تم إرسال الطلب","تم الشراء",
+    "تم إنشاء الطلب","تم إنشاء طلبك","تم شحن الرصيد","تم استلام الطلب","تم تعديل الحالة"
+  ];
+  return s.length<12 || generic.includes(s);
+}
+function notificationStatusLabel(status=""){
+  return ({pending:"معلق",processing:"قيد التنفيذ",delivered:"مكتمل",cancelled:"ملغي",refunded:"مسترد",approved:"مقبول",rejected:"مرفوض",active:"نشط",blocked:"محظور"}[String(status||"")])||String(status||"-");
+}
+function extractNotificationClues(note){
+  const raw=`${note?.title||""}
+${note?.body||""}`;
+  const orderNumber=(raw.match(/ORD[-\w]+/i)||[])[0]||"";
+  const transferRef=(raw.match(/(?:المرجع|رقم التحويل)\s*[:：]\s*([^
+]+)/)||[])[1]?.trim()||"";
+  return {raw,orderNumber,transferRef};
+}
+function findNearestByTime(list,noteTime,predicate=()=>true,maxHours=72){
+  const base=noteTime?new Date(noteTime).getTime():Date.now();
+  let best=null,bestDiff=Infinity;
+  (list||[]).forEach(item=>{
+    if(!predicate(item))return;
+    const ts=item?.created_at?new Date(item.created_at).getTime():0;
+    const diff=Math.abs((ts||base)-base);
+    if(diff<bestDiff){best=item;bestDiff=diff;}
+  });
+  return bestDiff<=maxHours*3600*1000?best:null;
+}
+async function loadNotificationContext(){
+  if(!S.user)return {orders:[],social:[],deposits:[],transactions:[]};
+  const [ordersResult,socialResult,depositsResult,transactionsResult]=await Promise.all([
+    supabase.from("orders").select("id,order_number,total,status,created_at,delivery_data,product:products(name)").eq("user_id",S.user.id).order("created_at",{ascending:false}).limit(80),
+    supabase.from("smm_orders").select("id,order_number,quantity,status,target_url,created_at,service:smm_services(name,platform:social_platforms(name))").eq("user_id",S.user.id).order("created_at",{ascending:false}).limit(80),
+    supabase.from("deposit_requests").select("id,amount,status,created_at,transfer_reference,admin_note,payment_method:payment_methods(name)").eq("user_id",S.user.id).order("created_at",{ascending:false}).limit(80),
+    supabase.from("wallet_transactions").select("id,amount,type,description,created_at").order("created_at",{ascending:false}).limit(120)
+  ]);
+  return {
+    orders:ordersResult.data||[],
+    social:socialResult.data||[],
+    deposits:depositsResult.data||[],
+    transactions:transactionsResult.data||[]
+  };
+}
+function deriveNotificationInsights(note,context={}){
+  const info=notificationTypeInfo(note?.type);
+  const parsed=parseNotificationBody(note?.body||"");
+  const clues=extractNotificationClues(note);
+  const audience=note?.user_id?"خاص بحسابك":"عام لكل المستخدمين";
+  const details=[...parsed.details];
+  const add=(key,value)=>{
+    const v=String(value??"").trim();
+    if(!v)return;
+    if(details.some(item=>item.key===key||item.value===v))return;
+    details.push({key,value:v});
+  };
+  let summary=parsed.summary;
+  if(note?.type==="order"){
+    const order=(context.orders||[]).find(x=>x.order_number&&x.order_number===clues.orderNumber) || findNearestByTime(context.orders,note?.created_at);
+    add("رقم الطلب",order?.order_number||clues.orderNumber);
+    add("المنتج",order?.product?.name);
+    add("الحالة",notificationStatusLabel(order?.status));
+    if(order?.total!=null)add("القيمة",money(order.total));
+    if(order?.delivery_data && ["delivered","processing"].includes(order?.status))add("بيانات التسليم",order.delivery_data);
+    if(isGenericNotificationSummary(summary))summary={pending:"تم تسجيل طلبك الرقمي وهو الآن بانتظار المراجعة.",processing:"طلبك الرقمي قيد التنفيذ حاليًا ويتم تجهيز التسليم.",delivered:"تم تجهيز طلبك الرقمي وأصبحت بيانات التسليم متاحة.",cancelled:"تم إلغاء الطلب وإعادة معالجته حسب الإجراء المعتمد.",refunded:"تم استرداد قيمة الطلب إلى محفظتك."}[order?.status]||"هناك تحديث جديد على طلبك الرقمي.";
+  }else if(note?.type==="social_order"){
+    const order=(context.social||[]).find(x=>x.order_number&&x.order_number===clues.orderNumber) || findNearestByTime(context.social,note?.created_at);
+    add("رقم الطلب",order?.order_number||clues.orderNumber);
+    add("الخدمة",order?.service?.name);
+    add("المنصة",order?.service?.platform?.name);
+    if(order?.quantity!=null)add("الكمية",String(order.quantity));
+    add("الرابط",order?.target_url);
+    add("الحالة",notificationStatusLabel(order?.status));
+    if(isGenericNotificationSummary(summary))summary={pending:"تم تسجيل طلب السوشل بنجاح وهو الآن بانتظار التنفيذ.",processing:"طلب السوشل الخاص بك قيد التنفيذ حاليًا.",delivered:"تم تنفيذ طلب السوشل بنجاح.",cancelled:"تم إلغاء طلب السوشل وفق الحالة الحالية.",refunded:"تم استرداد قيمة طلب السوشل إلى محفظتك."}[order?.status]||"هناك تحديث جديد على طلب السوشل الخاص بك.";
+  }else if(["deposit","wallet"].includes(note?.type)){
+    const deposit=(context.deposits||[]).find(x=>x.transfer_reference&&x.transfer_reference===clues.transferRef) || findNearestByTime(context.deposits,note?.created_at);
+    add("المبلغ",deposit?.amount!=null?money(deposit.amount):"");
+    add("طريقة الدفع",deposit?.payment_method?.name);
+    add("مرجع التحويل",deposit?.transfer_reference||clues.transferRef);
+    add("حالة الطلب",notificationStatusLabel(deposit?.status));
+    add("ملاحظة الإدارة",deposit?.admin_note);
+    if(isGenericNotificationSummary(summary))summary={pending:"تم استلام طلب شحن الرصيد وهو الآن قيد المراجعة.",approved:"تمت الموافقة على طلب الشحن وتمت إضافة الرصيد إلى محفظتك.",rejected:"تم رفض طلب الشحن، راجع التفاصيل لمعرفة السبب."}[deposit?.status]||"هناك تحديث جديد على طلب شحن الرصيد أو المحفظة.";
+  }else if(note?.type==="refund"){
+    const tx=findNearestByTime((context.transactions||[]).filter(x=>["refund","deposit"].includes(x.type)),note?.created_at);
+    add("المبلغ",tx?.amount!=null?money(tx.amount):"");
+    add("التفاصيل",tx?.description);
+    if(isGenericNotificationSummary(summary))summary="تم استرداد المبلغ إلى محفظتك ويمكنك استخدامه مباشرة في الطلبات القادمة.";
+  }else if(note?.type==="recharge"){
+    const tx=findNearestByTime((context.transactions||[]).filter(x=>x.type==="recharge_card"),note?.created_at);
+    add("المبلغ",tx?.amount!=null?money(tx.amount):"");
+    add("التفاصيل",tx?.description);
+    if(isGenericNotificationSummary(summary))summary="تم شحن رصيدك باستخدام بطاقة الشحن بنجاح.";
+  }
+  return {info,audience,summary,details};
+}
 function notificationPreviewText(note){
   const parsed=parseNotificationBody(note?.body||"");
   return parsed.summary||String(note?.title||"إشعار جديد");
 }
-function formatNotificationCard(note){
-  const info=notificationTypeInfo(note.type);
-  const parsed=parseNotificationBody(note.body);
-  const audience=note.user_id?"خاص بحسابك":"عام لكل المستخدمين";
+function notificationPreviewText(note){
+  const parsed=parseNotificationBody(note?.body||"");
+  return parsed.summary||String(note?.title||"إشعار جديد");
+}
+function formatNotificationCard(note,context={}){
+  const {info,audience,summary,details}=deriveNotificationInsights(note,context);
   return `<article class="card notification-card pro ${note.is_read?"":"unread"} tone-${info.tone}">
     <div class="notification-card-head">
       <span class="notification-icon-badge"><i data-lucide="${info.icon}"></i></span>
@@ -865,16 +964,17 @@ function formatNotificationCard(note){
       </div>
       <time class="notification-time">${dt(note.created_at)}</time>
     </div>
-    <p class="notification-summary">${esc(parsed.summary)}</p>
-    ${parsed.details.length?`<div class="notification-details-list">${parsed.details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
+    <p class="notification-summary">${esc(summary)}</p>
+    ${details.length?`<div class="notification-details-list">${details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
   </article>`;
 }
 function toastNotificationMessage(note){
-  const info=notificationTypeInfo(note?.type);
-  return `${note?.title||info.label} — ${notificationPreviewText(note)}`;
+  const {info,summary}=deriveNotificationInsights(note,{});
+  return `${note?.title||info.label} — ${summary||notificationPreviewText(note)}`;
 }
 async function showNotes(){
   if(!needUser())return;
+  const context=await loadNotificationContext();
   const {digital,social,finance,general}=notificationBuckets();
   const tabs=[
     {key:"digital",label:"المنتجات",icon:"package",items:digital,desc:"طلبات وتسليم المنتجات الرقمية"},
@@ -884,7 +984,7 @@ async function showNotes(){
   ];
   const unread=S.notes.filter(n=>!n.is_read).length;
   const total=S.notes.length;
-  const renderList=items=>items.length?`<div class="notification-cards-stack">${items.map(formatNotificationCard).join("")}</div>`:empty("لا توجد إشعارات","ستظهر هنا تفاصيل العمليات والإعلانات بشكل أوضح.","bell");
+  const renderList=items=>items.length?`<div class="notification-cards-stack">${items.map(note=>formatNotificationCard(note,context)).join("")}</div>`:empty("لا توجد إشعارات","ستظهر هنا تفاصيل العمليات والإعلانات بشكل أوضح.","bell");
   openModal(`<div class="sheet-head"><div><h2>الإشعارات</h2><p>كل إشعار يعرض ما حدث، متى حدث، وما المطلوب منك إن وُجد</p></div><button data-close>×</button></div>
     <section class="notes-hero-card">
       <div>
@@ -897,10 +997,7 @@ async function showNotes(){
       </div>
     </section>
     <div class="notes-summary-grid">${tabs.map((tab,i)=>`<button class="card note-summary-card ${tab.key} ${i===0?"active":""}" data-note-tab="${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></button>`).join("")}</div>
-    ${tabs.map((tab,i)=>`<section id="note${tab.key}" class="notification-pane ${i?"hidden":""}">
-      <div class="notification-pane-head"><div><h3>${tab.label}</h3><p>${tab.desc}</p></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>
-      ${renderList(tab.items)}
-    </section>`).join("")}`);
+    ${tabs.map((tab,i)=>`<section id="note${tab.key}" class="notification-pane ${i?"hidden":""}"><div class="notification-pane-head"><div><h3>${tab.label}</h3><p>${tab.desc}</p></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>${renderList(tab.items)}</section>`).join("")}`);
   $$("[data-note-tab]",modal).forEach(b=>b.onclick=()=>{
     $$("[data-note-tab]",modal).forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
