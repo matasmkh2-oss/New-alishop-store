@@ -789,7 +789,7 @@ function startAnnouncementRotation(){
     },4500);
   }
 }
-async function loadNotes(){S.notes=[];if(!S.user)return;const{data}=await supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50);S.notes=data||[]}
+async function loadNotes(){S.notes=[];if(!S.user)return;const[{data},{data:readRows}]=await Promise.all([supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50),supabase.from("notification_reads").select("notification_id")]);const readSet=new Set((readRows||[]).map(r=>r.notification_id));S.notes=(data||[]).map(n=>n.user_id===null&&readSet.has(n.id)?{...n,is_read:true}:n)}
 function updateHeader(){$("#notificationButton").classList.toggle("hidden",!S.user);const n=S.notes.filter(x=>!x.is_read).length;$("#notificationCount").textContent=n;$("#notificationCount").classList.toggle("hidden",!n)}
 function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();flashNotificationBell();navigator.vibrate?.([70,50,70]);toastNotificationMessage2(toastNotificationMessage(p.new));await loadNotes();updateHeader();flashNotificationBell()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts()}}).subscribe()}
 function notificationTypeInfo(type){
@@ -1024,11 +1024,12 @@ async function showNotes(){
     card.querySelector(".note-new-chip")?.remove();
   }));
   $("#markAllNotes",modal)?.addEventListener("click",async()=>{
-    const ids=S.notes.filter(n=>!n.is_read&&n.user_id===S.user.id).map(n=>n.id);
+    const ids=S.notes.filter(n=>!n.is_read).map(n=>n.id);
     $$(".notification-card",modal).forEach(card=>{card.classList.remove("unread");card.querySelector(".note-new-chip")?.remove();});
     $("#markAllNotes",modal)?.remove();
     if(!ids.length)return;
-    await supabase.from("notifications").update({is_read:true}).in("id",ids);
+    const{error}=await supabase.rpc("mark_notifications_read",{p_ids:ids});
+    if(error){console.error("mark read error:",error);toast("تعذر تعليم الإشعارات كمقروءة","error");return;}
     await loadNotes();
     updateHeader();
   });
