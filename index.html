@@ -18,6 +18,15 @@
   <h1>علي شوب</h1><p>جارٍ تجهيز تجربتك...</p>
   <div class="splash-progress"><span></span></div>
 </div>
+<script>
+/* ضمان ألا تعلق شاشة التحميل أبداً - مستقل عن app.js */
+(function(){
+  function hideSplash(){var s=document.getElementById("splash");if(s)s.classList.add("hide");}
+  window.addEventListener("load",function(){setTimeout(hideSplash,250);});
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(hideSplash,3500);});
+  setTimeout(hideSplash,4000);
+})();
+</script>
 <div id="announcementBar" class="announcement-bar hidden"></div>
 <div id="toastRoot" class="toast-root"></div>
 <header class="app-header">
