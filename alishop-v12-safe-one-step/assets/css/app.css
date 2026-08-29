@@ -486,27 +486,48 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 .user-sheet-item.tone-danger .usi-main,.user-sheet-item.tone-danger small,.user-sheet-item.tone-danger svg{color:#fff}
 
 /* notifications-rich-redesign */
-.notes-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}
-.note-summary-card{padding:14px;border-radius:16px;display:grid;gap:6px;text-align:center}
-.note-summary-card span{width:40px;height:40px;margin:auto;display:grid;place-items:center;border-radius:13px;background:var(--s2);color:var(--p)}
+.notes-hero-card{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:16px 18px;border:1px solid var(--b);border-radius:22px;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(14,165,233,.04));margin-bottom:14px}
+.notes-hero-card strong{display:block;font-size:16px;margin-bottom:6px}
+.notes-hero-card p{margin:0;color:var(--m);line-height:1.8}
+.notes-hero-chips{display:flex;flex-wrap:wrap;gap:8px}
+.notes-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.note-summary-card{padding:14px 12px;border-radius:18px;display:grid;gap:6px;text-align:center;border:1px solid var(--b);background:var(--card-bg);cursor:pointer;transition:.2s transform,.2s border-color,.2s box-shadow}
+.note-summary-card:hover{transform:translateY(-1px)}
+.note-summary-card.active{border-color:var(--p);box-shadow:0 12px 28px rgba(99,102,241,.14)}
+.note-summary-card span{width:42px;height:42px;margin:auto;display:grid;place-items:center;border-radius:14px;background:var(--s2);color:var(--p)}
 .note-summary-card strong{font-size:20px;line-height:1}
-.notes-actions-row{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.notification-card.rich,.admin-note-card{padding:16px;display:flex;gap:12px;align-items:flex-start}
-.notification-copy,.admin-note-main{flex:1;min-width:0}
+.note-summary-card small{color:var(--m);font-size:12px}
+.notification-pane{display:grid;gap:12px}
+.notification-pane-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:2px}
+.notification-pane-head h3{margin:0 0 4px;font-size:16px}
+.notification-pane-head p{margin:0;color:var(--m);line-height:1.7}
+.notification-cards-stack{display:grid;gap:12px}
+.notification-card.pro,.admin-note-card{padding:16px 16px 14px;border-radius:20px;border:1px solid var(--b);background:var(--card-bg);display:grid;gap:12px;box-shadow:0 10px 30px rgba(15,23,42,.04)}
+.notification-card.pro.unread{border-color:rgba(34,197,94,.35);box-shadow:0 14px 34px rgba(34,197,94,.08)}
+.notification-card-head{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start}
+.notification-icon-badge{width:48px;height:48px;border-radius:16px;display:grid;place-items:center;background:var(--s2);color:var(--p);flex:none}
+.notification-icon-badge svg{width:20px;height:20px}
+.notification-head-copy{min-width:0}
+.notification-kicker-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.notification-kicker{font-size:11px;font-weight:700;color:var(--m)}
+.notification-head-copy h3{margin:0;font-size:15px;line-height:1.7}
+.notification-time{font-size:11px;color:var(--m);white-space:nowrap}
+.notification-summary{margin:0;line-height:1.9;color:var(--t)}
+.notification-details-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.notification-details-list.compact{margin-top:10px}
+.notification-detail-item{padding:12px;border-radius:14px;background:var(--s2);border:1px solid var(--b)}
+.notification-detail-item small{display:block;margin-bottom:5px;color:var(--m);font-size:11px}
+.notification-detail-item strong{font-size:12.5px;line-height:1.8;color:var(--t);word-break:break-word}
+.notification-card.pro.tone-digital .notification-icon-badge,.admin-note-card.tone-digital .notification-icon{color:#2563eb;background:rgba(37,99,235,.10)}
+.notification-card.pro.tone-finance .notification-icon-badge,.admin-note-card.tone-finance .notification-icon{color:#0f9f9a;background:rgba(15,159,154,.10)}
+.notification-card.pro.tone-social .notification-icon-badge,.admin-note-card.tone-social .notification-icon{color:#7c3aed;background:rgba(124,58,237,.10)}
+.notification-card.pro.tone-general .notification-icon-badge,.admin-note-card.tone-general .notification-icon{color:#475569;background:rgba(71,85,105,.10)}
+.admin-notes-list{gap:12px}
+.admin-note-card{display:flex;gap:12px;align-items:flex-start}
+.admin-note-main{flex:1;min-width:0}
 .notification-top-row{display:flex;align-items:flex-start;gap:8px;justify-content:space-between;margin-bottom:7px}
 .notification-top-row h3{margin:0;font-size:15px;font-weight:800}
 .notification-meta-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
-.notification-summary{margin:0 0 10px;line-height:1.8;color:var(--t)}
-.notification-details-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.notification-details-list.compact{margin-top:10px}
-.notification-detail-item{padding:10px 12px;border-radius:12px;background:var(--s2);border:1px solid var(--b)}
-.notification-detail-item small{display:block;margin-bottom:4px;color:var(--m)}
-.notification-detail-item strong{font-size:12.5px;line-height:1.7;color:var(--t);word-break:break-word}
-.notification-card.rich.tone-finance .notification-icon,.admin-note-card.tone-finance .notification-icon{color:#0f9f9a;background:rgba(15,159,154,.10)}
-.notification-card.rich.tone-social .notification-icon,.admin-note-card.tone-social .notification-icon{color:#7c3aed;background:rgba(124,58,237,.10)}
-.notification-card.rich.tone-general .notification-icon,.admin-note-card.tone-general .notification-icon{color:#475569;background:rgba(71,85,105,.10)}
-.admin-notes-list{gap:12px}
-.admin-note-card .item-actions{align-self:flex-start}
 .rich-note-form{display:grid;gap:12px}
 .form-split-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-@media(max-width:720px){.notes-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.notification-details-list,.form-split-2{grid-template-columns:1fr}.notification-top-row{flex-direction:column;align-items:flex-start}.admin-note-card{flex-direction:column}}
+@media(max-width:720px){.notes-hero-card{flex-direction:column;align-items:flex-start}.notes-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.notification-pane-head,.notification-card-head{grid-template-columns:1fr;display:grid}.notification-time{white-space:normal}.notification-details-list,.form-split-2{grid-template-columns:1fr}.admin-note-card{flex-direction:column}}

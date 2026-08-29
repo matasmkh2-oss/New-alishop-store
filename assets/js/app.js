@@ -823,13 +823,27 @@ function parseNotificationBody(body=""){
     if(parts.length>=2){
       const key=parts.shift().trim();
       const value=parts.join(":").trim();
-      if(key&&value)details.push({key,value});
+      if(!key||!value)continue;
+      if(key==="الملخص"){
+        if(!summary)summary=value;
+        continue;
+      }
+      if(key==="وقت الإرسال")continue;
+      details.push({key,value});
     }else if(!summary) summary=line;
     else details.push({key:"معلومة إضافية",value:line});
   }
   if(!summary)summary=details[0]?.value||raw;
-  if(details[0]?.key==="الملخص")summary=details[0].value;
-  return {summary,details};
+  const seen=new Set();
+  const cleaned=details.filter(item=>{
+    if(!item?.key||!item?.value)return false;
+    if(item.value===summary)return false;
+    const sig=`${item.key}::${item.value}`;
+    if(seen.has(sig))return false;
+    seen.add(sig);
+    return true;
+  });
+  return {summary,details:cleaned};
 }
 function notificationPreviewText(note){
   const parsed=parseNotificationBody(note?.body||"");
@@ -838,22 +852,21 @@ function notificationPreviewText(note){
 function formatNotificationCard(note){
   const info=notificationTypeInfo(note.type);
   const parsed=parseNotificationBody(note.body);
-  const scope=note.user_id?"موجه لحسابك":"إشعار عام";
-  return `<article class="card notification-card rich ${note.is_read?"":"unread"} tone-${info.tone}">
-    <div class="notification-icon"><i data-lucide="${info.icon}"></i></div>
-    <div class="notification-copy">
-      <div class="notification-top-row">
+  const audience=note.user_id?"خاص بحسابك":"عام لكل المستخدمين";
+  return `<article class="card notification-card pro ${note.is_read?"":"unread"} tone-${info.tone}">
+    <div class="notification-card-head">
+      <span class="notification-icon-badge"><i data-lucide="${info.icon}"></i></span>
+      <div class="notification-head-copy">
+        <div class="notification-kicker-row">
+          <span class="notification-kicker">${esc(audience)}</span>
+          ${note.is_read?"":"<span class=\"mini-chip positive\">جديد</span>"}
+        </div>
         <h3>${esc(note.title||"إشعار")}</h3>
-        ${note.is_read?'':'<span class="mini-chip positive">جديد</span>'}
       </div>
-      <div class="notification-meta-row">
-        <span class="mini-chip neutral">${info.label}</span>
-        <span class="mini-chip neutral">${scope}</span>
-        <span class="mini-chip neutral">${dt(note.created_at)}</span>
-      </div>
-      <p class="notification-summary">${esc(parsed.summary)}</p>
-      ${parsed.details.length?`<div class="notification-details-list">${parsed.details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
+      <time class="notification-time">${dt(note.created_at)}</time>
     </div>
+    <p class="notification-summary">${esc(parsed.summary)}</p>
+    ${parsed.details.length?`<div class="notification-details-list">${parsed.details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
   </article>`;
 }
 function toastNotificationMessage(note){
@@ -864,18 +877,30 @@ async function showNotes(){
   if(!needUser())return;
   const {digital,social,finance,general}=notificationBuckets();
   const tabs=[
-    {key:"digital",label:"المنتجات",icon:"package",items:digital},
-    {key:"social",label:"السوشل",icon:"messages-square",items:social},
-    {key:"finance",label:"المالية",icon:"wallet-cards",items:finance},
-    {key:"general",label:"عامة",icon:"bell",items:general}
+    {key:"digital",label:"المنتجات",icon:"package",items:digital,desc:"طلبات وتسليم المنتجات الرقمية"},
+    {key:"social",label:"السوشل",icon:"messages-square",items:social,desc:"طلبات منصات التواصل والخدمات"},
+    {key:"finance",label:"المالية",icon:"wallet-cards",items:finance,desc:"الرصيد والشحن والاسترداد"},
+    {key:"general",label:"العامة",icon:"bell",items:general,desc:"إعلانات وتنبيهات عامة"}
   ];
   const unread=S.notes.filter(n=>!n.is_read).length;
-  const renderList=items=>items.length?items.map(formatNotificationCard).join(""):empty("لا توجد إشعارات","ستظهر هنا كل تفاصيل العمليات الجديدة.","bell");
-  openModal(`<div class="sheet-head"><div><h2>الإشعارات</h2><p>تفاصيل أوضح لكل عملية بدل الرسائل المختصرة المبهمة</p></div><button data-close>×</button></div>
-    <div class="notes-summary-grid">${tabs.map(tab=>`<div class="card note-summary-card ${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></div>`).join("")}</div>
-    <div class="notes-actions-row"><span class="mini-chip ${unread?"positive":"neutral"}">${unread} غير مقروء</span></div>
-    <div class="tabs notification-tabs">${tabs.map((tab,i)=>`<button class="tab ${i===0?"active":""}" data-note-tab="${tab.key}"><i data-lucide="${tab.icon}"></i> ${tab.label} <span>${tab.items.length}</span></button>`).join("")}</div>
-    ${tabs.map((tab,i)=>`<div id="note${tab.key}" class="list ${i?"hidden":""}">${renderList(tab.items)}</div>`).join("")}`);
+  const total=S.notes.length;
+  const renderList=items=>items.length?`<div class="notification-cards-stack">${items.map(formatNotificationCard).join("")}</div>`:empty("لا توجد إشعارات","ستظهر هنا تفاصيل العمليات والإعلانات بشكل أوضح.","bell");
+  openModal(`<div class="sheet-head"><div><h2>الإشعارات</h2><p>كل إشعار يعرض ما حدث، متى حدث، وما المطلوب منك إن وُجد</p></div><button data-close>×</button></div>
+    <section class="notes-hero-card">
+      <div>
+        <strong>مركز الإشعارات</strong>
+        <p>متابعة أوضح لجميع العمليات بدون تكرار أو عناصر مشتتة.</p>
+      </div>
+      <div class="notes-hero-chips">
+        <span class="mini-chip neutral">${total} إجمالي</span>
+        <span class="mini-chip ${unread?"positive":"neutral"}">${unread} جديد</span>
+      </div>
+    </section>
+    <div class="notes-summary-grid">${tabs.map((tab,i)=>`<button class="card note-summary-card ${tab.key} ${i===0?"active":""}" data-note-tab="${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></button>`).join("")}</div>
+    ${tabs.map((tab,i)=>`<section id="note${tab.key}" class="notification-pane ${i?"hidden":""}">
+      <div class="notification-pane-head"><div><h3>${tab.label}</h3><p>${tab.desc}</p></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>
+      ${renderList(tab.items)}
+    </section>`).join("")}`);
   $$("[data-note-tab]",modal).forEach(b=>b.onclick=()=>{
     $$("[data-note-tab]",modal).forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
