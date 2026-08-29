@@ -500,6 +500,17 @@ function notificationPreviewText(note){
   const parsed=parseNotificationBody(note?.body||"");
   return parsed.summary||String(note?.title||"إشعار جديد");
 }
+function relativeTime(value){
+  if(!value)return"";
+  const diff=Date.now()-new Date(value).getTime();
+  const mins=Math.max(1,Math.round(diff/60000));
+  if(mins<60)return`منذ ${mins} د`;
+  const hours=Math.round(mins/60);
+  if(hours<24)return`منذ ${hours} س`;
+  const days=Math.round(hours/24);
+  if(days<30)return`منذ ${days} يوم`;
+  return dt(value);
+}
 function formatNotificationCard(note,context={}){
   const {info,audience,summary,details}=deriveNotificationInsights(note,context);
   return `<article class="card notification-card pro ${note.is_read?"":"unread"} tone-${info.tone}">
@@ -512,7 +523,7 @@ function formatNotificationCard(note,context={}){
         </div>
         <h3>${esc(note.title||"إشعار")}</h3>
       </div>
-      <time class="notification-time">${dt(note.created_at)}</time>
+      <time class="notification-time">${relativeTime(note.created_at)}</time>
     </div>
     <p class="notification-summary">${esc(summary)}</p>
     ${details.length?`<div class="notification-details-list">${details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
@@ -534,24 +545,27 @@ async function showNotes(){
   ];
   const unread=S.notes.filter(n=>!n.is_read).length;
   const total=S.notes.length;
+  const activeKey=tabs.find(t=>t.items.some(n=>!n.is_read))?.key||"digital";
   const renderList=items=>items.length?`<div class="notification-cards-stack">${items.map(note=>formatNotificationCard(note,context)).join("")}</div>`:empty("لا توجد إشعارات","ستظهر هنا تفاصيل العمليات والإعلانات بشكل أوضح.","bell");
-  openModal(`<div class="sheet-head notes-modal-head"><div><h2>الإشعارات</h2><p>كل إشعار يعرض ما حدث، متى حدث، وما المطلوب منك إن وُجد</p></div><button data-close>×</button></div>
-    <div class="notes-top">
-      <div class="notes-counts"><span class="mini-chip neutral">${total} إجمالي</span><span class="mini-chip ${unread?"positive":"neutral"}">${unread} جديد</span></div>
-      <div class="notes-summary-grid">${tabs.map((tab,i)=>`<button class="note-summary-card ${tab.key} ${i===0?"active":""}" data-note-tab="${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></button>`).join("")}</div>
-    </div>
-    <div class="notes-body">${tabs.map((tab,i)=>`<section id="note${tab.key}" class="notification-pane ${i?"hidden":""}"><div class="notification-pane-head"><div><h3>${tab.label}</h3><p>${tab.desc}</p></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>${renderList(tab.items)}</section>`).join("")}</div>`);
+  openModal(`<div class="sheet-head notes-modal-head"><div><h2>الإشعارات</h2><p>${total} إجمالي • ${unread} غير مقروء</p></div><div class="notes-head-actions">${unread?`<button id="markAllNotes" type="button" class="notes-readall-btn"><i data-lucide="check-check"></i> قراءة الكل</button>`:""}<button data-close>×</button></div></div>
+    <div class="notes-top"><div class="notes-summary-grid notes-chips-slider">${tabs.map(tab=>`<button class="note-summary-card ${tab.key} ${tab.key===activeKey?"active":""}" data-note-tab="${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></button>`).join("")}</div></div>
+    <div class="notes-body">${tabs.map(tab=>`<section id="note${tab.key}" class="notification-pane ${tab.key===activeKey?"":"hidden"}"><div class="notification-pane-head"><div><h3>${tab.label}</h3></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>${renderList(tab.items)}</section>`).join("")}</div>`);
+  $(`[data-note-tab="${activeKey}"]`,modal)?.scrollIntoView({inline:"center",block:"nearest"});
   $$("[data-note-tab]",modal).forEach(b=>b.onclick=()=>{
     $$("[data-note-tab]",modal).forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
     tabs.forEach(tab=>$("#note"+tab.key,modal).classList.toggle("hidden",b.dataset.noteTab!==tab.key));
+    b.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"});
   });
-  const ids=S.notes.filter(n=>!n.is_read&&n.user_id===S.user.id).map(n=>n.id);
-  if(ids.length){
+  $("#markAllNotes",modal)?.addEventListener("click",async()=>{
+    const ids=S.notes.filter(n=>!n.is_read&&n.user_id===S.user.id).map(n=>n.id);
+    if(!ids.length)return;
     await supabase.from("notifications").update({is_read:true}).in("id",ids);
     await loadNotes();
     updateHeader();
-  }
+    closeModal();
+    showNotes();
+  });
   refreshIcons();
 }
 function route(){const r=location.hash.replace("#/","").split("?")[0]||"home";$$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));$("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home)();setTimeout(refreshIcons,0)}
