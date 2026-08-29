@@ -946,10 +946,6 @@ function notificationPreviewText(note){
   const parsed=parseNotificationBody(note?.body||"");
   return parsed.summary||String(note?.title||"إشعار جديد");
 }
-function notificationPreviewText(note){
-  const parsed=parseNotificationBody(note?.body||"");
-  return parsed.summary||String(note?.title||"إشعار جديد");
-}
 function formatNotificationCard(note,context={}){
   const {info,audience,summary,details}=deriveNotificationInsights(note,context);
   return `<article class="card notification-card pro ${note.is_read?"":"unread"} tone-${info.tone}">
