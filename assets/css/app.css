@@ -1159,3 +1159,24 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 .auth-grid-main{margin-top:2px}
 .auth-switch{margin-top:8px;font-weight:800}
 @media(max-width:520px){.auth-mark{width:46px;height:46px;border-radius:16px;font-size:21px}.auth-head h2{font-size:21px}.auth-grid{grid-template-columns:1fr}.auth-google-btn{padding:13px 14px;border-radius:16px}}
+
+/* user-card-actions-redesign */
+.admin-user-actions{display:flex;align-items:center;gap:7px;flex-wrap:nowrap}
+.admin-user-actions .user-details-btn{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px}
+.admin-user-actions .whatsapp-btn{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:12.5px;background:#20b65a!important;border-color:#20b65a!important;color:#fff!important}
+.admin-user-actions .whatsapp-btn svg,.admin-user-actions .user-details-btn svg{width:16px;height:16px}
+.user-more-wrap{position:relative;display:inline-block}
+.user-more-btn{width:38px;height:38px;border-radius:13px!important;border:1px solid var(--control-border,var(--b));background:var(--control-bg-strong,var(--s))!important;display:inline-grid;place-items:center;cursor:pointer}
+.user-more-btn svg{width:18px;height:18px}
+.user-more-menu{position:absolute;top:calc(100% + 6px);inset-inline-end:0;z-index:300;min-width:210px;padding:6px;border-radius:14px;border:1px solid var(--b);background:var(--s);box-shadow:0 14px 34px rgba(10,10,30,.18)}
+.user-more-menu.hidden{display:none}
+.user-menu-item{display:flex;align-items:center;gap:9px;width:100%;padding:10px 12px;border:0;background:transparent;border-radius:10px;font-size:13px;font-weight:700;color:var(--t);cursor:pointer;text-align:start}
+.user-menu-item:hover{background:rgba(105,88,245,.08)}
+.user-menu-item svg{width:17px;height:17px;flex:0 0 auto}
+.user-menu-item.tone-info{color:#7c3aed}
+.user-menu-item.tone-wallet{color:#0f9f9a}
+.user-menu-item.tone-role{color:#6958f5}
+.user-menu-item.tone-warn{color:#d97706}
+.user-menu-item.tone-danger{color:#fff;background:var(--bad);margin-top:4px}
+.user-menu-item.tone-danger:hover{background:var(--bad);filter:brightness(1.07)}
+@media(max-width:520px){.admin-user-actions .user-details-btn span,.admin-user-actions .whatsapp-btn span{display:none}.admin-user-actions .whatsapp-btn,.admin-user-actions .user-details-btn{width:38px;height:38px;justify-content:center;padding:0!important}.user-more-menu{min-width:200px}}

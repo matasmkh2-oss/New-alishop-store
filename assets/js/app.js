@@ -1600,6 +1600,13 @@ async function adminUsers(){
   $("#adminContent").innerHTML=`${adminHeader("المستخدمون","قائمة مختصرة أنيقة مع إجراءات سريعة",`<button id="exportUsers" class="btn soft">تصدير CSV</button>`)}
     <div class="list admin-users-list">${r.map(u=>{
       const protectedAdmin=isPrimaryAdmin(u.id),balance=walletBalanceOf(u),phoneDigits=String(u.phone||"").replace(/\D/g,"");
+      const statusIcon=u.status==="blocked"?"unlock":"ban",statusLabel=u.status==="blocked"?"فك الحظر":"حظر المستخدم";
+      const whatsappBtn=phoneDigits?`<a class="btn whatsapp-btn" href="https://wa.me/${phoneDigits}" target="_blank" title="مراسلة عبر واتساب" aria-label="مراسلة عبر واتساب"><i data-lucide="message-circle"></i><span>واتساب</span></a>`:"";
+      const resetItem=u.email?`<button class="user-menu-item tone-info" data-user-reset-email="${esc(u.email)}"><i data-lucide="key-round"></i><span>إعادة تعيين كلمة المرور</span></button>`:"";
+      const walletItem=`<button class="user-menu-item tone-wallet" data-user-wallet="${u.id}"><i data-lucide="wallet-cards"></i><span>تعديل الرصيد</span></button>`;
+      const roleItem=protectedAdmin?"":`<button class="user-menu-item tone-role" data-user-role="${u.id}"><i data-lucide="shield"></i><span>تغيير الدور</span></button>`;
+      const statusItem=protectedAdmin?"":`<button class="user-menu-item tone-warn" data-user-status="${u.id}" data-current="${u.status}"><i data-lucide="${statusIcon}"></i><span>${statusLabel}</span></button>`;
+      const deleteItem=protectedAdmin?"":`<button class="user-menu-item tone-danger" data-user-delete="${u.id}"><i data-lucide="trash-2"></i><span>حذف المستخدم</span></button>`;
       return `<article class="card item admin-user-card compact">
         <div class="admin-user-summary">
           <div class="admin-user-avatar">${esc((u.full_name||"م").trim().charAt(0)||"م")}</div>
@@ -1608,14 +1615,12 @@ async function adminUsers(){
             <div class="admin-user-badges">${protectedAdmin?`<span class="badge success">المدير الأساسي</span>`:""}${badge(u.status)}<span class="mini-chip ${balance>0?"positive":"neutral"}">${money(balance)}</span></div>
           </div>
         </div>
-        <div class="admin-user-actions">
-          ${iconButton("info","تفاصيل المستخدم",`data-user-details="${u.id}"`)}
-          ${phoneDigits?`<a class="icon-action whatsapp-btn" href="https://wa.me/${phoneDigits}" target="_blank" title="واتساب" aria-label="واتساب"><i data-lucide="message-circle"></i></a>`:""}
-          ${u.email?iconButton("key-round","إرسال رابط إعادة تعيين كلمة المرور",`data-user-reset-email="${esc(u.email)}"`):""}
-          ${iconButton("wallet-cards","تعديل الرصيد",`data-user-wallet="${u.id}"`)}
-          ${protectedAdmin?"":iconButton("shield","تغيير الدور",`data-user-role="${u.id}"`)}
-          ${protectedAdmin?"":iconButton(u.status==="blocked"?"unlock":"ban",u.status==="blocked"?"فك الحظر":"حظر",`data-user-status="${u.id}" data-current="${u.status}"`)}
-          ${protectedAdmin?"":iconButton("trash-2","حذف المستخدم",`data-user-delete="${u.id}"`)}
+                <div class="admin-user-actions">
+          <button class="btn soft user-details-btn" data-user-details="${u.id}"><i data-lucide="info"></i><span>التفاصيل</span></button>
+          ${whatsappBtn}
+          <div class="user-more-wrap"><button class="icon-action user-more-btn" title="إجراءات أخرى" aria-label="إجراءات أخرى" aria-haspopup="true" data-user-more="${u.id}"><i data-lucide="ellipsis-vertical"></i></button>
+            <div class="user-more-menu hidden" data-user-menu="${u.id}">${resetItem}${walletItem}${roleItem}${statusItem}${deleteItem}</div>
+          </div>
         </div>
       </article>`}).join("")||empty("لا يوجد مستخدمون")}</div>
     ${pager(S.page,rows.length,CONFIG.PAGE_SIZE)}`;
@@ -1623,6 +1628,8 @@ async function adminUsers(){
   bindPager(adminUsers);
   $("#exportUsers").onclick=()=>exportCsv("profiles","users.csv");
   $$("[data-user-details]").forEach(b=>b.onclick=()=>showUserDetails(rows.find(u=>String(u.id)===String(b.dataset.userDetails))));
+  $$("[data-user-more]").forEach(b=>b.onclick=e=>{e.stopPropagation();const menu=$(`[data-user-menu="${b.dataset.userMore}"]`);const wasHidden=menu.classList.contains("hidden");$$(".user-more-menu").forEach(m=>m.classList.add("hidden"));if(wasHidden)menu.classList.remove("hidden")});
+  if(!window.__userMenuDocBound){window.__userMenuDocBound=true;document.addEventListener("click",()=>$$(".user-more-menu").forEach(m=>m.classList.add("hidden")))}
   $$("[data-user-reset-email]").forEach(b=>b.onclick=()=>sendPasswordReset(b.dataset.userResetEmail));
   $$("[data-user-wallet]").forEach(b=>b.onclick=()=>adjustWallet(b.dataset.userWallet));
   $$("[data-user-role]").forEach(b=>b.onclick=()=>changeRole(b.dataset.userRole));
