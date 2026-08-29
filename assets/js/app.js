@@ -861,8 +861,7 @@ function extractNotificationClues(note){
   const raw=`${note?.title||""}
 ${note?.body||""}`;
   const orderNumber=(raw.match(/ORD[-\w]+/i)||[])[0]||"";
-  const transferRef=(raw.match(/(?:المرجع|رقم التحويل)\s*[:：]\s*([^
-]+)/)||[])[1]?.trim()||"";
+  const transferRef=(raw.match(/(?:المرجع|رقم التحويل)\s*[:：]\s*([^\n]+)/)||[])[1]?.trim()||"";
   return {raw,orderNumber,transferRef};
 }
 function findNearestByTime(list,noteTime,predicate=()=>true,maxHours=72){
