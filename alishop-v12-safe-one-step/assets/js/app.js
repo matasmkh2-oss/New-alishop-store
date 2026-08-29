@@ -535,19 +535,12 @@ async function showNotes(){
   const unread=S.notes.filter(n=>!n.is_read).length;
   const total=S.notes.length;
   const renderList=items=>items.length?`<div class="notification-cards-stack">${items.map(note=>formatNotificationCard(note,context)).join("")}</div>`:empty("لا توجد إشعارات","ستظهر هنا تفاصيل العمليات والإعلانات بشكل أوضح.","bell");
-  openModal(`<div class="sheet-head"><div><h2>الإشعارات</h2><p>كل إشعار يعرض ما حدث، متى حدث، وما المطلوب منك إن وُجد</p></div><button data-close>×</button></div>
-    <section class="notes-hero-card">
-      <div>
-        <strong>مركز الإشعارات</strong>
-        <p>متابعة أوضح لجميع العمليات بدون تكرار أو عناصر مشتتة.</p>
-      </div>
-      <div class="notes-hero-chips">
-        <span class="mini-chip neutral">${total} إجمالي</span>
-        <span class="mini-chip ${unread?"positive":"neutral"}">${unread} جديد</span>
-      </div>
-    </section>
-    <div class="notes-summary-grid">${tabs.map((tab,i)=>`<button class="card note-summary-card ${tab.key} ${i===0?"active":""}" data-note-tab="${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></button>`).join("")}</div>
-    ${tabs.map((tab,i)=>`<section id="note${tab.key}" class="notification-pane ${i?"hidden":""}"><div class="notification-pane-head"><div><h3>${tab.label}</h3><p>${tab.desc}</p></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>${renderList(tab.items)}</section>`).join("")}`);
+  openModal(`<div class="sheet-head notes-modal-head"><div><h2>الإشعارات</h2><p>كل إشعار يعرض ما حدث، متى حدث، وما المطلوب منك إن وُجد</p></div><button data-close>×</button></div>
+    <div class="notes-top">
+      <div class="notes-counts"><span class="mini-chip neutral">${total} إجمالي</span><span class="mini-chip ${unread?"positive":"neutral"}">${unread} جديد</span></div>
+      <div class="notes-summary-grid">${tabs.map((tab,i)=>`<button class="note-summary-card ${tab.key} ${i===0?"active":""}" data-note-tab="${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></button>`).join("")}</div>
+    </div>
+    <div class="notes-body">${tabs.map((tab,i)=>`<section id="note${tab.key}" class="notification-pane ${i?"hidden":""}"><div class="notification-pane-head"><div><h3>${tab.label}</h3><p>${tab.desc}</p></div><span class="mini-chip neutral">${tab.items.length} إشعار</span></div>${renderList(tab.items)}</section>`).join("")}</div>`);
   $$("[data-note-tab]",modal).forEach(b=>b.onclick=()=>{
     $$("[data-note-tab]",modal).forEach(x=>x.classList.remove("active"));
     b.classList.add("active");

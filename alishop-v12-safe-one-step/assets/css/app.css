@@ -490,7 +490,11 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 .notes-hero-card strong{display:block;font-size:16px;margin-bottom:6px}
 .notes-hero-card p{margin:0;color:var(--m);line-height:1.8}
 .notes-hero-chips{display:flex;flex-wrap:wrap;gap:8px}
-.notes-summary-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.notes-modal-head{position:sticky;top:-10px;z-index:40;padding-top:10px;background:var(--s);margin-bottom:8px}
+.notes-top{position:sticky;top:52px;z-index:30;padding:6px 0 10px;background:var(--s)}
+.notes-counts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.notes-body{display:grid;gap:12px}
+.notes-summary-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:0}
 .note-summary-card{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:12px;border:1px solid var(--b);background:var(--card-bg);cursor:pointer;font-family:inherit;transition:.15s border-color,.15s background}
 .note-summary-card:hover{border-color:var(--p)}
 .note-summary-card.active{border-color:var(--p);background:var(--s2)}
