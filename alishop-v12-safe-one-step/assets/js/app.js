@@ -344,19 +344,105 @@ async function loadIdentity(){S.profile=null;S.wallet={balance:0};if(!S.user)ret
 async function loadPublic(){const[{data:s},{data:a},{data:st}]=await Promise.all([supabase.from("store_slides").select("*").eq("is_active",true).order("sort_order"),supabase.from("announcements").select("*").eq("is_active",true).eq("kind","bar").order("created_at",{ascending:false}).limit(1),supabase.from("store_settings").select("*").limit(1).maybeSingle()]);S.slides=s||[];S.settings=st||{};applyBranding();renderFloatingContacts();const bar=$("#announcementBar");if(a?.[0]){bar.innerHTML=`${esc(a[0].message)}<button>×</button>`;bar.classList.remove("hidden");bar.classList.remove("news-enter");void bar.offsetWidth;bar.classList.add("news-enter");bar.querySelector("button").onclick=()=>bar.classList.add("hidden")}else bar.classList.add("hidden")}
 async function loadNotes(){S.notes=[];if(!S.user)return;const{data}=await supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50);S.notes=data||[]}
 function updateHeader(){$("#notificationButton").classList.toggle("hidden",!S.user);const n=S.notes.filter(x=>!x.is_read).length;$("#notificationCount").textContent=n;$("#notificationCount").classList.toggle("hidden",!n)}
-function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();toast(p.new.title);await loadNotes();updateHeader()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts()}}).subscribe()}
+function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();toast(toastNotificationMessage(p.new));await loadNotes();updateHeader()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts()}}).subscribe()}
+function notificationTypeInfo(type){
+  const map={
+    order:{label:"طلب رقمي",icon:"package",tone:"digital"},
+    social_order:{label:"طلب سوشل",icon:"messages-square",tone:"social"},
+    wallet:{label:"محفظة",icon:"wallet-cards",tone:"finance"},
+    deposit:{label:"شحن رصيد",icon:"badge-dollar-sign",tone:"finance"},
+    refund:{label:"استرداد",icon:"rotate-ccw",tone:"finance"},
+    recharge:{label:"بطاقة شحن",icon:"ticket-percent",tone:"finance"},
+    announcement:{label:"إعلان",icon:"megaphone",tone:"general"},
+    manual:{label:"إشعار يدوي",icon:"bell-ring",tone:"general"}
+  };
+  return map[type]||{label:"إشعار",icon:"bell",tone:"general"};
+}
+function notificationBuckets(){
+  const notes=S.notes||[];
+  const digital=notes.filter(n=>n.type==="order"&&!String(n.body||"").includes("السوشل"));
+  const social=notes.filter(n=>n.type==="social_order"||String(n.title||"").includes("السوشل")||String(n.body||"").includes("السوشل"));
+  const finance=notes.filter(n=>["wallet","deposit","refund","recharge"].includes(n.type));
+  const general=notes.filter(n=>!digital.includes(n)&&!social.includes(n)&&!finance.includes(n));
+  return {digital,social,finance,general};
+}
+function parseNotificationBody(body=""){
+  const raw=String(body||"").trim();
+  if(!raw)return {summary:"لا توجد تفاصيل إضافية.",details:[]};
+  const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  if(lines.length===1&&!lines[0].includes(":"))return {summary:lines[0],details:[]};
+  const details=[];
+  let summary="";
+  for(const line of lines){
+    const parts=line.split(/[:：]/);
+    if(parts.length>=2){
+      const key=parts.shift().trim();
+      const value=parts.join(":").trim();
+      if(key&&value)details.push({key,value});
+    }else if(!summary) summary=line;
+    else details.push({key:"معلومة إضافية",value:line});
+  }
+  if(!summary)summary=details[0]?.value||raw;
+  if(details[0]?.key==="الملخص")summary=details[0].value;
+  return {summary,details};
+}
+function notificationPreviewText(note){
+  const parsed=parseNotificationBody(note?.body||"");
+  return parsed.summary||String(note?.title||"إشعار جديد");
+}
+function formatNotificationCard(note){
+  const info=notificationTypeInfo(note.type);
+  const parsed=parseNotificationBody(note.body);
+  const scope=note.user_id?"موجه لحسابك":"إشعار عام";
+  return `<article class="card notification-card rich ${note.is_read?"":"unread"} tone-${info.tone}">
+    <div class="notification-icon"><i data-lucide="${info.icon}"></i></div>
+    <div class="notification-copy">
+      <div class="notification-top-row">
+        <h3>${esc(note.title||"إشعار")}</h3>
+        ${note.is_read?'':'<span class="mini-chip positive">جديد</span>'}
+      </div>
+      <div class="notification-meta-row">
+        <span class="mini-chip neutral">${info.label}</span>
+        <span class="mini-chip neutral">${scope}</span>
+        <span class="mini-chip neutral">${dt(note.created_at)}</span>
+      </div>
+      <p class="notification-summary">${esc(parsed.summary)}</p>
+      ${parsed.details.length?`<div class="notification-details-list">${parsed.details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
+    </div>
+  </article>`;
+}
+function toastNotificationMessage(note){
+  const info=notificationTypeInfo(note?.type);
+  return `${note?.title||info.label} — ${notificationPreviewText(note)}`;
+}
 async function showNotes(){
   if(!needUser())return;
-  const digital=S.notes.filter(n=>n.type==="order"&&!String(n.body||"").includes("السوشل"));
-  const social=S.notes.filter(n=>n.type==="social_order"||String(n.title||"").includes("السوشل")||String(n.body||"").includes("السوشل"));
-  const finance=S.notes.filter(n=>["wallet","deposit","refund","recharge"].includes(n.type));
-  const general=S.notes.filter(n=>!digital.includes(n)&&!social.includes(n)&&!finance.includes(n));
-  const render=(list,icon)=>list.length?list.map(n=>`<div class="card notification-card ${n.is_read?"":"unread"}"><div class="notification-icon"><i data-lucide="${icon}"></i></div><div class="item-main"><h3>${esc(n.title)}</h3><p>${esc(n.body)}</p><small>${dt(n.created_at)}</small></div></div>`).join(""):empty("لا توجد إشعارات");
-  openModal(`<div class="sheet-head"><div><h2>الإشعارات</h2><p>مقسمة حسب نوع الطلب والحركة</p></div><button data-close>×</button></div>
-  <div class="tabs notification-tabs"><button class="tab active" data-note-tab="digital"><i data-lucide="package"></i> المنتجات <span>${digital.length}</span></button><button class="tab" data-note-tab="social"><i data-lucide="messages-square"></i> السوشل <span>${social.length}</span></button><button class="tab" data-note-tab="finance"><i data-lucide="wallet-cards"></i> المالية <span>${finance.length}</span></button><button class="tab" data-note-tab="general"><i data-lucide="bell"></i> عامة <span>${general.length}</span></button></div>
-  <div id="noteDigital" class="list">${render(digital,"package")}</div><div id="noteSocial" class="list hidden">${render(social,"messages-square")}</div><div id="noteFinance" class="list hidden">${render(finance,"wallet-cards")}</div><div id="noteGeneral" class="list hidden">${render(general,"bell")}</div>`);
-  $$("[data-note-tab]",modal).forEach(b=>b.onclick=()=>{$$("[data-note-tab]",modal).forEach(x=>x.classList.remove("active"));b.classList.add("active");["Digital","Social","Finance","General"].forEach(x=>$(`#note${x}`,modal).classList.toggle("hidden",b.dataset.noteTab!==x.toLowerCase()))});
-  const ids=S.notes.filter(n=>!n.is_read&&n.user_id===S.user.id).map(n=>n.id);if(ids.length){await supabase.from("notifications").update({is_read:true}).in("id",ids);await loadNotes();updateHeader()}refreshIcons();
+  const {digital,social,finance,general}=notificationBuckets();
+  const tabs=[
+    {key:"digital",label:"المنتجات",icon:"package",items:digital},
+    {key:"social",label:"السوشل",icon:"messages-square",items:social},
+    {key:"finance",label:"المالية",icon:"wallet-cards",items:finance},
+    {key:"general",label:"عامة",icon:"bell",items:general}
+  ];
+  const unread=S.notes.filter(n=>!n.is_read).length;
+  const renderList=items=>items.length?items.map(formatNotificationCard).join(""):empty("لا توجد إشعارات","ستظهر هنا كل تفاصيل العمليات الجديدة.","bell");
+  openModal(`<div class="sheet-head"><div><h2>الإشعارات</h2><p>تفاصيل أوضح لكل عملية بدل الرسائل المختصرة المبهمة</p></div><button data-close>×</button></div>
+    <div class="notes-summary-grid">${tabs.map(tab=>`<div class="card note-summary-card ${tab.key}"><span><i data-lucide="${tab.icon}"></i></span><strong>${tab.items.length}</strong><small>${tab.label}</small></div>`).join("")}</div>
+    <div class="notes-actions-row"><span class="mini-chip ${unread?"positive":"neutral"}">${unread} غير مقروء</span></div>
+    <div class="tabs notification-tabs">${tabs.map((tab,i)=>`<button class="tab ${i===0?"active":""}" data-note-tab="${tab.key}"><i data-lucide="${tab.icon}"></i> ${tab.label} <span>${tab.items.length}</span></button>`).join("")}</div>
+    ${tabs.map((tab,i)=>`<div id="note${tab.key}" class="list ${i?"hidden":""}">${renderList(tab.items)}</div>`).join("")}`);
+  $$("[data-note-tab]",modal).forEach(b=>b.onclick=()=>{
+    $$("[data-note-tab]",modal).forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    tabs.forEach(tab=>$("#note"+tab.key,modal).classList.toggle("hidden",b.dataset.noteTab!==tab.key));
+  });
+  const ids=S.notes.filter(n=>!n.is_read&&n.user_id===S.user.id).map(n=>n.id);
+  if(ids.length){
+    await supabase.from("notifications").update({is_read:true}).in("id",ids);
+    await loadNotes();
+    updateHeader();
+  }
+  refreshIcons();
 }
 function route(){const r=location.hash.replace("#/","").split("?")[0]||"home";$$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));$("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home)();setTimeout(refreshIcons,0)}
 async function catalog(){const[{data:p},{data:c}]=await Promise.all([supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),supabase.from("categories").select("*").eq("is_active",true).order("sort_order")]);S.products=p||[];S.categories=c||[]}
@@ -809,131 +895,89 @@ function slideForm(s=null){openModal(`<div class="sheet-head"><h2>${s?"تعدي�
 function previewSlide(s){openModal(`<div class="sheet-head"><h2>معاينة السلايد</h2><button data-close>×</button></div><section class="slide active" style="${s.image_url?`background-image:linear-gradient(90deg,rgba(23,19,55,.72),rgba(23,19,55,.25)),url('${esc(s.image_url)}')`:""}"><div class="slide-overlay"><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><span class="btn primary">${esc(s.button_text||"استكشف")}</span></div></section>`)}
 async function adminAnnouncements(){const{data,count}=await listQuery("announcements","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,message.ilike.%${S.query}%`);if(S.filter)q=q.eq("kind",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإعلانات","شريط علوي وإعلانات عامة",`<button id="addAnnouncement" class="btn primary">إضافة إعلان</button>`)}<div class="list">${r.map(a=>`<div class="card item"><div class="item-main"><h3>${esc(a.title||"إعلان")}</h3><p>${esc(a.message)} • ${a.kind}</p></div><div class="item-actions">${a.is_active?badge("active"):badge("blocked")}<button class="small" data-ann-edit="${a.id}">تعديل</button><button class="danger" data-ann-delete="${a.id}">حذف</button></div></div>`).join("")||empty("لا توجد إعلانات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminAnnouncements,[["bar","شريط علوي"],["notification","إشعار عام"]]);bindPager(adminAnnouncements);$("#addAnnouncement").onclick=()=>announcementForm();$$("[data-ann-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("announcements").select("*").eq("id",b.dataset.annEdit).single();announcementForm(data)});$$("[data-ann-delete]").forEach(b=>b.onclick=()=>deleteRow("announcements",b.dataset.annDelete,"الإعلان",adminAnnouncements))}
 function announcementForm(a=null){openModal(`<div class="sheet-head"><h2>${a?"تعديل":"إضافة"} إعلان</h2><button data-close>×</button></div><form id="annForm"><label>العنوان<input id="at" value="${esc(a?.title||"")}"></label><label>النص<textarea id="am" required>${esc(a?.message||"")}</textarea></label><label>النوع<select id="ak"><option value="bar">شريط علوي</option><option value="notification" ${a?.kind==="notification"?"selected":""}>إشعار عام</option></select></label><label>تاريخ البداية<input id="as" type="datetime-local"></label><label>تاريخ النهاية<input id="ae" type="datetime-local"></label><label><input id="aa" type="checkbox" ${a?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#annForm").onsubmit=async e=>{e.preventDefault();const payload={title:$("#at").value,message:$("#am").value,kind:$("#ak").value,starts_at:$("#as").value||new Date().toISOString(),ends_at:$("#ae").value||null,is_active:$("#aa").checked,created_by:S.user.id};const q=a?supabase.from("announcements").update(payload).eq("id",a.id):supabase.from("announcements").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");if(!a&&payload.kind==="notification")await supabase.from("notifications").insert({user_id:null,title:payload.title||"إعلان",body:payload.message,type:"announcement"});toast("تم الحفظ");closeModal();adminAnnouncements()}}
-async function adminNotifications(){const{data,count}=await listQuery("notifications","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,body.ilike.%${S.query}%`);if(S.filter==="global")q=q.is("user_id",null);if(S.filter==="personal")q=q.not("user_id","is",null);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإشعارات","إرسال عام أو خاص",`<button id="sendNotification" class="btn primary">إرسال إشعار</button>`)}<div class="list">${r.map(n=>`<div class="card item"><div class="item-main"><h3>${esc(n.title)}</h3><p>${esc(n.body)} • ${n.user_id?"خاص":"عام"}</p></div><div class="item-actions"><button class="danger" data-note-delete="${n.id}">حذف</button></div></div>`).join("")||empty("لا توجد إشعارات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminNotifications,[["global","عامة"],["personal","خاصة"]]);bindPager(adminNotifications);$("#sendNotification").onclick=notificationForm;$$("[data-note-delete]").forEach(b=>b.onclick=()=>deleteRow("notifications",b.dataset.noteDelete,"الإشعار",adminNotifications))}
-async function notificationForm(){const{data:u}=await supabase.from("profiles").select("id,full_name").order("full_name").limit(500);openModal(`<div class="sheet-head"><h2>إرسال إشعار</h2><button data-close>×</button></div><form id="noteForm"><label>المستلم<select id="nu"><option value="">جميع المستخدمين</option>${(u||[]).map(x=>`<option value="${x.id}">${esc(x.full_name||x.id)}</option>`).join("")}</select></label><label>العنوان<input id="nt" required></label><label>النص<textarea id="nb" required></textarea></label><button class="btn primary block">إرسال</button></form>`);$("#noteForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.from("notifications").insert({user_id:$("#nu").value||null,title:$("#nt").value,body:$("#nb").value,type:"manual"});if(error)return toast(error.message,"error");toast("تم الإرسال");closeModal();adminNotifications()}}
-
-async function adminSocialPlatforms(){
-  const{data,count}=await listQuery("social_platforms","*",q=>{if(S.query)q=q.ilike("name",`%${S.query}%`);return q});const r=data||[];
-  $("#adminContent").innerHTML=`${adminHeader("منصات السوشل ميديا","أضف المنصات مرة واحدة لتظهر في اختيار الخدمات",`<button id="addPlatform" class="btn primary"><i data-lucide="plus"></i> إضافة منصة</button>`)}
-  <div class="list">${r.map(p=>`<div class="card item"><div class="platform-list-icon"><i data-lucide="${p.icon||"circle"}"></i></div><div class="item-main"><h3>${esc(p.name)}</h3><p>${esc(p.slug)} • الترتيب ${p.sort_order}</p></div><div class="item-actions">${p.is_active?badge("active"):badge("blocked")}${iconButton("pencil","تعديل",`data-platform-edit="${p.id}"`)}${iconButton("trash-2","حذف",`data-platform-delete="${p.id}"`)}</div></div>`).join("")||empty("لا توجد منصات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;
-  bindAdminSearch(adminSocialPlatforms);bindPager(adminSocialPlatforms);$("#addPlatform").onclick=()=>platformForm();$$("[data-platform-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("social_platforms").select("*").eq("id",b.dataset.platformEdit).single();platformForm(data)});$$("[data-platform-delete]").forEach(b=>b.onclick=()=>deleteRow("social_platforms",b.dataset.platformDelete,"المنصة",adminSocialPlatforms));refreshIcons()
+async function adminNotifications(){
+  const {data,count}=await listQuery("notifications","*",q=>{
+    if(S.query)q=q.or(`title.ilike.%${S.query}%,body.ilike.%${S.query}%`);
+    if(S.filter==="global")q=q.is("user_id",null);
+    if(S.filter==="personal")q=q.not("user_id","is",null);
+    return q;
+  });
+  const rows=data||[];
+  $("#adminContent").innerHTML=`${adminHeader("الإشعارات","محتوى واضح مع تفاصيل العملية والمستلم",`<button id="sendNotification" class="btn primary">إرسال إشعار</button>`)}
+    <div class="list admin-notes-list">${rows.map(n=>{
+      const info=notificationTypeInfo(n.type);
+      const parsed=parseNotificationBody(n.body);
+      return `<article class="card admin-note-card tone-${info.tone}">
+        <div class="admin-note-main">
+          <div class="notification-top-row">
+            <h3>${esc(n.title||"إشعار")}</h3>
+            <span class="mini-chip ${n.user_id?"warning":"neutral"}">${n.user_id?"خاص":"عام"}</span>
+          </div>
+          <div class="notification-meta-row">
+            <span class="mini-chip neutral">${info.label}</span>
+            <span class="mini-chip neutral">${n.is_read?"مقروء":"غير مقروء"}</span>
+            <span class="mini-chip neutral">${dt(n.created_at)}</span>
+          </div>
+          <p class="notification-summary">${esc(parsed.summary)}</p>
+          ${parsed.details.length?`<div class="notification-details-list compact">${parsed.details.map(item=>`<div class="notification-detail-item"><small>${esc(item.key)}</small><strong>${esc(item.value)}</strong></div>`).join("")}</div>`:""}
+        </div>
+        <div class="item-actions"><button class="danger" data-note-delete="${n.id}">حذف</button></div>
+      </article>`;
+    }).join("")||empty("لا توجد إشعارات","يمكنك إرسال إشعار واضح ومفصل من هنا.","bell")}</div>
+    ${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;
+  bindAdminSearch(adminNotifications,[["global","عامة"],["personal","خاصة"]]);
+  bindPager(adminNotifications);
+  $("#sendNotification").onclick=notificationForm;
+  $$("[data-note-delete]").forEach(b=>b.onclick=()=>deleteRow("notifications",b.dataset.noteDelete,"الإشعار",adminNotifications));
+  refreshIcons();
 }
-
-function platformForm(p=null){
-  const predefined=[
-    {name:"Instagram",slug:"instagram",icon:"instagram"},
-    {name:"Facebook",slug:"facebook",icon:"facebook"},
-    {name:"YouTube",slug:"youtube",icon:"youtube"},
-    {name:"TikTok",slug:"tiktok",icon:"music-2"},
-    {name:"Telegram",slug:"telegram",icon:"send"},
-    {name:"X / Twitter",slug:"x-twitter",icon:"twitter"},
-    {name:"LinkedIn",slug:"linkedin",icon:"linkedin"},
-    {name:"WhatsApp",slug:"whatsapp",icon:"message-circle"},
-    {name:"Snapchat",slug:"snapchat",icon:"ghost"},
-    {name:"Pinterest",slug:"pinterest",icon:"pin"},
-    {name:"Twitch",slug:"twitch",icon:"twitch"},
-    {name:"Discord",slug:"discord",icon:"messages-square"},
-    {name:"Reddit",slug:"reddit",icon:"message-square-more"},
-    {name:"Spotify",slug:"spotify",icon:"circle-play"}
-  ];
-  openModal(`<div class="sheet-head"><h2>${p?"تعديل":"إضافة"} منصة</h2><button data-close>×</button></div><form id="platformForm"><label>اختر المنصة<select id="platformPreset">${predefined.map(x=>`<option value="${x.slug}" ${p?.slug===x.slug?"selected":""}>${x.name}</option>`).join("")}</select></label><div id="platformPreview" class="chosen-platform"></div><label>الترتيب<input id="platformOrder" type="number" value="${p?.sort_order||0}"></label><label><input id="platformActive" type="checkbox" ${p?.is_active!==false?"checked":""}> مفعلة</label><button class="btn primary block">حفظ</button></form>`);
-  const draw=()=>{const item=predefined.find(x=>x.slug===$("#platformPreset").value);$("#platformPreview").innerHTML=`<i data-lucide="${item.icon}"></i><strong>${item.name}</strong><small>الاسم والأيقونة يضافان تلقائيًا</small>`;refreshIcons()};
-  $("#platformPreset").onchange=draw;draw();
-  $("#platformForm").onsubmit=async e=>{e.preventDefault();const item=predefined.find(x=>x.slug===$("#platformPreset").value);const payload={name:item.name,slug:item.slug,icon:item.icon,sort_order:+$("#platformOrder").value,is_active:$("#platformActive").checked};const q=p?supabase.from("social_platforms").update(payload).eq("id",p.id):supabase.from("social_platforms").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم حفظ المنصة");closeModal();adminSocialPlatforms()}
-}
-async function adminSmmServices(){
-  const{data,count}=await listQuery("smm_services","*,platform:social_platforms(name,icon)",q=>{if(S.query)q=q.ilike("name",`%${S.query}%`);return q});const r=data||[];
-  $("#adminContent").innerHTML=`${adminHeader("خدمات السوشل ميديا","إضافة وتعديل الخدمات من المنصات المحفوظة",`<button id="addSmmService" class="btn primary"><i data-lucide="plus"></i> إضافة خدمة</button>`)}
-  <div class="list">${r.map(x=>`<div class="card item"><div class="platform-list-icon"><i data-lucide="${x.platform?.icon||"circle"}"></i></div><div class="item-main"><h3>${esc(x.name)}</h3><p>${esc(x.platform?.name||"-")} • ${esc(x.service_category||"خدمات عامة")} • ${money(x.price_per_1000)}/1000</p></div><div class="item-actions">${x.is_active?badge("active"):badge("blocked")}${iconButton("pencil","تعديل",`data-smm-edit="${x.id}"`)}${iconButton("trash-2","حذف",`data-smm-delete="${x.id}"`)}</div></div>`).join("")||empty("لا توجد خدمات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;
-  bindAdminSearch(adminSmmServices);bindPager(adminSmmServices);$("#addSmmService").onclick=()=>smmServiceForm();$$("[data-smm-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("smm_services").select("*").eq("id",b.dataset.smmEdit).single();smmServiceForm(data)});$$("[data-smm-delete]").forEach(b=>b.onclick=()=>deleteRow("smm_services",b.dataset.smmDelete,"الخدمة",adminSmmServices));refreshIcons()
-}
-async function smmServiceForm(s=null){
-  const platformsResult=await supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order");
-  if(platformsResult.error)return toast(friendlyError(platformsResult.error),"error");
-  const platforms=platformsResult.data||[];
-  if(!platforms.length){
-    toast("لا توجد منصات مفعلة. شغّل ملف SQL المرفق لإضافة المنصات تلقائيًا.","error");
-    return;
-  }
-
-  openModal(`<div class="sheet-head"><div><h2>${s?"تعديل":"إضافة"} منتج سوشل ميديا</h2><p>اختر المنصة وأدخل معلومات الخدمة</p></div><button data-close>×</button></div>
-  <div id="socialLivePreview" class="catalog-live-preview"></div>
-  <form id="smmServiceForm">
-    <label>المنصة<select id="servicePlatform">${platforms.map(p=>`<option value="${p.id}" ${s?.platform_id===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
-    <div id="chosenPlatformPreview" class="chosen-platform"></div>
-    <label>فئة الخدمة<input id="serviceCategory" value="${esc(s?.service_category||"متابعون")}" placeholder="متابعون، مشاهدات، إعجابات" required></label>
-    <label>اسم الخدمة<input id="sn" value="${esc(s?.name||"")}" required maxlength="180"></label>
-    <label>الوصف<textarea id="sd" maxlength="4000">${esc(s?.description||"")}</textarea></label>
-    <label>السعر لكل 1000<input id="spr" type="number" min="0" step=".0001" value="${s?.price_per_1000??0}" required></label>
-    <div class="social-form-grid">
-      <label>الحد الأدنى<input id="smin" type="number" min="1" value="${s?.min_quantity||100}" required></label>
-      <label>الحد الأقصى<input id="smax" type="number" min="1" value="${s?.max_quantity||10000}" required></label>
-    </div>
-    <label class="switch-label"><input id="sactive" type="checkbox" ${s?.is_active!==false?"checked":""}> الخدمة مفعلة</label>
-    <button type="submit" class="btn primary block"><i data-lucide="save"></i><span>حفظ منتج السوشل</span></button>
-  </form>`);
-
-  const selectedPlatform=()=>platforms.find(x=>x.id===$("#servicePlatform").value);
-  const drawPreview=()=>{
-    const platform=selectedPlatform();
-    $("#chosenPlatformPreview").innerHTML=`<i data-lucide="${platform?.icon||"messages-square"}"></i><strong>${esc(platform?.name||"منصة")}</strong><small>تُضاف المنصة والأيقونة تلقائيًا</small>`;
-    $("#socialLivePreview").innerHTML=`<div class="mini-social-preview"><span><i data-lucide="${platform?.icon||"messages-square"}"></i></span><div><small>معاينة</small><strong>${esc($("#sn")?.value.trim()||"اسم الخدمة")}</strong><b>${money(Number($("#spr")?.value||0))}/1000</b></div></div>`;
-    refreshIcons();
-  };
-  $("#servicePlatform").onchange=drawPreview;
-  $("#sn").oninput=drawPreview;
-  $("#spr").oninput=drawPreview;
-  drawPreview();
-
-  $("#smmServiceForm").onsubmit=async event=>{
-    event.preventDefault();
-    const form=event.currentTarget;
-    if(!form.reportValidity())return;
-    setFormBusy(form,true);
-    try{
-      const platform=selectedPlatform();
-      if(!platform)throw new Error("اختر منصة صالحة.");
-      const name=$("#sn").value.trim();
-      const category=$("#serviceCategory").value.trim();
-      if(name.length<2)throw new Error("اسم الخدمة قصير جدًا.");
-      if(!category)throw new Error("فئة الخدمة مطلوبة.");
-      const price=validatePositiveNumber($("#spr").value,"السعر لكل 1000",true);
-      const minimum=Math.trunc(validatePositiveNumber($("#smin").value,"الحد الأدنى"));
-      const maximum=Math.trunc(validatePositiveNumber($("#smax").value,"الحد الأقصى"));
-      if(maximum<minimum)throw new Error("الحد الأقصى يجب أن يكون أكبر من أو مساويًا للحد الأدنى.");
-
-      const payload={
-        platform_id:platform.id,
-        platform:platform.name,
-        icon:platform.icon||"messages-square",
-        service_category:category,
-        name,
-        description:$("#sd").value.trim()||null,
-        price_per_1000:price,
-        min_quantity:minimum,
-        max_quantity:maximum,
-        is_active:$("#sactive").checked,
-        updated_at:new Date().toISOString()
-      };
-
-      let result;
-      if(s?.id){
-        result=await supabase.from("smm_services").update(payload).eq("id",s.id).select("id").single();
-      }else{
-        result=await supabase.from("smm_services").insert(payload).select("id").single();
-      }
-      if(result.error)throw result.error;
-
-      toast(s?"تم تعديل منتج السوشل بنجاح":"تمت إضافة منتج السوشل بنجاح");
-      closeModal();
-      S.filter="social";S.query="";S.catalogStatus="";S.catalogPlatform="";
-      await adminCatalogItems();
-    }catch(error){
-      console.error("Social product save error:",error);
-      toast(friendlyError(error),"error");
-    }finally{
-      setFormBusy(form,false);
-    }
+async function notificationForm(){
+  const {data:users}=await supabase.from("profiles").select("id,full_name").order("full_name").limit(500);
+  openModal(`<div class="sheet-head"><div><h2>إرسال إشعار واضح</h2><p>كوّن الرسالة بشكل مفهوم مع تفاصيل العملية كاملة</p></div><button data-close>×</button></div>
+    <form id="noteForm" class="rich-note-form">
+      <label>المستلم<select id="nu"><option value="">جميع المستخدمين</option>${(users||[]).map(u=>`<option value="${u.id}">${esc(u.full_name||u.id)}</option>`).join("")}</select></label>
+      <label>نوع الإشعار<select id="nkind"><option value="manual">عام</option><option value="order">طلب رقمي</option><option value="social_order">طلب سوشل</option><option value="wallet">محفظة</option><option value="deposit">شحن رصيد</option><option value="refund">استرداد</option><option value="announcement">إعلان</option></select></label>
+      <label>عنوان الإشعار<input id="nt" required placeholder="مثال: تم تحديث حالة الطلب"></label>
+      <label>ملخص واضح للعملية<textarea id="ns" required placeholder="اكتب جملة مفهومة توضح ماذا حدث بالضبط"></textarea></label>
+      <div class="form-split-2">
+        <label>رقم الطلب / المرجع<input id="nref" placeholder="مثال: ORD-1024"></label>
+        <label>الحالة الحالية<input id="nstatus" placeholder="مثال: قيد التنفيذ / تم التسليم"></label>
+      </div>
+      <div class="form-split-2">
+        <label>المبلغ أو الرصيد<input id="namount" placeholder="مثال: 15 USD"></label>
+        <label>الإجراء التالي<input id="naction" placeholder="مثال: راجع الطلبات أو انتظر التواصل"></label>
+      </div>
+      <label>تفاصيل إضافية<textarea id="ndetails" placeholder="أي تفاصيل إضافية يحتاجها المستخدم لفهم العملية"></textarea></label>
+      <button class="btn primary block">إرسال الإشعار</button>
+    </form>`);
+  $("#noteForm").onsubmit=async e=>{
+    e.preventDefault();
+    const title=$("#nt").value.trim();
+    const summary=$("#ns").value.trim();
+    const ref=$("#nref").value.trim();
+    const status=$("#nstatus").value.trim();
+    const amount=$("#namount").value.trim();
+    const action=$("#naction").value.trim();
+    const extra=$("#ndetails").value.trim();
+    const body=[
+      `الملخص: ${summary}`,
+      ref?`المرجع: ${ref}`:"",
+      status?`الحالة: ${status}`:"",
+      amount?`المبلغ: ${amount}`:"",
+      action?`الإجراء التالي: ${action}`:"",
+      extra?`تفاصيل إضافية: ${extra}`:"",
+      `وقت الإرسال: ${dt(new Date().toISOString())}`
+    ].filter(Boolean).join("\n");
+    const {error}=await supabase.from("notifications").insert({
+      user_id:$("#nu").value||null,
+      title,
+      body,
+      type:$("#nkind").value
+    });
+    if(error)return toast(error.message,"error");
+    toast("تم إرسال إشعار واضح ومفصل");
+    closeModal();
+    adminNotifications();
   };
   refreshIcons();
 }
