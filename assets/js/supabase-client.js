@@ -1,1 +1,4 @@
-import{createClient}from"https://esm.sh/@supabase/supabase-js@2";import{CONFIG}from"./config.js";export const supabase=createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+import{CONFIG}from"./config.js";
+const lib=window.supabase;
+if(!lib||!lib.createClient){throw new Error("تعذر تحميل مكتبة الاتصال بقاعدة البيانات — تأكد من وجود assets/vendor/supabase.min.js");}
+export const supabase=lib.createClient(CONFIG.SUPABASE_URL,CONFIG.SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});

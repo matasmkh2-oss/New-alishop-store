@@ -58,5 +58,17 @@
 </form></dialog>
 <dialog id="modalDialog" class="sheet wide"></dialog>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+<script src="./assets/vendor/supabase.min.js"></script>
 <script type="module" src="./assets/js/app.js"></script>
+<script>
+/* حارس تحميل التطبيق: إذا تعذر بدء app.js أظهر رسالة بدل الشاشة الفارغة */
+setTimeout(function(){
+  if(!window.__alishopBooted){
+    var app=document.getElementById('app');
+    if(app && !app.innerHTML.trim()){
+      app.innerHTML='<div class="card empty"><h2>تعذر بدء التطبيق</h2><p>تحقق من اتصالك بالإنترنت ثم أعد المحاولة.</p><button class="btn primary" onclick="location.reload(true)">إعادة التحميل</button></div>';
+    }
+  }
+},9000);
+</script>
 </body></html>

@@ -693,6 +693,7 @@ function needAdmin(){if(S.profile?.role!=="admin"){app.innerHTML=empty("غير �
 function pager(page,total,size){const pages=Math.max(1,Math.ceil(total/size)),start=Math.max(1,page-2),end=Math.min(pages,page+2);return`<div class="pagination"><button class="page-btn" data-page="${Math.max(1,page-1)}">‹</button>${Array.from({length:end-start+1},(_,i)=>start+i).map(n=>`<button class="page-btn ${n===page?"active":""}" data-page="${n}">${n}</button>`).join("")}<button class="page-btn" data-page="${Math.min(pages,page+1)}">›</button></div>`}
 function bindPager(render){$$("[data-page]").forEach(b=>b.onclick=()=>{S.page=+b.dataset.page;render()})}
 function adminHeader(title,sub,actions=""){return`${section(title,sub,actions)}<div class="admin-toolbar"><input id="adminSearch" class="input" placeholder="بحث..." value="${esc(S.query)}"><select id="adminFilter" class="input"><option value="">الكل</option></select><button id="clearFilters" class="btn soft">مسح</button></div>`}
+window.__alishopBooted=true;
 async function init(){
   bind();
   setTheme(localStorage.theme||"dark");
