@@ -20,6 +20,45 @@ const catalogSectionMeta=value=>CATALOG_SECTIONS[normalizeCatalogSection(value)]
 const productSection=product=>normalizeCatalogSection(product?.catalog_section);
 const categorySection=category=>normalizeCatalogSection(category?.catalog_section);
 function logLabel(v){return LOG_LABELS[v]||String(v||"عملية إدارية").replaceAll("_"," ")}
+function normalizeProductPackages(list){
+  if(!Array.isArray(list))return [];
+  return list.map((pkg,index)=>({
+    id:String(pkg?.id||crypto.randomUUID()),
+    name:String(pkg?.name||"").trim(),
+    quantity:String(pkg?.quantity??pkg?.qty??"").trim(),
+    price:Number(pkg?.price)||0
+  })).filter(pkg=>pkg.name&&pkg.price>=0);
+}
+function productPackageRow(pkg={}){
+  return `<div class="package-row" data-package-row>
+    <input class="input" data-package-name placeholder="اسم الباقة" value="${esc(pkg.name||"")}">
+    <input class="input" data-package-qty placeholder="العدد" value="${esc(pkg.quantity||"")}">
+    <input class="input" data-package-price type="number" min="0" step=".01" placeholder="السعر" value="${pkg.price??""}">
+    <button type="button" class="icon-btn danger-icon" data-package-remove aria-label="حذف"><i data-lucide="trash-2"></i></button>
+  </div>`;
+}
+function renderProductPackagesBuilder(packages=[]){
+  const box=$("#productPackagesBuilder");
+  if(!box)return;
+  box.innerHTML=packages.length?packages.map(productPackageRow).join(""):`<p class="builder-empty">لا توجد باقات — اتركه فارغًا ليبقى المنتج بسعر واحد فقط</p>`;
+  bindProductPackagesBuilder();
+  refreshIcons();
+}
+function bindProductPackagesBuilder(){
+  $$("#productPackagesBuilder [data-package-remove]").forEach(btn=>btn.onclick=()=>btn.closest("[data-package-row]")?.remove());
+}
+function collectProductPackages(){
+  const rows=$$("#productPackagesBuilder [data-package-row]");
+  return rows.map(row=>{
+    const name=(row.querySelector("[data-package-name]")?.value||"").trim();
+    const quantity=(row.querySelector("[data-package-qty]")?.value||"").trim();
+    const price=Number(row.querySelector("[data-package-price]")?.value||0);
+    if(!name)throw new Error("اسم الباقة مطلوب لكل باقة مضافة.");
+    if(!Number.isFinite(price)||price<0)throw new Error("سعر الباقة غير صالح.");
+    return {id:crypto.randomUUID(),name,quantity,price};
+  });
+}
+
 function safeFileName(name){return `${Date.now()}-${crypto.randomUUID()}-${String(name).replace(/[^a-zA-Z0-9._-]/g,"-")}`}
 async function uploadFile(file,folder){
   if(!file)return null;
@@ -46,7 +85,8 @@ function applyBranding(){
     else el.textContent=name.trim().charAt(0)||"A";
   });
 }
-async function previewCoupon(code,product){
+async function previewCoupon(code,product,selectedPackage=null){
+  product=selectedPackage?{...product,price:selectedPackage.price}:product;
   const box=$("#couponPreview",modal);
   if(!box)return;
   if(!code){box.className="coupon-preview hidden";box.innerHTML="";return}
@@ -1385,8 +1425,46 @@ async function products(){
   drawShell();
 }
 async function digitalProducts(){location.hash="#/products?tab=digital"}
-function details(id){const p=S.products.find(x=>String(x.id)===String(id)),sold=p.availability_status==="sold_out",fields=p.required_fields||[];openModal(`<div class="sheet-head"><div><h2>${esc(p.name)}</h2><p>${sold?"نفد المخزون":"متوفر الآن"}</p></div><button data-close>×</button></div><div class="product-image" style="height:230px;border-radius:19px">${p.image_url?`<img src="${esc(p.image_url)}">`:"🛍️"}</div><p style="line-height:1.9;color:var(--m)">${esc(p.description||"")}</p>${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" ${f.required?"required":""}></label>`).join("")}<label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label><div id="couponPreview" class="coupon-preview hidden"></div><div class="product-foot"><span class="price">${money(p.price)}</span><button id="buy" class="btn ${sold?"soft":"primary"}" ${sold?"disabled":""}>${sold?"غير متوفر حاليًا":"شراء الآن"}</button></div>`);if(!sold)$("#buy").onclick=()=>buy(p);$("#couponCode").oninput=debounce(()=>previewCoupon($("#couponCode").value.trim(),p),350)}
-async function buy(p){if(!needUser())return;const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${p.name}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});if(!approved)return;const code=$("#couponCode")?.value.trim()||null;const customerData={};$$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());const{error}=await supabase.rpc("purchase_product_v6",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData});if(error)return toast(error.message,"error");toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders"}
+function details(id){
+  const p=S.products.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  const sold=p.availability_status==="sold_out";
+  const fields=p.required_fields||[];
+  const packages=normalizeProductPackages(p.packages||[]);
+  openModal(`<div class="sheet-head"><div><h2>${esc(p.name)}</h2><p>${sold?"نفد المخزون":"متوفر الآن"}</p></div><button data-close>×</button></div>
+  <div class="product-image" style="height:230px;border-radius:19px">${p.image_url?`<img src="${esc(p.image_url)}">`:"🛍️"}</div>
+  <p style="line-height:1.9;color:var(--m)">${esc(p.description||"")}</p>
+  ${packages.length?`<div class="packages-select-block"><h3 class="packages-title">اختر الباقة</h3><div class="packages-list">${packages.map((pkg,i)=>`<button type="button" class="package-option ${i===0?"active":""}" data-package-option="${esc(pkg.id)}"><span class="pkg-name">${esc(pkg.name)}</span>${pkg.quantity?`<span class="pkg-qty">${esc(pkg.quantity)}</span>`:""}<span class="pkg-price">${money(pkg.price)}</span></button>`).join("")}</div></div>`:""}
+  ${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" ${f.required?"required":""}></label>`).join("")}
+  <label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label>
+  <div id="couponPreview" class="coupon-preview hidden"></div>
+  <div class="product-foot"><span class="price" id="orderPrice">${money(packages.length?packages[0].price:p.price)}</span><button id="buy" class="btn ${sold?"soft":"primary"}" ${sold?"disabled":""}>${sold?"غير متوفر حاليًا":"شراء الآن"}</button></div>`);
+  let selectedPackage=packages.length?packages[0]:null;
+  $$("[data-package-option]",modal).forEach(btn=>btn.onclick=()=>{
+    $$("[data-package-option]",modal).forEach(x=>x.classList.remove("active"));
+    btn.classList.add("active");
+    selectedPackage=packages.find(pkg=>pkg.id===btn.dataset.packageOption)||null;
+    const priceBox=$("#orderPrice");
+    if(priceBox)priceBox.textContent=money(selectedPackage?selectedPackage.price:p.price);
+    const code=$("#couponCode")?.value.trim();
+    if(code)previewCoupon(code,p,selectedPackage);
+  });
+  if(!sold)$("#buy").onclick=()=>buy(p,selectedPackage);
+  $("#couponCode").oninput=debounce(()=>previewCoupon($("#couponCode").value.trim(),p,selectedPackage),350);
+  refreshIcons();
+}
+async function buy(p,selectedPackage=null){
+  if(!needUser())return;
+  const label=selectedPackage?`${p.name} — ${selectedPackage.name}`:p.name;
+  const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${label}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});
+  if(!approved)return;
+  const code=$("#couponCode")?.value.trim()||null;
+  const customerData={};
+  $$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());
+  const{error}=await supabase.rpc("purchase_product_v7",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData,p_package_id:selectedPackage?.id||null});
+  if(error)return toast(error.message,"error");
+  toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders";
+}
 async function orders(){
   if(!needUser())return app.innerHTML=empty("طلباتي","سجل الدخول");
 
@@ -1823,6 +1901,13 @@ async function productForm(p=null,sectionHint=null){
     <label>الوصف<textarea id="pdesc" maxlength="4000">${esc(p?.description||"")}</textarea></label>
     <section class="product-fields-builder-card">
       <div class="product-fields-builder-head">
+        <div><h3>باقات المنتج (اختياري)</h3><p>أضف باقات بصيغة: اسم الباقة — العدد — السعر. عند وجود باقات سيختار العميل إحداها وسعرها هو المستخدم.</p></div>
+        <button type="button" id="addProductPackage" class="btn soft compact"><i data-lucide="plus"></i><span>إضافة باقة</span></button>
+      </div>
+      <div id="productPackagesBuilder" class="product-packages-builder"></div>
+    </section>
+    <section class="product-fields-builder-card">
+      <div class="product-fields-builder-head">
         <div><h3>معلومات مطلوبة من العميل</h3><p>أضف الحقول التي سيملؤها العميل عند الطلب دون كتابة أكواد.</p></div>
         <button type="button" id="addProductField" class="btn soft compact"><i data-lucide="plus"></i><span>إضافة حقل</span></button>
       </div>
@@ -1857,6 +1942,14 @@ async function productForm(p=null,sectionHint=null){
 
   renderCategoryOptions();
   renderProductFieldsBuilder(p?.required_fields||[]);
+  renderProductPackagesBuilder(normalizeProductPackages(p?.packages||[]));
+  $("#addProductPackage").onclick=()=>{
+    const box=$("#productPackagesBuilder");
+    box.querySelector(".builder-empty")?.remove();
+    box.insertAdjacentHTML("beforeend",productPackageRow());
+    bindProductPackagesBuilder();
+    refreshIcons();
+  };
   $("#addProductField").onclick=()=>addProductField();
   $("#psection").onchange=()=>{renderCategoryOptions();drawPreview()};
   $("#pn").oninput=drawPreview;
@@ -1875,6 +1968,7 @@ async function productForm(p=null,sectionHint=null){
       if(name.length<2)throw new Error("اسم المنتج قصير جدًا.");
       const price=validatePositiveNumber($("#pp").value,"السعر",true);
       const requiredFields=collectProductFields();
+      const packages=collectProductPackages();
 
       let imageUrl=p?.image_url||null;
       const imageFile=$("#productImageFile").files?.[0];
@@ -1890,6 +1984,7 @@ async function productForm(p=null,sectionHint=null){
         image_url:imageUrl,
         description:$("#pdesc").value.trim()||null,
         required_fields:requiredFields,
+        packages:packages,
         is_active:$("#pa").checked,
         updated_at:new Date().toISOString()
       };

@@ -1550,3 +1550,20 @@ input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)
 @media(max-width:520px){
   .announcement-group-head{align-items:flex-start;flex-direction:column}
 }
+
+/* V16 — اختيار الباقات داخل المنتج */
+.packages-select-block{margin:14px 0 4px}
+.packages-title{margin:0 0 9px;font-size:14px;font-weight:800}
+.packages-list{display:grid;gap:8px}
+.package-option{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:12px 14px;border:1px solid var(--b);border-radius:14px;background:var(--control-bg,var(--s2));color:var(--t);font:inherit;text-align:right;cursor:pointer;transition:.2s border-color,.2s box-shadow,.2s transform}
+.package-option:hover{border-color:color-mix(in srgb,var(--p) 45%,transparent)}
+.package-option.active{border-color:var(--p);box-shadow:0 0 0 3px color-mix(in srgb,var(--p) 14%,transparent);transform:translateY(-1px)}
+.package-option .pkg-name{font-weight:800;flex:1;min-width:90px}
+.package-option .pkg-qty{font-size:12px;color:var(--m);padding:2px 10px;border-radius:999px;background:var(--s2)}
+.package-option .pkg-price{font-weight:800;color:var(--p)}
+.product-packages-builder{display:grid;gap:8px}
+.package-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:6px;align-items:center}
+.package-row .icon-btn{width:38px;height:38px;border-radius:12px}
+.builder-empty{margin:0;font-size:12px;color:var(--m)}
+.danger-icon{color:var(--bad)}
+@media(max-width:520px){.package-row{grid-template-columns:1fr 70px 80px 36px}}
