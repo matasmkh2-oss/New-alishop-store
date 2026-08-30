@@ -7,6 +7,7 @@ const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
 const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),catalogAt:0,authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
+const toDatetimeLocal=value=>{if(!value)return"";const date=new Date(value);if(Number.isNaN(date.getTime()))return"";const offset=date.getTimezoneOffset();const local=new Date(date.getTime()-offset*60000);return local.toISOString().slice(0,16)};
 function linkify(text){const safe=esc(text);return safe.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener" class="faq-link">$1</a>').replace(/\n/g,"<br>")}
 const debounce=(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
 const LOG_LABELS={update_order:"تحديث طلب",set_user_status:"تغيير حالة مستخدم",set_user_role:"تغيير دور مستخدم",adjust_wallet:"تعديل رصيد",approve_deposit:"قبول طلب شحن",reject_deposit:"رفض طلب شحن",create_product:"إضافة منتج",update_product:"تعديل منتج",delete_product:"حذف منتج",publish_announcement:"نشر إعلان",generate_cards:"توليد بطاقات شحن",update_slide:"تحديث سلايدر",delete_slide:"حذف سلايدر"};
@@ -800,7 +801,7 @@ function startAnnouncementRotation(){
   const bar=$("#announcementBar");
   if(!bar)return;
 
-  const announcements=S.announcements||[];
+  const announcements=(S.announcements||[]).filter(a=>a.kind==="bar");
   if(!announcements.length){
     bar.classList.add("hidden");
     bar.innerHTML="";
@@ -2211,8 +2212,87 @@ async function adminFaqs(){
   $$("[data-faq-del]").forEach(b=>b.onclick=()=>deleteRow("faqs",b.dataset.faqDel,"السؤال",adminFaqs));
   refreshIcons();
 }
-async function adminAnnouncements(){const{data,count}=await listQuery("announcements","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,message.ilike.%${S.query}%`);if(S.filter)q=q.eq("kind",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإعلانات","شريط علوي وإعلانات عامة",`<button id="addAnnouncement" class="btn primary">إضافة إعلان</button>`)}<div class="list">${r.map(a=>`<div class="card item"><div class="item-main"><h3>${esc(a.title||"إعلان")}</h3><p>${esc(a.message)} • ${{bar:"شريط علوي",popup:"منبثق",notification:"إشعار عام"}[a.kind]||a.kind}</p></div><div class="item-actions">${a.is_active?badge("active"):badge("blocked")}<button class="small" data-ann-edit="${a.id}">تعديل</button><button class="danger" data-ann-delete="${a.id}">حذف</button></div></div>`).join("")||empty("لا توجد إعلانات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminAnnouncements,[["bar","شريط علوي"],["notification","إشعار عام"]]);bindPager(adminAnnouncements);$("#addAnnouncement").onclick=()=>announcementForm();$$("[data-ann-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("announcements").select("*").eq("id",b.dataset.annEdit).single();announcementForm(data)});$$("[data-ann-delete]").forEach(b=>b.onclick=()=>deleteRow("announcements",b.dataset.annDelete,"الإعلان",adminAnnouncements))}
-function announcementForm(a=null){openModal(`<div class="sheet-head"><h2>${a?"تعديل":"إضافة"} إعلان</h2><button data-close>×</button></div><form id="annForm"><label>العنوان<input id="at" value="${esc(a?.title||"")}"></label><label>النص<textarea id="am" required>${esc(a?.message||"")}</textarea></label><label>النوع<select id="ak"><option value="bar" ${!a||a.kind==="bar"?"selected":""}>شريط علوي</option><option value="popup" ${a?.kind==="popup"?"selected":""}>إعلان منبثق (الرئيسية)</option><option value="notification" ${a?.kind==="notification"?"selected":""}>إشعار عام</option></select></label><div id="popupFields" class="popup-fields ${a?.kind==="popup"?"":"hidden"}"><label>صورة الإعلان${imagePicker("annImageFile",a?.image_url||"")}</label><div class="social-form-grid"><label>نص الزر<input id="abt" value="${esc(a?.button_text||"")}" placeholder="مثال: تسوق الآن"></label><label>رابط الزر<input id="abu" value="${esc(a?.button_url||"")}" placeholder="#/products أو رابط خارجي"></label></div><label class="switch-label"><input id="aonce" type="checkbox" ${a?.show_once!==false?"checked":""}> يظهر مرة واحدة لكل زائر</label></div><label>تاريخ البداية<input id="as" type="datetime-local"></label><label>تاريخ النهاية<input id="ae" type="datetime-local"></label><label><input id="aa" type="checkbox" ${a?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#ak").onchange=()=>$("#popupFields").classList.toggle("hidden",$("#ak").value!=="popup");$("#annForm").onsubmit=async e=>{e.preventDefault();const isPopup=$("#ak").value==="popup";let imageUrl=a?.image_url||null;const imageFile=$("#annImageFile")?.files?.[0];if(isPopup&&imageFile)imageUrl=await uploadFile(imageFile,"announcements");const payload={title:$("#at").value,message:$("#am").value,kind:$("#ak").value,starts_at:$("#as").value||new Date().toISOString(),ends_at:$("#ae").value||null,is_active:$("#aa").checked,created_by:S.user.id,image_url:isPopup?imageUrl:null,button_text:isPopup?$("#abt").value.trim()||null:null,button_url:isPopup?$("#abu").value.trim()||null:null,show_once:isPopup?$("#aonce").checked:true};const q=a?supabase.from("announcements").update(payload).eq("id",a.id):supabase.from("announcements").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");if(!a&&payload.kind==="notification")await supabase.from("notifications").insert({user_id:null,title:payload.title||"إعلان",body:payload.message,type:"announcement"});toast("تم الحفظ");closeModal();adminAnnouncements()}}
+async function adminAnnouncements(){
+  const result=await supabase.from("announcements").select("*").order("kind",{ascending:true}).order("created_at",{ascending:false});
+  if(result.error){
+    $("#adminContent").innerHTML=`${section("الإعلانات","تعذر تحميل الإعلانات")}<div class="card empty"><h2>حدث خطأ</h2><p>${esc(friendlyError(result.error))}</p><button id="retryAnnouncements" class="btn primary">إعادة المحاولة</button></div>`;
+    $("#retryAnnouncements").onclick=adminAnnouncements;
+    refreshIcons();
+    return;
+  }
+
+  const rows=result.data||[];
+  const groups=[
+    ["bar","الشريط العلوي","يظهر أعلى التطبيق"],
+    ["popup","الإعلانات المنبثقة","تظهر داخل نافذة منبثقة في الرئيسية"],
+    ["notification","الإشعارات العامة","تُرسل كإشعارات داخل التطبيق"]
+  ];
+
+  const render=()=>{
+    const query=(S.query||"").trim().toLowerCase();
+    const filtered=rows.filter(item=>{
+      const haystack=`${item.title||""} ${item.message||""}`.toLowerCase();
+      return (!query||haystack.includes(query)) && (!S.filter||item.kind===S.filter);
+    });
+
+    const filterButtons=`<div class="catalog-admin-tabs announcement-kind-tabs">
+      <button class="${!S.filter?"active":""}" data-ann-kind=""><i data-lucide="layout-grid"></i><span>الكل</span><b>${rows.length}</b></button>
+      ${groups.map(([kind,label])=>`<button class="${S.filter===kind?"active":""}" data-ann-kind="${kind}"><i data-lucide="${kind==="bar"?"panel-top-open":kind==="popup"?"picture-in-picture-2":"bell-ring"}"></i><span>${label}</span><b>${rows.filter(item=>item.kind===kind).length}</b></button>`).join("")}
+    </div>`;
+
+    const groupedMarkup=groups.map(([kind,label,description])=>{
+      const list=filtered.filter(item=>item.kind===kind);
+      return `<section class="announcement-group">
+        <div class="announcement-group-head">
+          <div><h3>${label}</h3><p>${description}</p></div>
+          <span class="mini-chip neutral">${list.length}</span>
+        </div>
+        <div class="list">${list.map(a=>`<article class="card item announcement-admin-item ${a.is_active?"is-on":"is-off"}">
+          <div class="item-main">
+            <div class="announcement-admin-top">
+              <h3>${esc(a.title||"إعلان بدون عنوان")}</h3>
+              ${a.is_active?badge("active"):badge("blocked")}
+            </div>
+            <p>${esc(a.message||"-")}</p>
+            <div class="announcement-admin-meta">
+              ${a.starts_at?`<span class="mini-chip neutral">من ${dt(a.starts_at)}</span>`:""}
+              ${a.ends_at?`<span class="mini-chip neutral">حتى ${dt(a.ends_at)}</span>`:""}
+              ${a.button_text?`<span class="mini-chip neutral">زر: ${esc(a.button_text)}</span>`:""}
+            </div>
+          </div>
+          <div class="item-actions">
+            <button class="small" data-ann-edit="${a.id}">تعديل</button>
+            <button class="danger" data-ann-delete="${a.id}">حذف</button>
+          </div>
+        </article>`).join("")||empty(`لا توجد عناصر ضمن ${label}`)}</div>
+      </section>`;
+    }).join("");
+
+    $("#adminContent").innerHTML=`${section("الإعلانات","مقسمة حسب النوع لتسهيل الإدارة",`<button id="addAnnouncement" class="btn primary">إضافة إعلان</button>`)}
+      ${filterButtons}
+      <div class="catalog-filter-bar announcement-filter-bar">
+        <input id="announcementSearch" class="input" placeholder="بحث في الإعلانات..." value="${esc(S.query||"")}">
+        <select id="announcementQuickFilter" class="input">
+          <option value="">كل الفئات</option>
+          ${groups.map(([kind,label])=>`<option value="${kind}" ${S.filter===kind?"selected":""}>${label}</option>`).join("")}
+        </select>
+        <button id="clearAnnouncementFilters" class="btn soft">مسح</button>
+      </div>
+      ${groupedMarkup||empty("لا توجد إعلانات")}`;
+
+    $("#addAnnouncement").onclick=()=>announcementForm();
+    $("#announcementSearch").oninput=debounce(()=>{S.query=$("#announcementSearch").value.trim();render()},220);
+    $("#announcementQuickFilter").onchange=()=>{S.filter=$("#announcementQuickFilter").value;render()};
+    $("#clearAnnouncementFilters").onclick=()=>{S.query="";S.filter="";render()};
+    $$("[data-ann-kind]").forEach(button=>button.onclick=()=>{S.filter=button.dataset.annKind||"";render()});
+    $$("[data-ann-edit]").forEach(button=>button.onclick=async()=>{const{data}=await supabase.from("announcements").select("*").eq("id",button.dataset.annEdit).single();announcementForm(data)});
+    $$("[data-ann-delete]").forEach(button=>button.onclick=()=>deleteRow("announcements",button.dataset.annDelete,"الإعلان",adminAnnouncements));
+    refreshIcons();
+  };
+
+  render();
+}
+function announcementForm(a=null){openModal(`<div class="sheet-head"><h2>${a?"تعديل":"إضافة"} إعلان</h2><button data-close>×</button></div><form id="annForm"><label>العنوان<input id="at" value="${esc(a?.title||"")}"></label><label>النص<textarea id="am" required>${esc(a?.message||"")}</textarea></label><label>النوع<select id="ak"><option value="bar" ${!a||a.kind==="bar"?"selected":""}>شريط علوي</option><option value="popup" ${a?.kind==="popup"?"selected":""}>إعلان منبثق (الرئيسية)</option><option value="notification" ${a?.kind==="notification"?"selected":""}>إشعار عام</option></select></label><div id="popupFields" class="popup-fields ${a?.kind==="popup"?"":"hidden"}"><label>صورة الإعلان${imagePicker("annImageFile",a?.image_url||"")}</label><div class="social-form-grid"><label>نص الزر<input id="abt" value="${esc(a?.button_text||"")}" placeholder="مثال: تسوق الآن"></label><label>رابط الزر<input id="abu" value="${esc(a?.button_url||"")}" placeholder="#/products أو رابط خارجي"></label></div><label class="switch-label"><input id="aonce" type="checkbox" ${a?.show_once!==false?"checked":""}> يظهر مرة واحدة لكل زائر</label></div><label>تاريخ البداية<input id="as" type="datetime-local"></label><label>تاريخ النهاية<input id="ae" type="datetime-local"></label><label class="switch-label"><input id="aa" type="checkbox" ${a?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);if(a?.starts_at)$("#as").value=toDatetimeLocal(a.starts_at);if(a?.ends_at)$("#ae").value=toDatetimeLocal(a.ends_at);$("#ak").onchange=()=>$("#popupFields").classList.toggle("hidden",$("#ak").value!=="popup");$("#annForm").onsubmit=async e=>{e.preventDefault();const isPopup=$("#ak").value==="popup";let imageUrl=a?.image_url||null;const imageFile=$("#annImageFile")?.files?.[0];if(isPopup&&imageFile)imageUrl=await uploadFile(imageFile,"announcements");const payload={title:$("#at").value,message:$("#am").value,kind:$("#ak").value,starts_at:$("#as").value||new Date().toISOString(),ends_at:$("#ae").value||null,is_active:$("#aa").checked,created_by:S.user.id,image_url:isPopup?imageUrl:null,button_text:isPopup?$("#abt").value.trim()||null:null,button_url:isPopup?$("#abu").value.trim()||null:null,show_once:isPopup?$("#aonce").checked:true};const q=a?supabase.from("announcements").update(payload).eq("id",a.id):supabase.from("announcements").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");if(!a&&payload.kind==="notification")await supabase.from("notifications").insert({user_id:null,title:payload.title||"إعلان",body:payload.message,type:"announcement"});toast("تم الحفظ");closeModal();adminAnnouncements()}}
 async function adminNotifications(){
   const {data,count}=await listQuery("notifications","*",q=>{
     if(S.query)q=q.or(`title.ilike.%${S.query}%,body.ilike.%${S.query}%`);

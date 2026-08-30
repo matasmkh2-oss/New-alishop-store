@@ -1447,3 +1447,106 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 .rich-note-form{display:grid;gap:12px}
 .form-split-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media(max-width:720px){.notes-hero-card{flex-direction:column;align-items:flex-start}.notification-pane-head{grid-template-columns:1fr;display:grid}.notification-time{white-space:nowrap}.form-split-2{grid-template-columns:1fr}.admin-note-card{flex-direction:column}.notes-top{top:56px}}
+
+
+/* =========================================================
+   UX hotfixes — dialogs, active states, announcement grouping
+   ========================================================= */
+@keyframes desktopSheetIn{
+  0%{opacity:0;transform:translate(-50%,-46%) scale(.98)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+}
+@media(min-width:700px){
+  .sheet{
+    left:50%!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    inset:auto!important;
+    width:min(760px,calc(100vw - 40px))!important;
+    max-width:min(760px,calc(100vw - 40px))!important;
+    max-height:min(88vh,920px)!important;
+    margin:0!important;
+    transform:translate(-50%,-50%)!important;
+    border-radius:26px!important;
+  }
+  .sheet[open]{animation:desktopSheetIn .22s cubic-bezier(.22,.9,.3,1) both!important}
+  .sheet>.dialog-body,.sheet-body{overflow:auto}
+}
+
+.popup-media{
+  min-height:clamp(220px,42vh,360px);
+  height:auto!important;
+  padding:14px;
+  display:grid;
+  place-items:center;
+}
+.popup-media img,
+.product-image img,
+.order-thumb img,
+.mini-product-preview>img,
+.upload-preview{
+  width:100%;
+  height:100%;
+  object-fit:contain!important;
+  object-position:center;
+  background:var(--s2);
+}
+.popup-media img{max-height:clamp(190px,38vh,330px);border-radius:18px}
+.product-image{padding:10px}
+.order-thumb{overflow:hidden}
+.order-thumb img,
+.mini-product-preview>img{padding:6px}
+.upload-preview{object-fit:contain!important;background:var(--s2)}
+
+.tabs .tab.active,
+.catalog-top-tabs button.active,
+.catalog-admin-tabs button.active,
+.wallet-filter-tabs button.active,
+.social-pf-chip.active,
+.category-pill.active,
+.note-summary-card.active,
+.segmented-control button.active,
+.platform-choice.active{
+  box-shadow:0 10px 24px rgba(8,127,130,.20)!important;
+  transform:translateY(-1px);
+}
+[data-theme=dark] .tabs .tab.active,
+[data-theme=dark] .catalog-top-tabs button.active,
+[data-theme=dark] .catalog-admin-tabs button.active,
+[data-theme=dark] .wallet-filter-tabs button.active,
+[data-theme=dark] .social-pf-chip.active,
+[data-theme=dark] .category-pill.active,
+[data-theme=dark] .note-summary-card.active,
+[data-theme=dark] .segmented-control button.active,
+[data-theme=dark] .platform-choice.active{
+  box-shadow:0 12px 28px rgba(45,212,191,.18)!important;
+}
+
+.switch-label,
+label:has(>input[type="checkbox"]),
+label:has(>input[type="radio"]){
+  cursor:pointer!important;
+}
+.switch-label:has(input:checked),
+label:has(>input[type="checkbox"]:checked),
+label:has(>input[type="radio"]:checked){
+  border-color:color-mix(in srgb,var(--p) 42%,var(--b))!important;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--p) 11%,var(--s2)),var(--s2))!important;
+  box-shadow:0 8px 18px rgba(8,127,130,.10);
+}
+input[type="checkbox"],input[type="radio"]{cursor:pointer!important}
+input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)}
+
+.announcement-filter-bar{margin-bottom:14px}
+.announcement-group{display:grid;gap:10px;margin-bottom:18px}
+.announcement-group-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.announcement-group-head h3{margin:0;font-size:16px}
+.announcement-group-head p{margin:4px 0 0;color:var(--m);font-size:12px}
+.announcement-admin-item{align-items:flex-start}
+.announcement-admin-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.announcement-admin-top h3{margin:0}
+.announcement-admin-meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media(max-width:520px){
+  .announcement-group-head{align-items:flex-start;flex-direction:column}
+}
