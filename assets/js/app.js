@@ -4,7 +4,7 @@ const PRIMARY_ADMIN_ID="60fb1f4a-5df4-4d05-9956-1ad1d59aa957";
 const isPrimaryAdmin=id=>id===PRIMARY_ADMIN_ID;
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
 const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
-const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
+const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),catalogAt:0,authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
 const debounce=(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
@@ -1066,14 +1066,14 @@ async function showNotes(){
   });
   refreshIcons();
 }
-function route(){const r=location.hash.replace("#/","").split("?")[0]||"home";$$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));$("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home)();setTimeout(refreshIcons,0)}
-async function catalog(){const[{data:p},{data:c},{data:f}]=await Promise.all([supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),supabase.from("categories").select("*").eq("is_active",true).order("sort_order"),S.user?supabase.from("favorites").select("product_id").eq("user_id",S.user.id):Promise.resolve({data:[]})]);S.products=p||[];S.categories=c||[];S.favorites=new Set((f||[]).map(x=>x.product_id))}
+function route(){const r=location.hash.replace("#/","").split("?")[0]||"home";$$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));$("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";app.classList.remove("page-enter");void app.offsetWidth;app.classList.add("page-enter");({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home)();setTimeout(refreshIcons,0)}
+async function catalog(force=false){if(!force&&S.products.length&&Date.now()-S.catalogAt<30000)return;const[{data:p},{data:c},{data:f}]=await Promise.all([supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),supabase.from("categories").select("*").eq("is_active",true).order("sort_order"),S.user?supabase.from("favorites").select("product_id").eq("user_id",S.user.id):Promise.resolve({data:[]})]);S.products=p||[];S.categories=c||[];S.favorites=new Set((f||[]).map(x=>x.product_id));S.catalogAt=Date.now()}
 
 function pcard(p){
   const sold=p.availability_status==="sold_out";
   return `<article class="catalog-image-card ${sold?"soldout":""}" data-product="${p.id}" role="button" tabindex="0">
     ${sold?'<div class="soldout-ribbon">نفد المخزون</div>':""}
-    <div class="catalog-image">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}">`:`<div class="image-fallback"><i data-lucide="package-open"></i></div>`}</div>
+    <div class="catalog-image">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:`<div class="image-fallback"><i data-lucide="package-open"></i></div>`}</div>
     <div class="catalog-overlay">
       <span class="catalog-category">${esc(p.category_name||"منتج رقمي")}</span>
       <h3>${esc(p.name)}</h3>
