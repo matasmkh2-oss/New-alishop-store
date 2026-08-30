@@ -3,8 +3,12 @@
 *{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--t);font-family:Tajawal,sans-serif;-webkit-tap-highlight-color:transparent}button,input,select,textarea{font:inherit}.hidden{display:none!important}a{text-decoration:none;color:inherit}
 .splash{position:fixed;inset:0;z-index:5000;display:grid;place-content:center;text-align:center;color:#fff;background:linear-gradient(145deg,#5646df,#7c50e5 58%,#d74e9d);transition:.35s}.splash.hide{opacity:0;visibility:hidden}.splash-logo{width:92px;height:92px;margin:auto;display:grid;place-items:center;border-radius:30px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);font-size:42px;font-weight:800}.splash h1{margin:18px 0 4px}.splash p{margin:0;opacity:.85}
 .announcement-bar{position:sticky;top:0;z-index:130;padding:9px 40px 9px 14px;text-align:center;color:#fff;background:linear-gradient(90deg,var(--p),var(--p2));font-size:13px}.announcement-bar button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#fff;font-size:20px}
-.app-header{position:sticky;top:0;z-index:120;height:76px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--s) 92%,transparent);border-bottom:1px solid var(--b);backdrop-filter:blur(18px)}
-.brand{display:flex;align-items:center;gap:11px}.brand-logo{width:48px;height:48px;display:grid;place-items:center;border-radius:17px;color:#fff;font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--p),var(--p2));box-shadow:0 12px 28px rgba(105,88,245,.28)}.brand strong,.brand small{display:block}.brand small{margin-top:2px;color:var(--m)}
+.app-header{position:sticky;top:0;z-index:120;height:76px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;background:color-mix(in srgb,var(--s) 80%,transparent);border-bottom:1px solid transparent;backdrop-filter:blur(22px) saturate(180%);box-shadow:0 10px 34px rgba(10,14,30,.08)}
+.app-header:after{content:"";position:absolute;right:0;left:0;bottom:-1px;height:1px;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--p) 55%,transparent),transparent)}
+.brand{display:flex;align-items:center;gap:12px}.brand-logo{position:relative;width:50px;height:50px;display:grid;place-items:center;border-radius:18px;color:#fff;font-size:23px;font-weight:800;background:linear-gradient(135deg,var(--p),var(--p2));box-shadow:0 12px 30px color-mix(in srgb,var(--p) 38%,transparent);overflow:visible}
+.brand-logo:after{content:"";position:absolute;inset:-3px;border-radius:21px;border:1px solid color-mix(in srgb,var(--p) 45%,transparent);opacity:.7}
+.brand-copy strong{display:block;font-size:17px;font-weight:800;letter-spacing:.2px}
+.brand-copy small{display:block;margin-top:3px;color:var(--m);font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--s2);width:fit-content}
 .header-actions{display:flex;gap:8px}.icon-btn,.sheet-head button{position:relative;width:43px;height:43px;border:1px solid var(--b);border-radius:15px;color:var(--t);background:var(--s)}.counter{position:absolute;top:-6px;left:-5px;min-width:19px;height:19px;padding:0 4px;display:grid;place-items:center;border-radius:10px;background:var(--bad);color:#fff;font-size:10px}
 .page{width:min(820px,100%);margin:auto;padding:20px 16px calc(98px + var(--safe))}
 @keyframes pageEnter{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
@@ -68,7 +72,8 @@
 .skeleton-wrap{display:grid;gap:12px}
 .sk-card{padding:16px;display:grid;gap:10px;border-radius:18px;border:1px solid var(--b)}
 /* ===== Pull to refresh ===== */
-.pull-indicator{position:fixed;top:calc(84px);left:50%;translate:-50% 0;z-index:130;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:var(--card-bg);border:1px solid var(--b);box-shadow:0 12px 30px rgba(0,0,0,.18);color:var(--p);transform:translateY(-80px);transition:transform .12s ease-out}
+.pull-indicator{position:fixed;top:84px;left:50%;translate:-50% 0;z-index:130;width:44px;height:44px;display:grid;place-items:center;border-radius:50%;background:var(--card-bg);border:1px solid var(--b);box-shadow:0 12px 30px rgba(0,0,0,.18);color:var(--p);opacity:0;visibility:hidden;transform:translateY(-70px);transition:opacity .18s,transform .12s ease-out,visibility .18s}
+.pull-indicator.visible{opacity:1;visibility:visible}
 .pull-indicator i{width:20px;height:20px;transition:.2s}
 .pull-indicator.ready{color:#fff;background:var(--p);border-color:var(--p)}
 .pull-indicator.ready i{transform:rotate(180deg)}
@@ -76,6 +81,16 @@
 .pull-indicator.spinning i{animation:ptrSpin .7s linear infinite}
 @keyframes ptrSpin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.sk-line,.sk-search,.sk-hero,.sk-tile,.sk-card,.pull-indicator.spinning i{animation:none}}
+/* ===== FAQ ===== */
+.faq-list{display:grid;gap:9px;margin-bottom:14px}
+.faq-item{border:1px solid var(--b);border-radius:16px;background:var(--card-bg);overflow:hidden;transition:.2s border-color}
+.faq-item[open]{border-color:color-mix(in srgb,var(--p) 40%,var(--b))}
+.faq-item summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;cursor:pointer;list-style:none;font-size:13.5px;font-weight:800;color:var(--t)}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary i{width:17px;height:17px;color:var(--m);flex:none;transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.faq-item[open] summary i{transform:rotate(180deg);color:var(--p)}
+.faq-answer{padding:0 16px 15px;color:var(--m);font-size:13px;line-height:1.9;border-top:1px dashed var(--b);padding-top:12px;margin:0 14px 14px}
+.home-footer-space{height:10px}
 
 .catalog-image img,.slide-background-image{content-visibility:auto}
 .bottom-nav{position:fixed;right:0;left:0;bottom:0;z-index:125;height:calc(74px + var(--safe));padding:7px 8px var(--safe);display:grid;grid-template-columns:repeat(5,1fr);background:color-mix(in srgb,var(--s) 96%,transparent);border-top:1px solid var(--b);backdrop-filter:blur(20px)}.bottom-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:15px;color:var(--m);font-size:11px}.bottom-nav a span{font-size:22px}.bottom-nav a.active{color:var(--p);background:var(--s2)}
