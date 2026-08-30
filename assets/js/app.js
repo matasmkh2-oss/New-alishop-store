@@ -4,7 +4,7 @@ const PRIMARY_ADMIN_ID="60fb1f4a-5df4-4d05-9956-1ad1d59aa957";
 const isPrimaryAdmin=id=>id===PRIMARY_ADMIN_ID;
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
 const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
-const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
+const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
 const debounce=(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
@@ -633,6 +633,37 @@ const ADMIN_ICONS={sales:"receipt-text",catalog:"package-search",finance:"wallet
 
 function toast(m,t="success"){const e=document.createElement("div");e.className=`toast ${t}`;e.textContent=m;$("#toastRoot").append(e);setTimeout(()=>e.remove(),3200)}
 function badge(s){const m={pending:["قيد المراجعة","warning"],approved:["مقبول","success"],rejected:["مرفوض","danger"],paid:["مدفوع","success"],processing:["قيد التنفيذ","warning"],delivered:["تم التسليم","success"],cancelled:["ملغي","danger"],refunded:["مسترد","warning"],active:["نشط","success"],blocked:["محظور","danger"],available:["متاح","success"],paused:["موقوف","warning"],sold_out:["نفد","danger"]};const[t,c]=m[s]||[s||"-",""];return`<span class="badge ${c}">${t}</span>`}
+async function toggleFavorite(productId){
+  if(!needUser())return;
+  const isFav=S.favorites.has(productId);
+  S.favorites[isFav?"delete":"add"](productId);
+  $$(`[data-favorite="${productId}"]`).forEach(b=>b.classList.toggle("active",!isFav));
+  const q=isFav?supabase.from("favorites").delete().eq("user_id",S.user.id).eq("product_id",productId):supabase.from("favorites").insert({user_id:S.user.id,product_id:productId});
+  const{error}=await q;
+  if(error){S.favorites[isFav?"add":"delete"](productId);$$(`[data-favorite="${productId}"]`).forEach(b=>b.classList.toggle("active",isFav));toast(error.message,"error");return;}
+  toast(isFav?"أُزيل من المفضلة":"أُضيف إلى المفضلة");
+}
+function orderDetails(o){
+  const info=notificationTypeInfo("order");
+  const status=o.status||"pending";
+  const rows=[
+    ["رقم الطلب",o.order_number],
+    ["المنتج",o.product?.name],
+    ["القيمة",o.total!=null?money(o.total):null],
+    ["التاريخ",dt(o.created_at)]
+  ].filter(x=>x[1]);
+  openModal(`<div class="sheet-head"><div><h2>تفاصيل الطلب</h2><p>${esc(o.order_number||"")}</p></div><button data-close>×</button></div>
+  <div class="notification-card pro tone-digital">
+    <div class="notification-card-head">
+      <span class="notification-icon-badge"><i data-lucide="${info.icon}"></i></span>
+      <div class="notification-head-copy"><div class="notification-kicker-row"><span class="notification-kicker">طلب رقمي</span></div><h3>${esc(o.product?.name||"منتج رقمي")}</h3></div>
+      <span class="notification-detail-item status"><small>الحالة</small><strong class="st-${["delivered","approved"].includes(status)?"ok":status==="processing"?"run":["cancelled","refunded","rejected"].includes(status)?"bad":"wait"}">${esc(notificationStatusLabel(status))}</strong></span>
+    </div>
+    <div class="notification-details-list">${rows.map(([k,v])=>`<div class="notification-detail-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join("")}</div>
+    ${o.delivery_data&&["delivered","processing"].includes(status)?`<div class="notification-detail-item delivery"><small>بيانات التسليم</small><strong>${esc(o.delivery_data)}</strong></div>`:""}
+  </div>`);
+  refreshIcons();
+}
 function walletBalanceOf(u){return Number(u?.wallet_balance??u?.wallets?.balance??u?.wallets?.[0]?.balance??0)||0}
 function userRoleLabel(u){if(isPrimaryAdmin(u?.id))return "المدير الأساسي";return u?.role==="admin"?"مدير":"مستخدم"}
 function userRoleTone(u){if(isPrimaryAdmin(u?.id))return "primary-admin";return u?.role==="admin"?"admin-role":"user-role"}
@@ -1036,7 +1067,7 @@ async function showNotes(){
   refreshIcons();
 }
 function route(){const r=location.hash.replace("#/","").split("?")[0]||"home";$$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));$("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home)();setTimeout(refreshIcons,0)}
-async function catalog(){const[{data:p},{data:c}]=await Promise.all([supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),supabase.from("categories").select("*").eq("is_active",true).order("sort_order")]);S.products=p||[];S.categories=c||[]}
+async function catalog(){const[{data:p},{data:c},{data:f}]=await Promise.all([supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),supabase.from("categories").select("*").eq("is_active",true).order("sort_order"),S.user?supabase.from("favorites").select("product_id").eq("user_id",S.user.id):Promise.resolve({data:[]})]);S.products=p||[];S.categories=c||[];S.favorites=new Set((f||[]).map(x=>x.product_id))}
 
 function pcard(p){
   const sold=p.availability_status==="sold_out";
@@ -1048,7 +1079,7 @@ function pcard(p){
       <h3>${esc(p.name)}</h3>
       <div class="catalog-meta"><strong>${money(p.price)}</strong><span><i data-lucide="arrow-up-left"></i></span></div>
     </div>
-    <button class="favorite-btn" data-favorite="${p.id}" aria-label="المفضلة"><i data-lucide="heart"></i></button>
+    <button class="favorite-btn ${S.favorites.has(p.id)?"active":""}" data-favorite="${p.id}" aria-label="المفضلة"><i data-lucide="heart"></i></button>
   </article>`;
 }
 function bindProducts(){
@@ -1458,6 +1489,55 @@ function catalogItemChooser(){
 }
 
 async function adminProducts(){let q=supabase.from("products_with_stock").select("*",{count:"exact"}).order("created_at",{ascending:false});if(S.query)q=q.ilike("name",`%${S.query}%`);if(S.filter)q=q.eq("availability_status",S.filter);const from=(S.page-1)*CONFIG.PAGE_SIZE,{data,count}=await q.range(from,from+CONFIG.PAGE_SIZE-1),r=data||[];$("#adminContent").innerHTML=`${adminHeader("المنتجات","إضافة وتعديل وتعطيل",`<button id="addProduct" class="btn primary">إضافة منتج</button>`)}<div class="list">${r.map(p=>`<div class="card item"><div class="item-main"><h3>${esc(p.name)}</h3><p>${money(p.price)} • المخزون ${p.stock_count??"-"}</p></div><div class="item-actions">${badge(p.availability_status)}${iconButton("pencil","تعديل",`data-product-edit="${p.id}"`)}${iconButton("trash-2","حذف",`data-product-delete="${p.id}"`)}</div></div>`).join("")||empty("لا توجد منتجات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminProducts,[["available","متاح"],["sold_out","نفد المخزون"]]);bindPager(adminProducts);$("#addProduct").onclick=()=>productForm();$$("[data-product-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("products").select("*").eq("id",b.dataset.productEdit).single();productForm(data)});$$("[data-product-delete]").forEach(b=>b.onclick=()=>deleteRow("products",b.dataset.productDelete,"المنتج",adminProducts))}
+async function smmServiceForm(s=null){
+  const{data:platforms}=await supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order");
+  openModal(`<div class="sheet-head"><div><h2>${s?"تعديل":"إضافة"} خدمة سوشل ميديا</h2><p>أدخل تفاصيل الخدمة كما ستظهر للعملاء</p></div><button data-close>×</button></div>
+  <form id="smmServiceFormEl">
+    <label>اسم الخدمة<input id="sn" value="${esc(s?.name||"")}" required maxlength="160"></label>
+    <div class="social-form-grid">
+      <label>المنصة<select id="sp"><option value="">بدون منصة</option>${(platforms||[]).map(x=>`<option value="${x.id}" ${s?.platform_id===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>
+      <label>الفئة<input id="scat" value="${esc(s?.service_category||"")}" placeholder="مثال: خدمات عامة"></label>
+    </div>
+    <div class="social-form-grid">
+      <label>السعر / 1000<input id="spp" type="number" min="0" step=".0001" value="${s?.price_per_1000??0}" required></label>
+      <label>مدة التنفيذ<input id="setime" value="${esc(s?.estimated_time||"")}" placeholder="مثال: 0-1 ساعة"></label>
+    </div>
+    <div class="social-form-grid">
+      <label>أقل كمية<input id="smin" type="number" min="1" step="1" value="${s?.min_quantity??10}" required></label>
+      <label>أقصى كمية<input id="smax" type="number" min="1" step="1" value="${s?.max_quantity??10000}" required></label>
+    </div>
+    <div class="social-form-grid">
+      <label>الجودة<input id="squality" value="${esc(s?.quality_label||"")}" placeholder="مثال: جودة عالية"></label>
+      <label>الأيقونة<input id="sicon" value="${esc(s?.icon||"rocket")}" placeholder="اسم أيقونة lucide"></label>
+    </div>
+    <label>الوصف<textarea id="sdesc" maxlength="2000">${esc(s?.description||"")}</textarea></label>
+    <div class="social-form-grid">
+      <label class="switch-label"><input id="srefill" type="checkbox" ${s?.refill_supported?"checked":""}> يدعم التعويض</label>
+      <label class="switch-label"><input id="scancel" type="checkbox" ${s?.cancel_supported?"checked":""}> يدعم الإلغاء</label>
+    </div>
+    <label class="switch-label"><input id="sa" type="checkbox" ${s?.is_active!==false?"checked":""}> الخدمة مفعّلة</label>
+    <button type="submit" class="btn primary block"><i data-lucide="save"></i><span>حفظ الخدمة</span></button>
+  </form>`);
+  $("#smmServiceFormEl").onsubmit=async e=>{
+    e.preventDefault();
+    const name=$("#sn").value.trim();
+    if(name.length<2)return toast("اسم الخدمة قصير جدًا","error");
+    const price=Number($("#spp").value);
+    if(!Number.isFinite(price)||price<0)return toast("السعر غير صالح","error");
+    const min=parseInt($("#smin").value)||1,max=parseInt($("#smax").value)||1;
+    if(min<1||max<min)return toast("تحقق من الكميات الدنيا والقصوى","error");
+    const platformId=$("#sp").value||null;
+    const platformName=platformId?(platforms||[]).find(x=>x.id===platformId)?.name||null:null;
+    const payload={name,platform_id:platformId,platform:platformName,service_category:$("#scat").value.trim()||"خدمات عامة",price_per_1000:price,min_quantity:min,max_quantity:max,estimated_time:$("#setime").value.trim()||null,quality_label:$("#squality").value.trim()||null,icon:$("#sicon").value.trim()||"rocket",description:$("#sdesc").value.trim()||null,refill_supported:$("#srefill").checked,cancel_supported:$("#scancel").checked,is_active:$("#sa").checked,sort_order:s?.sort_order??0,updated_at:new Date().toISOString()};
+    const q=s?supabase.from("smm_services").update(payload).eq("id",s.id):supabase.from("smm_services").insert(payload);
+    const{error}=await q;
+    if(error)return toast(error.message,"error");
+    toast(s?"تم تحديث الخدمة":"تمت إضافة الخدمة");
+    closeModal();
+    adminCatalogItems();
+  };
+  refreshIcons();
+}
 async function productForm(p=null){
   const categoriesResult=await supabase.from("categories").select("*").order("name");
   if(categoriesResult.error)return toast(friendlyError(categoriesResult.error),"error");
