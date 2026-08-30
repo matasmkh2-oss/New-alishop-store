@@ -1090,13 +1090,70 @@ function bindProducts(){
   $$("[data-favorite]").forEach(b=>b.onclick=e=>{e.stopPropagation();toggleFavorite(b.dataset.favorite)});
   refreshIcons();
 }
-async function home(){await catalog();const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];app.innerHTML=`<div class="hero-slider">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}">
+function skeleton(lines=4){return `<div class="skeleton-wrap">${Array.from({length:lines}).map(()=>`<div class="sk-card"><div class="sk-line w60"></div><div class="sk-line w90"></div><div class="sk-line w40"></div></div>`).join("")}</div>`}
+function homeSkeleton(){return `<div class="home-skeleton"><div class="sk-line w50 lg"></div><div class="sk-search"></div><div class="sk-hero"></div><div class="sk-line w70"></div><div class="sk-grid">${'<div class="sk-tile"></div>'.repeat(6)}</div></div>`}
+function greetingText(){const h=new Date().getHours();return h<12?"صباح الخير":h<18?"مساء الخير":"مساء النور"}
+function platformTone(i){return["pf-a","pf-b","pf-c","pf-d","pf-e","pf-f"][i%6]}
+function bindPullToRefresh(){
+  if(window.__ptrBound)return;window.__ptrBound=true;
+  const indicator=document.createElement("div");indicator.className="pull-indicator";indicator.innerHTML=`<i data-lucide="refresh-cw"></i>`;document.body.append(indicator);
+  let startY=0,pulling=false;
+  const onHome=()=>{const r=location.hash.replace("#/","").split("?")[0];return r===""||r==="home"};
+  window.addEventListener("touchstart",e=>{if(window.scrollY<=2&&onHome()){startY=e.touches[0].clientY;pulling=true}},{passive:true});
+  window.addEventListener("touchmove",e=>{if(!pulling)return;const d=e.touches[0].clientY-startY;if(d>0&&window.scrollY<=2){indicator.style.transform=`translateY(${Math.min(d/2.2,74)}px)`;indicator.classList.toggle("ready",d>140)}},{passive:true});
+  window.addEventListener("touchend",async()=>{if(!pulling)return;pulling=false;const ready=indicator.classList.contains("ready");indicator.style.transform="";indicator.classList.remove("ready");if(ready){indicator.classList.add("spinning");refreshIcons();await Promise.all([catalog(true),loadIdentity(),loadPublic()]);await home();indicator.classList.remove("spinning")}},{passive:true});
+}
+async function home(){
+  app.innerHTML=homeSkeleton();refreshIcons();
+  await catalog();
+  const[activeRes,platformsRes,topRes]=await Promise.all([
+    S.user?supabase.from("orders").select("id,order_number,status,product:products(name)").eq("user_id",S.user.id).in("status",["pending","paid","processing"]).order("created_at",{ascending:false}).limit(1).maybeSingle():Promise.resolve({data:null}),
+    supabase.from("social_platforms").select("id,name,icon,slug").eq("is_active",true).order("sort_order").limit(12),
+    supabase.from("smm_services").select("id,name,price_per_1000,sales_count,icon,platform:social_platforms(name)").eq("is_active",true).order("sales_count",{ascending:false}).limit(6)
+  ]);
+  const activeOrder=activeRes?.data||null;
+  const platforms=platformsRes?.data||[];
+  const topSocial=topRes?.data||[];
+  const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];
+  const weekAgo=Date.now()-7*864e5;
+  const fresh=S.products.filter(p=>p.created_at&&new Date(p.created_at).getTime()>weekAgo).slice(0,6);
+  const lastCat=localStorage.getItem("alishop_last_category")||"";
+  const catName=id=>S.categories.find(c=>c.id===id)?.name||"";
+  const featured=lastCat?S.products.filter(p=>p.category_id===lastCat).concat(S.products.filter(p=>p.category_id!==lastCat)).slice(0,6):S.products.slice(0,6);
+  const name=S.profile?.full_name||"";
+  app.innerHTML=`
+  <div class="home-hello">
+    <div><small>${greetingText()}${name?"،":""}</small><h2>${esc(name||"أهلًا بك")}</h2></div>
+    <button id="homeSearchBtn" class="icon-btn" aria-label="بحث"><i data-lucide="search"></i></button>
+  </div>
+  <div class="home-search"><i data-lucide="search"></i><input id="homeSearch" placeholder="ابحث عن منتج أو خدمة..." autocomplete="off"></div>
+  ${activeOrder?`<a href="#/orders" class="active-order-card"><span class="ao-icon"><i data-lucide="package-search"></i></span><div><small>طلبك الآن</small><strong>${esc(activeOrder.product?.name||"طلب رقمي")}</strong><p>${esc(activeOrder.order_number||"")} • ${notificationStatusLabel(activeOrder.status)}</p></div><span class="ao-track">تتبع <i data-lucide="arrow-left"></i></span></a>`:""}
+  <div class="wallet-card">
+    <div class="wallet-card-top"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>رصيدك المتاح</small><strong>${money(S.wallet.balance)}</strong></div></div>
+    <div class="wallet-card-actions">
+      <a href="#/wallet" class="wc-action"><i data-lucide="plus-circle"></i><span>شحن</span></a>
+      <button id="homeRedeem" type="button" class="wc-action"><i data-lucide="scan-line"></i><span>بطاقة</span></button>
+      <a href="#/wallet" class="wc-action"><i data-lucide="history"></i><span>الحركات</span></a>
+    </div>
+  </div>
+  <div class="hero-slider compact">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}">
   ${s.image_url?`<img class="slide-background-image" src="${esc(s.image_url)}" alt="${esc(s.title||"سلايدر")}" loading="${i===0?"eager":"lazy"}">`:""}
   <div class="slide-shade"></div>
-  <div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div><div class="wallet-strip">
-  <div class="wallet-main"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>الرصيد المتاح</small><strong>${money(S.wallet.balance)}</strong></div></div>
-  <a href="#/wallet" class="wallet-charge-btn"><i data-lucide="plus"></i><span>شحن</span></a>
-</div>${section("خدمات السوشل ميديا","خدمات السوشل ميديا",`<a class="btn soft" href="#/social-services"><i data-lucide="rocket"></i> عرض الخدمات</a>`)}<div class="card item"><div class="item-main"><h3>خدمات السوشل ميديا سريعة</h3><p>متابعون، مشاهدات وتفاعل مع متابعة الطلب.</p></div><a href="#/social-services" class="icon-action"><i data-lucide="arrow-left"></i></a></div>${section("منتجات مميزة","أحدث المنتجات المتاحة")}<div class="grid">${S.products.slice(0,6).map(pcard).join("")||empty("لا توجد منتجات")}</div>`;let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{const prev=cur;els[prev].classList.remove("active");els[prev].classList.add("leaving");dots[prev].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active");setTimeout(()=>els[prev].classList.remove("leaving"),650)};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);bindProducts()}
+  <div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div>
+  ${platforms.length?`${section("خدمات السوشل ميديا","اختر المنصة وابدأ",`<a class="btn soft" href="#/products?tab=social"><i data-lucide="rocket"></i> الكل</a>`)}<div class="platforms-rail">${platforms.map((pl,i)=>`<a class="platform-chip ${platformTone(i)}" href="#/products?tab=social"><span class="pf-icon"><i data-lucide="${esc(pl.icon||"messages-square")}"></i></span><strong>${esc(pl.name)}</strong></a>`).join("")}</div>`:""}
+  ${lastCat?`${section("أكمل من حيث توقفت",esc(catName(lastCat)||"تصفحتها مؤخرًا"))}<div class="grid">${featured.slice(0,3).map(pcard).join("")}</div>`:""}
+  ${fresh.length?`${section("وصل حديثاً","أضيفت خلال الأسبوع")}<div class="grid">${fresh.map(pcard).join("")}</div>`:""}
+  ${topSocial.length?`${section("الأكثر طلباً","خدمات يثق بها العملاء")}<div class="list">${topSocial.map(sv=>`<a class="card item" href="#/products?tab=social"><div class="platform-list-icon"><i data-lucide="${esc(sv.icon||"rocket")}"></i></div><div class="item-main"><h3>${esc(sv.name)}</h3><p>${esc(sv.platform?.name||"")} • ${money(sv.price_per_1000)}/1000</p></div><span class="mini-chip neutral">${sv.sales_count||0} طلب</span></a>`).join("")}</div>`:""}
+  ${section("منتجات مميزة","أحدث المنتجات المتاحة",`<a class="btn soft" href="#/products">عرض الكل</a>`)}<div class="grid" id="homeGrid">${featured.map(pcard).join("")||empty("لا توجد منتجات")}</div>`;
+  let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{const prev=cur;els[prev].classList.remove("active");els[prev].classList.add("leaving");dots[prev].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active");setTimeout(()=>els[prev].classList.remove("leaving"),650)};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);
+  const searchInput=$("#homeSearch");
+  $("#homeSearchBtn")?.addEventListener("click",()=>searchInput?.focus());
+  searchInput?.addEventListener("input",debounce(()=>{const q=searchInput.value.trim();const grid=$("#homeGrid");if(!grid)return;const list=q?S.products.filter(p=>(p.name||"").includes(q)||(p.description||"").includes(q)).slice(0,12):featured;grid.innerHTML=list.map(pcard).join("")||empty("لا نتائج مطابقة");bindProducts();refreshIcons()},200));
+  searchInput?.addEventListener("keydown",e=>{if(e.key==="Enter"){S.query=searchInput.value.trim();location.hash="#/products"}});
+  $("#homeRedeem")?.addEventListener("click",async()=>{if(!needUser())return;const code=await appPrompt({title:"بطاقة شحن",message:"أدخل رمز بطاقة الشحن لإضافة الرصيد إلى محفظتك.",placeholder:"رمز البطاقة",confirmText:"شحن الرصيد",icon:"scan-line"});if(!code)return;const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});if(error)return toast(error.message,"error");toast(data?.message||"تم شحن الرصيد");await loadIdentity();home()});
+  bindProducts();
+  bindPullToRefresh();
+}
 async function products(){
   const initial=new URLSearchParams(location.hash.split("?")[1]||"").get("tab")||"digital";
   S.productMode=initial;
