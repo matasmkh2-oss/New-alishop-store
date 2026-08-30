@@ -1,5 +1,5 @@
 import{CONFIG}from"./config.js";import{supabase}from"./supabase-client.js";
-const APP_BUILD="13.0.0";
+const APP_BUILD="15.0.1";
 const PRIMARY_ADMIN_ID="60fb1f4a-5df4-4d05-9956-1ad1d59aa957";
 const isPrimaryAdmin=id=>id===PRIMARY_ADMIN_ID;
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
@@ -377,6 +377,11 @@ window.addEventListener("error",event=>{
   const message=event.error?.message||event.message;
   if(message&&!String(message).includes("ResizeObserver"))toast(friendlyError(message),"error");
 });
+function renderAppError(title,detail,actionText="إعادة المحاولة",action=()=>location.reload()){
+  app.innerHTML=`<div class="card empty"><h2>${esc(title)}</h2><p>${esc(detail||"حدث خطأ غير متوقع")}</p><button id="retryView" class="btn primary">${esc(actionText)}</button></div>`;
+  $("#retryView")?.addEventListener("click",action);
+  refreshIcons();
+}
 
 
 function appConfirm({
@@ -1096,8 +1101,37 @@ async function showNotes(){
   });
   refreshIcons();
 }
-function route(){const r=location.hash.replace("#/","").split("?")[0]||"home";$$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));$("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";app.classList.remove("page-enter");void app.offsetWidth;app.classList.add("page-enter");({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home)();setTimeout(refreshIcons,0)}
-async function catalog(force=false){if(!force&&S.products.length&&Date.now()-S.catalogAt<30000)return;const[{data:p},{data:c},{data:f}]=await Promise.all([supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),supabase.from("categories").select("*").eq("is_active",true).order("sort_order"),S.user?supabase.from("favorites").select("product_id").eq("user_id",S.user.id):Promise.resolve({data:[]})]);S.products=p||[];S.categories=c||[];S.favorites=new Set((f||[]).map(x=>x.product_id));S.catalogAt=Date.now()}
+async function route(){
+  const r=location.hash.replace("#/","").split("?")[0]||"home";
+  $$("[data-route]").forEach(a=>a.classList.toggle("active",a.dataset.route===r));
+  $("#pageTitle").textContent={home:"الرئيسية",products:"المنتجات والخدمات","digital-products":"المنتجات الرقمية","social-services":"خدمات السوشل ميديا",orders:"طلباتي",wallet:"المحفظة",account:"حسابي",admin:"لوحة الإدارة"}[r]||"علي شوب";
+  app.classList.remove("page-enter");
+  void app.offsetWidth;
+  app.classList.add("page-enter");
+  try{
+    const view=({home,products,"digital-products":digitalProducts,"social-services":socialServices,orders,wallet,account,admin}[r]||home);
+    await view();
+  }catch(error){
+    console.error("Route render error:",error);
+    renderAppError("تعذر تحميل الصفحة",friendlyError(error),"إعادة المحاولة",()=>route());
+  }
+  setTimeout(refreshIcons,0);
+}
+async function catalog(force=false){
+  if(!force&&S.products.length&&Date.now()-S.catalogAt<30000)return;
+  const [productsResult,categoriesResult,favoritesResult]=await Promise.all([
+    supabase.from("products_with_stock").select("*").eq("is_active",true).order("created_at",{ascending:false}),
+    supabase.from("categories").select("*").eq("is_active",true).order("sort_order"),
+    S.user?supabase.from("favorites").select("product_id").eq("user_id",S.user.id):Promise.resolve({data:[],error:null})
+  ]);
+  if(productsResult.error)throw productsResult.error;
+  if(categoriesResult.error)throw categoriesResult.error;
+  if(favoritesResult.error)throw favoritesResult.error;
+  S.products=productsResult.data||[];
+  S.categories=categoriesResult.data||[];
+  S.favorites=new Set((favoritesResult.data||[]).map(x=>x.product_id));
+  S.catalogAt=Date.now();
+}
 
 function pcard(p){
   const sold=p.availability_status==="sold_out";
@@ -1135,58 +1169,94 @@ function bindPullToRefresh(){
 }
 async function home(){
   app.innerHTML=homeSkeleton();refreshIcons();
-  await catalog();
-  const[activeRes,platformsRes,topRes,faqsRes]=await Promise.all([
-    S.user?supabase.from("orders").select("id,order_number,status,product:products(name)").eq("user_id",S.user.id).in("status",["pending","paid","processing"]).order("created_at",{ascending:false}).limit(1).maybeSingle():Promise.resolve({data:null}),
-    supabase.from("social_platforms").select("id,name,icon,slug").eq("is_active",true).order("sort_order").limit(12),
-    supabase.from("smm_services").select("id,name,price_per_1000,sales_count,icon,platform:social_platforms(name)").eq("is_active",true).order("sales_count",{ascending:false}).limit(6),
-    supabase.from("faqs").select("id,question,answer").eq("is_active",true).order("sort_order").limit(8)
-  ]);
-  const activeOrder=activeRes?.data||null;
-  const platforms=platformsRes?.data||[];
-  const topSocial=topRes?.data||[];
-  const faqs=faqsRes?.data||[];
-  const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];
-  const weekAgo=Date.now()-7*864e5;
-  const fresh=S.products.filter(p=>p.created_at&&new Date(p.created_at).getTime()>weekAgo).slice(0,6);
-  const lastCat=localStorage.getItem("alishop_last_category")||"";
-  const catName=id=>S.categories.find(c=>c.id===id)?.name||"";
-  const featured=lastCat?S.products.filter(p=>p.category_id===lastCat).concat(S.products.filter(p=>p.category_id!==lastCat)).slice(0,6):S.products.slice(0,6);
-  const name=S.profile?.full_name||"";
-  app.innerHTML=`
-  <div class="home-hello">
-    <div><small>${greetingText()}${name?"،":""}</small><h2>${esc(name||"أهلًا بك")}</h2></div>
-    <button id="homeSearchBtn" class="icon-btn" aria-label="بحث"><i data-lucide="search"></i></button>
-  </div>
-  <div class="home-search"><i data-lucide="search"></i><input id="homeSearch" placeholder="ابحث عن منتج أو خدمة..." autocomplete="off"></div>
-  ${activeOrder?`<a href="#/orders" class="active-order-card"><span class="ao-icon"><i data-lucide="package-search"></i></span><div><small>طلبك الآن</small><strong>${esc(activeOrder.product?.name||"طلب رقمي")}</strong><p>${esc(activeOrder.order_number||"")} • ${notificationStatusLabel(activeOrder.status)}</p></div><span class="ao-track">تتبع <i data-lucide="arrow-left"></i></span></a>`:""}
-  <div class="wallet-card">
-    <div class="wallet-card-top"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>رصيدك المتاح</small><strong>${money(S.wallet.balance)}</strong></div></div>
-    <div class="wallet-card-actions">
-      <a href="#/wallet" class="wc-action"><i data-lucide="plus-circle"></i><span>شحن</span></a>
-      <button id="homeRedeem" type="button" class="wc-action"><i data-lucide="scan-line"></i><span>بطاقة</span></button>
-      <a href="#/wallet" class="wc-action"><i data-lucide="history"></i><span>الحركات</span></a>
+  try{
+    await catalog();
+    const[activeRes,platformsRes,topRes,faqsRes]=await Promise.all([
+      S.user?supabase.from("orders").select("id,order_number,status,product:products(name)").eq("user_id",S.user.id).in("status",["pending","paid","processing"]).order("created_at",{ascending:false}).limit(1).maybeSingle():Promise.resolve({data:null}),
+      supabase.from("social_platforms").select("id,name,icon,slug").eq("is_active",true).order("sort_order").limit(12),
+      supabase.from("smm_services").select("id,name,price_per_1000,sales_count,icon,platform:social_platforms(name)").eq("is_active",true).order("sales_count",{ascending:false}).limit(6),
+      supabase.from("faqs").select("id,question,answer").eq("is_active",true).order("sort_order").limit(8)
+    ]);
+    if(activeRes?.error)throw activeRes.error;
+    if(platformsRes?.error)throw platformsRes.error;
+    if(topRes?.error)throw topRes.error;
+    if(faqsRes?.error)throw faqsRes.error;
+
+    const activeOrder=activeRes?.data||null;
+    const platforms=platformsRes?.data||[];
+    const topSocial=topRes?.data||[];
+    const faqs=faqsRes?.data||[];
+    const slides=S.slides.length?S.slides:[{title:"كل ما تحتاجه رقميًا",subtitle:"اشحن محفظتك واشترِ بسهولة",button_text:"تصفح المنتجات",button_url:"#/products"}];
+    const weekAgo=Date.now()-7*864e5;
+    const fresh=S.products.filter(p=>p.created_at&&new Date(p.created_at).getTime()>weekAgo).slice(0,6);
+    const gamingRoots=S.categories.filter(category=>categorySection(category)==="gaming"&&!category.parent_id);
+    const gamingProducts=S.products.filter(product=>productSection(product)==="gaming");
+    const gamingPreview=gamingProducts.slice(0,6);
+    const lastCat=localStorage.getItem("alishop_last_category")||"";
+    const catName=id=>S.categories.find(c=>c.id===id)?.name||"";
+    const featured=lastCat?S.products.filter(p=>p.category_id===lastCat).concat(S.products.filter(p=>p.category_id!==lastCat)).slice(0,6):S.products.slice(0,6);
+    const name=S.profile?.full_name||"";
+    app.innerHTML=`
+    <div class="home-hello">
+      <div><small>${greetingText()}${name?"،":""}</small><h2>${esc(name||"أهلًا بك")}</h2></div>
+      <button id="homeSearchBtn" class="icon-btn" aria-label="بحث"><i data-lucide="search"></i></button>
     </div>
-  </div>
-  <div class="hero-slider compact">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}">
-  ${s.image_url?`<img class="slide-background-image" src="${esc(s.image_url)}" alt="${esc(s.title||"سلايدر")}" loading="${i===0?"eager":"lazy"}">`:""}
-  <div class="slide-shade"></div>
-  <div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div>
-  ${platforms.length?`${section("خدمات السوشل ميديا","اختر المنصة وابدأ",`<a class="btn soft" href="#/products?tab=social"><i data-lucide="rocket"></i> الكل</a>`)}<div class="platforms-rail">${platforms.map((pl,i)=>`<a class="platform-chip ${platformTone(i)}" href="#/products?tab=social"><span class="pf-icon"><i data-lucide="${esc(pl.icon||"messages-square")}"></i></span><strong>${esc(pl.name)}</strong></a>`).join("")}</div>`:""}
-  ${lastCat?`${section("أكمل من حيث توقفت",esc(catName(lastCat)||"تصفحتها مؤخرًا"))}<div class="grid">${featured.slice(0,3).map(pcard).join("")}</div>`:""}
-  ${fresh.length?`${section("وصل حديثاً","أضيفت خلال الأسبوع")}<div class="grid">${fresh.map(pcard).join("")}</div>`:""}
-  ${topSocial.length?`${section("الأكثر طلباً","خدمات يثق بها العملاء")}<div class="list">${topSocial.map(sv=>`<a class="card item" href="#/products?tab=social"><div class="platform-list-icon"><i data-lucide="${esc(sv.icon||"rocket")}"></i></div><div class="item-main"><h3>${esc(sv.name)}</h3><p>${esc(sv.platform?.name||"")} • ${money(sv.price_per_1000)}/1000</p></div><span class="mini-chip neutral">${sv.sales_count||0} طلب</span></a>`).join("")}</div>`:""}
-  ${section("منتجات مميزة","أحدث المنتجات المتاحة",`<a class="btn soft" href="#/products">عرض الكل</a>`)}<div class="grid" id="homeGrid">${featured.map(pcard).join("")||empty("لا توجد منتجات")}</div>
-  ${faqs.length?`${section("الأسئلة الشائعة","إجابات سريعة عن أكثر ما يُسأل عنه")}<div class="faq-list">${faqs.map((f,i)=>`<details class="faq-item" ${i===0?"open":""}><summary><span class="faq-q-icon"><i data-lucide="circle-help"></i></span><span class="faq-q-text">${esc(f.question)}</span><i data-lucide="chevron-down" class="faq-chevron"></i></summary><div class="faq-answer">${linkify(f.answer)}</div></details>`).join("")}</div>`:""}
-  <div class="home-footer-space"></div>`;
-  let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{const prev=cur;els[prev].classList.remove("active");els[prev].classList.add("leaving");dots[prev].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active");setTimeout(()=>els[prev].classList.remove("leaving"),650)};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);
-  const searchInput=$("#homeSearch");
-  $("#homeSearchBtn")?.addEventListener("click",()=>searchInput?.focus());
-  searchInput?.addEventListener("input",debounce(()=>{const q=searchInput.value.trim();const grid=$("#homeGrid");if(!grid)return;const list=q?S.products.filter(p=>(p.name||"").includes(q)||(p.description||"").includes(q)).slice(0,12):featured;grid.innerHTML=list.map(pcard).join("")||empty("لا نتائج مطابقة");bindProducts();refreshIcons()},200));
-  searchInput?.addEventListener("keydown",e=>{if(e.key==="Enter"){S.query=searchInput.value.trim();S.catalogSearchFromHome=S.query;location.hash="#/products"}});
-  $("#homeRedeem")?.addEventListener("click",async()=>{if(!needUser())return;const code=await appPrompt({title:"بطاقة شحن",message:"أدخل رمز بطاقة الشحن لإضافة الرصيد إلى محفظتك.",placeholder:"رمز البطاقة",confirmText:"شحن الرصيد",icon:"scan-line"});if(!code)return;const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});if(error)return toast(error.message,"error");toast(data?.message||"تم شحن الرصيد");await loadIdentity();home()});
-  bindProducts();
-  bindPullToRefresh();
+    <div class="home-search"><i data-lucide="search"></i><input id="homeSearch" placeholder="ابحث عن منتج أو خدمة..." autocomplete="off"></div>
+    ${activeOrder?`<a href="#/orders" class="active-order-card"><span class="ao-icon"><i data-lucide="package-search"></i></span><div><small>طلبك الآن</small><strong>${esc(activeOrder.product?.name||"طلب رقمي")}</strong><p>${esc(activeOrder.order_number||"")} • ${notificationStatusLabel(activeOrder.status)}</p></div><span class="ao-track">تتبع <i data-lucide="arrow-left"></i></span></a>`:""}
+    <div class="wallet-card">
+      <div class="wallet-card-top"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>رصيدك المتاح</small><strong>${money(S.wallet.balance)}</strong></div></div>
+      <div class="wallet-card-actions">
+        <a href="#/wallet" class="wc-action"><i data-lucide="plus-circle"></i><span>شحن</span></a>
+        <button id="homeRedeem" type="button" class="wc-action"><i data-lucide="scan-line"></i><span>بطاقة</span></button>
+        <a href="#/wallet" class="wc-action"><i data-lucide="history"></i><span>الحركات</span></a>
+      </div>
+    </div>
+    <div class="hero-slider compact">${slides.map((s,i)=>`<section class="slide ${i===0?"active":""}">
+    ${s.image_url?`<img class="slide-background-image" src="${esc(s.image_url)}" alt="${esc(s.title||"سلايدر")}" loading="${i===0?"eager":"lazy"}">`:""}
+    <div class="slide-shade"></div>
+    <div class="slide-overlay"><span class="badge">علي شوب</span><h1>${esc(s.title)}</h1><p>${esc(s.subtitle||"")}</p><a class="btn primary" href="${esc(s.button_url||"#/products")}">${esc(s.button_text||"استكشف")}</a></div></section>`).join("")}<div class="dots">${slides.map((_,i)=>`<button class="dot ${i===0?"active":""}" data-slide="${i}"></button>`).join("")}</div></div>
+    ${gamingRoots.length?`${section("قسم الألعاب والتطبيقات والبرامج","جاهز الآن لإضافة المنتجات والبدء",`<a class="btn soft" href="#/products?tab=gaming"><i data-lucide="gamepad-2"></i> فتح القسم</a>`)}<div class="platforms-rail">${gamingRoots.map((category,index)=>`<a class="platform-chip ${platformTone(index)}" href="#/products?tab=gaming"><span class="pf-icon"><i data-lucide="${category.name.includes("الألعاب")?"gamepad-2":category.name.includes("التطبيقات")?"smartphone":"badge-check"}"></i></span><strong>${esc(category.name)}</strong></a>`).join("")}</div>`:""}
+    ${platforms.length?`${section("خدمات السوشل ميديا","اختر المنصة وابدأ",`<a class="btn soft" href="#/products?tab=social"><i data-lucide="rocket"></i> الكل</a>`)}<div class="platforms-rail">${platforms.map((pl,i)=>`<a class="platform-chip ${platformTone(i)}" href="#/products?tab=social"><span class="pf-icon"><i data-lucide="${esc(pl.icon||"messages-square")}"></i></span><strong>${esc(pl.name)}</strong></a>`).join("")}</div>`:""}
+    ${gamingPreview.length?`${section("منتجات الألعاب والتطبيقات","أحدث ما تمت إضافته لهذا القسم",`<a class="btn soft" href="#/products?tab=gaming">عرض الكل</a>`)}<div class="grid">${gamingPreview.map(pcard).join("")}</div>`:""}
+    ${lastCat?`${section("أكمل من حيث توقفت",esc(catName(lastCat)||"تصفحتها مؤخرًا"))}<div class="grid">${featured.slice(0,3).map(pcard).join("")}</div>`:""}
+    ${fresh.length?`${section("وصل حديثاً","أضيفت خلال الأسبوع")}<div class="grid">${fresh.map(pcard).join("")}</div>`:""}
+    ${topSocial.length?`${section("الأكثر طلباً","خدمات يثق بها العملاء")}<div class="list">${topSocial.map(sv=>`<a class="card item" href="#/products?tab=social"><div class="platform-list-icon"><i data-lucide="${esc(sv.icon||"rocket")}"></i></div><div class="item-main"><h3>${esc(sv.name)}</h3><p>${esc(sv.platform?.name||"")} • ${money(sv.price_per_1000)}/1000</p></div><span class="mini-chip neutral">${sv.sales_count||0} طلب</span></a>`).join("")}</div>`:""}
+    ${section("منتجات مميزة","أحدث المنتجات المتاحة",`<a class="btn soft" href="#/products">عرض الكل</a>`)}<div class="grid" id="homeGrid">${featured.map(pcard).join("")||empty("لا توجد منتجات")}</div>
+    ${faqs.length?`${section("الأسئلة الشائعة","إجابات سريعة عن أكثر ما يُسأل عنه")}<div class="faq-list">${faqs.map((f,i)=>`<details class="faq-item" ${i===0?"open":""}><summary><span class="faq-q-icon"><i data-lucide="circle-help"></i></span><span class="faq-q-text">${esc(f.question)}</span><i data-lucide="chevron-down" class="faq-chevron"></i></summary><div class="faq-answer">${linkify(f.answer)}</div></details>`).join("")}</div>`:""}
+    <div class="home-footer-space"></div>`;
+    let cur=0,els=$$(".slide"),dots=$$(".dot");
+    const go=index=>{
+      const prev=cur;
+      if(!els.length||!dots.length||!els[index])return;
+      els[prev]?.classList.remove("active");
+      els[prev]?.classList.add("leaving");
+      dots[prev]?.classList.remove("active");
+      cur=index;
+      els[cur]?.classList.add("active");
+      dots[cur]?.classList.add("active");
+      setTimeout(()=>els[prev]?.classList.remove("leaving"),650);
+    };
+    dots.forEach(dot=>dot.onclick=()=>go(+dot.dataset.slide));
+    if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);
+    const searchInput=$("#homeSearch");
+    $("#homeSearchBtn")?.addEventListener("click",()=>searchInput?.focus());
+    searchInput?.addEventListener("input",debounce(()=>{
+      const q=searchInput.value.trim();
+      const grid=$("#homeGrid");
+      if(!grid)return;
+      const list=q?S.products.filter(p=>(p.name||"").includes(q)||(p.description||"").includes(q)).slice(0,12):featured;
+      grid.innerHTML=list.map(pcard).join("")||empty("لا نتائج مطابقة");
+      bindProducts();
+      refreshIcons();
+    },200));
+    searchInput?.addEventListener("keydown",e=>{if(e.key==="Enter"){S.query=searchInput.value.trim();S.catalogSearchFromHome=S.query;location.hash="#/products"}});
+    $("#homeRedeem")?.addEventListener("click",async()=>{if(!needUser())return;const code=await appPrompt({title:"بطاقة شحن",message:"أدخل رمز بطاقة الشحن لإضافة الرصيد إلى محفظتك.",placeholder:"رمز البطاقة",confirmText:"شحن الرصيد",icon:"scan-line"});if(!code)return;const{data,error}=await supabase.rpc("redeem_recharge_card",{p_code:code.trim()});if(error)return toast(error.message,"error");toast(data?.message||"تم شحن الرصيد");await loadIdentity();home()});
+    bindProducts();
+    bindPullToRefresh();
+  }catch(error){
+    console.error("Home render error:",error);
+    renderAppError("تعذر تحميل الصفحة الرئيسية",friendlyError(error),"إعادة المحاولة",()=>home());
+  }
 }
 async function products(){
   const requestedTab=new URLSearchParams(location.hash.split("?")[1]||"").get("tab");
