@@ -7,6 +7,7 @@ const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
 const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),catalogAt:0,authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"hub",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
+function linkify(text){const safe=esc(text);return safe.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener" class="faq-link">$1</a>').replace(/\n/g,"<br>")}
 const debounce=(fn,ms=250)=>{let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}};
 const LOG_LABELS={update_order:"تحديث طلب",set_user_status:"تغيير حالة مستخدم",set_user_role:"تغيير دور مستخدم",adjust_wallet:"تعديل رصيد",approve_deposit:"قبول طلب شحن",reject_deposit:"رفض طلب شحن",create_product:"إضافة منتج",update_product:"تعديل منتج",delete_product:"حذف منتج",publish_announcement:"نشر إعلان",generate_cards:"توليد بطاقات شحن",update_slide:"تحديث سلايدر",delete_slide:"حذف سلايدر"};
 function logLabel(v){return LOG_LABELS[v]||String(v||"عملية إدارية").replaceAll("_"," ")}
@@ -749,7 +750,7 @@ async function loadPublic(){
       .from("announcements")
       .select("*")
       .eq("is_active",true)
-      .eq("kind","bar")
+      .in("kind",["bar","popup"])
       .lte("starts_at",now)
       .or(`ends_at.is.null,ends_at.gte.${now}`)
       .order("created_at",{ascending:false}),
@@ -771,6 +772,26 @@ async function loadPublic(){
   applyBranding();
   renderFloatingContacts();
   startAnnouncementRotation();
+  showPopupAnnouncement();
+}
+function showPopupAnnouncement(){
+  const popup=(S.announcements||[]).find(a=>a.kind==="popup");
+  if(!popup)return;
+  const seenKey=`alishop_popup_${popup.id}`;
+  if(popup.show_once&&localStorage.getItem(seenKey))return;
+  if(popup.show_once)localStorage.setItem(seenKey,"1");
+  setTimeout(()=>{
+    openModal(`<div class="popup-announce">
+      <button class="popup-close" data-close aria-label="إغلاق">×</button>
+      ${popup.image_url?`<div class="popup-media"><img src="${esc(popup.image_url)}" alt="${esc(popup.title||"إعلان")}"></div>`:`<div class="popup-media popup-media-icon"><i data-lucide="megaphone"></i></div>`}
+      <div class="popup-body">
+        ${popup.title?`<h2>${esc(popup.title)}</h2>`:""}
+        <p>${linkify(popup.message||"")}</p>
+        ${popup.button_text?`<a class="btn primary block popup-cta" href="${esc(popup.button_url||"#/products")}">${esc(popup.button_text)}</a>`:""}
+      </div>
+    </div>`);
+    refreshIcons();
+  },900);
 }
 
 function startAnnouncementRotation(){
@@ -1147,7 +1168,7 @@ async function home(){
   ${fresh.length?`${section("وصل حديثاً","أضيفت خلال الأسبوع")}<div class="grid">${fresh.map(pcard).join("")}</div>`:""}
   ${topSocial.length?`${section("الأكثر طلباً","خدمات يثق بها العملاء")}<div class="list">${topSocial.map(sv=>`<a class="card item" href="#/products?tab=social"><div class="platform-list-icon"><i data-lucide="${esc(sv.icon||"rocket")}"></i></div><div class="item-main"><h3>${esc(sv.name)}</h3><p>${esc(sv.platform?.name||"")} • ${money(sv.price_per_1000)}/1000</p></div><span class="mini-chip neutral">${sv.sales_count||0} طلب</span></a>`).join("")}</div>`:""}
   ${section("منتجات مميزة","أحدث المنتجات المتاحة",`<a class="btn soft" href="#/products">عرض الكل</a>`)}<div class="grid" id="homeGrid">${featured.map(pcard).join("")||empty("لا توجد منتجات")}</div>
-  ${faqs.length?`${section("الأسئلة الشائعة","إجابات سريعة عن أكثر ما يُسأل عنه")}<div class="faq-list">${faqs.map((f,i)=>`<details class="faq-item" ${i===0?"open":""}><summary><span>${esc(f.question)}</span><i data-lucide="chevron-down"></i></summary><div class="faq-answer">${esc(f.answer)}</div></details>`).join("")}</div>`:""}
+  ${faqs.length?`${section("الأسئلة الشائعة","إجابات سريعة عن أكثر ما يُسأل عنه")}<div class="faq-list">${faqs.map((f,i)=>`<details class="faq-item" ${i===0?"open":""}><summary><span class="faq-q-icon"><i data-lucide="circle-help"></i></span><span class="faq-q-text">${esc(f.question)}</span><i data-lucide="chevron-down" class="faq-chevron"></i></summary><div class="faq-answer">${linkify(f.answer)}</div></details>`).join("")}</div>`:""}
   <div class="home-footer-space"></div>`;
   let cur=0,els=$$(".slide"),dots=$$(".dot");const go=i=>{const prev=cur;els[prev].classList.remove("active");els[prev].classList.add("leaving");dots[prev].classList.remove("active");cur=i;els[cur].classList.add("active");dots[cur].classList.add("active");setTimeout(()=>els[prev].classList.remove("leaving"),650)};dots.forEach(d=>d.onclick=()=>go(+d.dataset.slide));if(els.length>1)setInterval(()=>go((cur+1)%els.length),5000);
   const searchInput=$("#homeSearch");
@@ -1186,28 +1207,64 @@ async function products(){
     $("#search").oninput=draw;$("#cat").onchange=draw;bindProducts();refreshIcons();
   };
   const renderSocialInside=async()=>{
-    if(!S.user){$("#catalogDynamic").innerHTML=empty("خدمات السوشل ميديا","سجل الدخول للطلب");return}
+    $("#catalogDynamic").innerHTML=skeleton(3);
     const[{data:platforms},{data:services}]=await Promise.all([
       supabase.from("social_platforms").select("*").eq("is_active",true).order("sort_order"),
       supabase.from("smm_services").select("*,platform:social_platforms(name,icon)").eq("is_active",true).order("sort_order")
     ]);
-    const ps=platforms||[],all=services||[];let platformId=ps[0]?.id;
-    $("#catalogDynamic").innerHTML=`<div class="official-order-card compact-social">
-      <div class="platform-picker">${ps.map((p,i)=>`<button class="platform-choice ${i===0?"active":""}" data-platform="${p.id}"><i data-lucide="${p.icon||"circle"}"></i><span>${esc(p.name)}</span></button>`).join("")}</div>
-      <div class="social-form-grid"><label>الفئة<select id="socialCategorySelect"></select></label><label>الخدمة<select id="socialServiceSelect"></select></label></div>
-      <div id="serviceInfo" class="service-info-card"></div>
-      <form id="officialSocialForm"><label>الرابط<input id="socialTarget" type="url" placeholder="https://..." required></label><div class="social-form-grid"><label>الكمية<input id="socialQuantity" type="number" required></label><div id="socialCalculation" class="calculation-card"></div></div><label>ملاحظات<textarea id="socialNotes" placeholder="اختياري"></textarea></label><button class="btn primary block"><i data-lucide="shopping-cart"></i> تأكيد الطلب</button></form>
-    </div>`;
-    const byPlatform=()=>all.filter(s=>s.platform_id===platformId);
-    const selectedService=()=>all.find(s=>s.id===$("#socialServiceSelect").value);
-    const updateCategories=()=>{const cats=[...new Set(byPlatform().map(s=>s.service_category||"خدمات عامة"))];$("#socialCategorySelect").innerHTML=cats.map(c=>`<option>${esc(c)}</option>`).join("");updateServices()};
-    const updateServices=()=>{const cat=$("#socialCategorySelect").value,list=byPlatform().filter(s=>(s.service_category||"خدمات عامة")===cat);$("#socialServiceSelect").innerHTML=list.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");updateInfo()};
-    const updateCalc=()=>{const s=selectedService(),q=+$("#socialQuantity").value||0;if(!s)return;$("#socialCalculation").innerHTML=`<small>الإجمالي</small><strong>${money((q/1000)*s.price_per_1000)}</strong>`};
-    const updateInfo=()=>{const s=selectedService();if(!s){$("#serviceInfo").innerHTML=empty("لا توجد خدمات");return}$("#serviceInfo").innerHTML=`<div class="service-info-head"><span class="service-platform-icon"><i data-lucide="${s.platform?.icon||"circle"}"></i></span><div><h3>${esc(s.name)}</h3><p>${esc(s.description||"")}</p></div></div><div class="service-stat-row"><span>الأدنى <b>${s.min_quantity}</b></span><span>الأقصى <b>${s.max_quantity}</b></span><span>1000 / <b>${money(s.price_per_1000)}</b></span></div>`;$("#socialQuantity").min=s.min_quantity;$("#socialQuantity").max=s.max_quantity;$("#socialQuantity").value=s.min_quantity;updateCalc();refreshIcons()};
-    $$(".platform-choice").forEach(b=>b.onclick=()=>{$$(".platform-choice").forEach(x=>x.classList.remove("active"));b.classList.add("active");platformId=b.dataset.platform;updateCategories()});
-    $("#socialCategorySelect").onchange=updateServices;$("#socialServiceSelect").onchange=updateInfo;$("#socialQuantity").oninput=updateCalc;updateCategories();
-    $("#officialSocialForm").onsubmit=async e=>{e.preventDefault();const s=selectedService();if(!s)return;const{error}=await supabase.rpc("create_smm_order",{p_service_id:s.id,p_target_url:$("#socialTarget").value,p_quantity:+$("#socialQuantity").value,p_notes:$("#socialNotes").value||null});if(error)return toast(error.message,"error");toast("تم إنشاء طلب السوشل ميديا");location.hash="#/orders?tab=social"};
-    refreshIcons();
+    const ps=platforms||[],all=services||[];
+    if(!all.length){$("#catalogDynamic").innerHTML=empty("لا توجد خدمات","ستتوفر خدمات السوشل قريبًا","rocket");refreshIcons();return}
+    let platformId="all";
+    const card=s=>`<button class="social-service-card" data-order-service="${s.id}">
+      <span class="ssc-icon"><i data-lucide="${esc(s.icon||s.platform?.icon||"rocket")}"></i></span>
+      <div class="ssc-main"><h3>${esc(s.name)}</h3><p>${esc(s.platform?.name||"")}${s.sales_count?` • ${s.sales_count} طلب`:""}</p></div>
+      <div class="ssc-meta"><strong>${money(s.price_per_1000)}</strong><small>لكل 1000</small></div>
+    </button>`;
+    const draw=()=>{
+      const list=platformId==="all"?all:all.filter(s=>s.platform_id===platformId);
+      $("#catalogDynamic").innerHTML=`
+      <div class="social-platforms-row">
+        <button class="social-pf-chip ${platformId==="all"?"active":""}" data-pf="all"><i data-lucide="layout-grid"></i> الكل</button>
+        ${ps.map(p=>`<button class="social-pf-chip ${platformId===p.id?"active":""}" data-pf="${p.id}"><i data-lucide="${esc(p.icon||"circle")}"></i> ${esc(p.name)}</button>`).join("")}
+      </div>
+      <div class="social-services-list">${list.map(card).join("")||empty("لا توجد خدمات لهذه المنصة")}</div>`;
+      $$(".social-pf-chip").forEach(b=>b.onclick=()=>{platformId=b.dataset.pf;draw()});
+      $$("[data-order-service]").forEach(b=>b.onclick=()=>openServiceOrder(all.find(s=>s.id===b.dataset.orderService)));
+      refreshIcons();
+    };
+    const openServiceOrder=s=>{
+      if(!s)return;
+      openModal(`<div class="sheet-head"><div><h2>${esc(s.name)}</h2><p>${esc(s.platform?.name||"خدمة سوشل")}</p></div><button data-close>×</button></div>
+      <form id="officialSocialForm" class="social-order-form">
+        ${s.description?`<div class="service-desc">${esc(s.description)}</div>`:""}
+        <div class="service-quick-stats">
+          <span><small>الأدنى</small><b>${s.min_quantity}</b></span>
+          <span><small>الأقصى</small><b>${s.max_quantity}</b></span>
+          <span><small>السعر/1000</small><b>${money(s.price_per_1000)}</b></span>
+        </div>
+        <label>الرابط أو المعرف<input id="socialTarget" type="text" placeholder="رابط، اسم مستخدم، أو أي نص..." required></label>
+        <label>الكمية<input id="socialQuantity" type="number" inputmode="numeric" min="${s.min_quantity}" max="${s.max_quantity}" value="${s.min_quantity}" required></label>
+        <div id="socialCalculation" class="calculation-card"></div>
+        <label>ملاحظات<textarea id="socialNotes" placeholder="اختياري"></textarea></label>
+        <button class="btn primary block"><i data-lucide="shopping-cart"></i> تأكيد الطلب</button>
+      </form>`);
+      const qty=$("#socialQuantity");
+      const calc=()=>{const q=+qty.value||0;$("#socialCalculation").innerHTML=`<small>الإجمالي</small><strong>${money((q/1000)*s.price_per_1000)}</strong>`};
+      qty.oninput=calc;calc();
+      $("#officialSocialForm").onsubmit=async e=>{
+        e.preventDefault();
+        if(!needUser())return;
+        const target=$("#socialTarget").value.trim();
+        const quantity=+qty.value;
+        if(!target)return toast("أدخل الرابط أو المعرف","error");
+        if(quantity<s.min_quantity||quantity>s.max_quantity)return toast(`الكمية بين ${s.min_quantity} و ${s.max_quantity}`,"error");
+        const{error}=await supabase.rpc("create_smm_order",{p_service_id:s.id,p_target_url:target,p_quantity:quantity,p_notes:$("#socialNotes").value.trim()||null});
+        if(error)return toast(error.message,"error");
+        toast("تم إنشاء طلب السوشل");closeModal();location.hash="#/orders?tab=social";
+      };
+      refreshIcons();
+    };
+    draw();
   };
   drawShell();
 }
@@ -2154,8 +2211,8 @@ async function adminFaqs(){
   $$("[data-faq-del]").forEach(b=>b.onclick=()=>deleteRow("faqs",b.dataset.faqDel,"السؤال",adminFaqs));
   refreshIcons();
 }
-async function adminAnnouncements(){const{data,count}=await listQuery("announcements","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,message.ilike.%${S.query}%`);if(S.filter)q=q.eq("kind",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإعلانات","شريط علوي وإعلانات عامة",`<button id="addAnnouncement" class="btn primary">إضافة إعلان</button>`)}<div class="list">${r.map(a=>`<div class="card item"><div class="item-main"><h3>${esc(a.title||"إعلان")}</h3><p>${esc(a.message)} • ${a.kind}</p></div><div class="item-actions">${a.is_active?badge("active"):badge("blocked")}<button class="small" data-ann-edit="${a.id}">تعديل</button><button class="danger" data-ann-delete="${a.id}">حذف</button></div></div>`).join("")||empty("لا توجد إعلانات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminAnnouncements,[["bar","شريط علوي"],["notification","إشعار عام"]]);bindPager(adminAnnouncements);$("#addAnnouncement").onclick=()=>announcementForm();$$("[data-ann-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("announcements").select("*").eq("id",b.dataset.annEdit).single();announcementForm(data)});$$("[data-ann-delete]").forEach(b=>b.onclick=()=>deleteRow("announcements",b.dataset.annDelete,"الإعلان",adminAnnouncements))}
-function announcementForm(a=null){openModal(`<div class="sheet-head"><h2>${a?"تعديل":"إضافة"} إعلان</h2><button data-close>×</button></div><form id="annForm"><label>العنوان<input id="at" value="${esc(a?.title||"")}"></label><label>النص<textarea id="am" required>${esc(a?.message||"")}</textarea></label><label>النوع<select id="ak"><option value="bar">شريط علوي</option><option value="notification" ${a?.kind==="notification"?"selected":""}>إشعار عام</option></select></label><label>تاريخ البداية<input id="as" type="datetime-local"></label><label>تاريخ النهاية<input id="ae" type="datetime-local"></label><label><input id="aa" type="checkbox" ${a?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#annForm").onsubmit=async e=>{e.preventDefault();const payload={title:$("#at").value,message:$("#am").value,kind:$("#ak").value,starts_at:$("#as").value||new Date().toISOString(),ends_at:$("#ae").value||null,is_active:$("#aa").checked,created_by:S.user.id};const q=a?supabase.from("announcements").update(payload).eq("id",a.id):supabase.from("announcements").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");if(!a&&payload.kind==="notification")await supabase.from("notifications").insert({user_id:null,title:payload.title||"إعلان",body:payload.message,type:"announcement"});toast("تم الحفظ");closeModal();adminAnnouncements()}}
+async function adminAnnouncements(){const{data,count}=await listQuery("announcements","*",q=>{if(S.query)q=q.or(`title.ilike.%${S.query}%,message.ilike.%${S.query}%`);if(S.filter)q=q.eq("kind",S.filter);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الإعلانات","شريط علوي وإعلانات عامة",`<button id="addAnnouncement" class="btn primary">إضافة إعلان</button>`)}<div class="list">${r.map(a=>`<div class="card item"><div class="item-main"><h3>${esc(a.title||"إعلان")}</h3><p>${esc(a.message)} • ${{bar:"شريط علوي",popup:"منبثق",notification:"إشعار عام"}[a.kind]||a.kind}</p></div><div class="item-actions">${a.is_active?badge("active"):badge("blocked")}<button class="small" data-ann-edit="${a.id}">تعديل</button><button class="danger" data-ann-delete="${a.id}">حذف</button></div></div>`).join("")||empty("لا توجد إعلانات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminAnnouncements,[["bar","شريط علوي"],["notification","إشعار عام"]]);bindPager(adminAnnouncements);$("#addAnnouncement").onclick=()=>announcementForm();$$("[data-ann-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("announcements").select("*").eq("id",b.dataset.annEdit).single();announcementForm(data)});$$("[data-ann-delete]").forEach(b=>b.onclick=()=>deleteRow("announcements",b.dataset.annDelete,"الإعلان",adminAnnouncements))}
+function announcementForm(a=null){openModal(`<div class="sheet-head"><h2>${a?"تعديل":"إضافة"} إعلان</h2><button data-close>×</button></div><form id="annForm"><label>العنوان<input id="at" value="${esc(a?.title||"")}"></label><label>النص<textarea id="am" required>${esc(a?.message||"")}</textarea></label><label>النوع<select id="ak"><option value="bar" ${!a||a.kind==="bar"?"selected":""}>شريط علوي</option><option value="popup" ${a?.kind==="popup"?"selected":""}>إعلان منبثق (الرئيسية)</option><option value="notification" ${a?.kind==="notification"?"selected":""}>إشعار عام</option></select></label><div id="popupFields" class="popup-fields ${a?.kind==="popup"?"":"hidden"}"><label>صورة الإعلان${imagePicker("annImageFile",a?.image_url||"")}</label><div class="social-form-grid"><label>نص الزر<input id="abt" value="${esc(a?.button_text||"")}" placeholder="مثال: تسوق الآن"></label><label>رابط الزر<input id="abu" value="${esc(a?.button_url||"")}" placeholder="#/products أو رابط خارجي"></label></div><label class="switch-label"><input id="aonce" type="checkbox" ${a?.show_once!==false?"checked":""}> يظهر مرة واحدة لكل زائر</label></div><label>تاريخ البداية<input id="as" type="datetime-local"></label><label>تاريخ النهاية<input id="ae" type="datetime-local"></label><label><input id="aa" type="checkbox" ${a?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#ak").onchange=()=>$("#popupFields").classList.toggle("hidden",$("#ak").value!=="popup");$("#annForm").onsubmit=async e=>{e.preventDefault();const isPopup=$("#ak").value==="popup";let imageUrl=a?.image_url||null;const imageFile=$("#annImageFile")?.files?.[0];if(isPopup&&imageFile)imageUrl=await uploadFile(imageFile,"announcements");const payload={title:$("#at").value,message:$("#am").value,kind:$("#ak").value,starts_at:$("#as").value||new Date().toISOString(),ends_at:$("#ae").value||null,is_active:$("#aa").checked,created_by:S.user.id,image_url:isPopup?imageUrl:null,button_text:isPopup?$("#abt").value.trim()||null:null,button_url:isPopup?$("#abu").value.trim()||null:null,show_once:isPopup?$("#aonce").checked:true};const q=a?supabase.from("announcements").update(payload).eq("id",a.id):supabase.from("announcements").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");if(!a&&payload.kind==="notification")await supabase.from("notifications").insert({user_id:null,title:payload.title||"إعلان",body:payload.message,type:"announcement"});toast("تم الحفظ");closeModal();adminAnnouncements()}}
 async function adminNotifications(){
   const {data,count}=await listQuery("notifications","*",q=>{
     if(S.query)q=q.or(`title.ilike.%${S.query}%,body.ilike.%${S.query}%`);
