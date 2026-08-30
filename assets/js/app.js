@@ -2122,8 +2122,7 @@ async function inventoryForm(sectionHint=null){
   $("#invForm").onsubmit=async event=>{
     event.preventDefault();
     if(!productSelect.value)return toast("أضف منتجًا تلقائيًا لهذا القسم أولاً","error");
-    const values=$("#iv").value.split("
-").map(value=>value.trim()).filter(Boolean);
+    const values=$("#iv").value.split("\n").map(value=>value.trim()).filter(Boolean);
     const{error}=await supabase.from("digital_inventory").insert(values.map(secret_value=>({product_id:productSelect.value,secret_value})));
     if(error)return toast(error.message,"error");
     S.inventorySection=normalizeCatalogSection($("#inventorySection").value);
