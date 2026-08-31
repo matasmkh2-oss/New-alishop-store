@@ -1830,3 +1830,10 @@ input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)
 .bot-badge{display:inline-flex;align-items:center;gap:4px;margin-bottom:5px;font-size:10px;font-weight:800;color:var(--p)}
 .bot-badge svg{width:11px;height:11px;animation:sparkleSpin 2.4s linear infinite}
 @keyframes sparkleSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.15)}100%{transform:rotate(360deg) scale(1)}}
+
+/* V21 — مؤشر "يكتب الآن" */
+.typing-dots{display:flex;gap:5px;padding:4px 2px}
+.typing-dots span{width:7px;height:7px;border-radius:50%;background:var(--p);opacity:.35;animation:typingBounce 1.2s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:.15s}
+.typing-dots span:nth-child(3){animation-delay:.3s}
+@keyframes typingBounce{0%,100%{transform:translateY(0);opacity:.35}50%{transform:translateY(-4px);opacity:1}}

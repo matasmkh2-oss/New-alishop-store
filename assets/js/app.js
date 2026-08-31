@@ -224,7 +224,7 @@ async function openSupportChat(){
   }
   await supabase.from("support_threads").update({user_unread_count:0}).eq("id",thread.id);
   openModal(`<div class="sheet-head support-head-pro"><div class="support-agent"><span class="support-avatar"><i data-lucide="headphones"></i></span><div><h2>الدعم الفني</h2><p class="support-status-line"><span class="support-dot"></span>${thread.is_user_blocked?"تم إيقاف الإرسال بواسطة الإدارة":"متصل الآن • يرد عادةً خلال دقائق"}</p></div></div><button data-close>×</button></div>
-    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.sender_id===null;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`}).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
+    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.is_bot||m.sender_id===null;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`}).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
     ${thread.is_user_blocked?`<div class="chat-blocked"><i data-lucide="ban"></i><span>قام الدعم بإيقاف إرسال الرسائل مؤقتًا.</span></div>`:
     `<form id="supportSendForm" class="support-send-rich">
       <div class="chat-tools">
@@ -244,7 +244,41 @@ async function openSupportChat(){
       const image=await uploadSupportImage(file);
       const{error}=await supabase.from("support_messages").insert({thread_id:thread.id,sender_id:S.user.id,body:body||null,image_url:image});
       if(error)throw error;
-      playChatSound(false);if(body)geminiSupportReply(thread,body);closeModal();openSupportChat();
+      playChatSound(false);
+      const list=$("#supportMessages");
+      if(list){
+        list.querySelector(".empty-chat")?.remove();
+        const mine=document.createElement("div");
+        mine.className="support-message mine";
+        mine.innerHTML=`${image?`<img class="chat-image" src="${esc(image)}" alt="">`:""}${body?`<div>${esc(body)}</div>`:""}<small>${new Date().toLocaleString("ar")}</small>`;
+        list.append(mine);
+        list.scrollTop=list.scrollHeight;
+      }
+      $("#supportBody").value="";
+      const imgInput=$("#supportImage");
+      if(imgInput){imgInput.value="";$("#supportImageBadge")?.classList.add("hidden")}
+      if(body){
+        if(list){
+          const typing=document.createElement("div");
+          typing.id="botTyping";
+          typing.className="support-message bot";
+          typing.innerHTML=`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span><div class="typing-dots"><span></span><span></span><span></span></div>`;
+          list.append(typing);
+          list.scrollTop=list.scrollHeight;
+          refreshIcons();
+        }
+        const reply=await geminiSupportReply(thread,body);
+        document.getElementById("botTyping")?.remove();
+        if(reply&&list){
+          const bot=document.createElement("div");
+          bot.className="support-message bot";
+          bot.innerHTML=`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span><div>${esc(reply)}</div><small>${new Date().toLocaleString("ar")}</small>`;
+          list.append(bot);
+          list.scrollTop=list.scrollHeight;
+          refreshIcons();
+          playChatSound(true);
+        }
+      }
     }catch(err){toast(err.message,"error")}
   };
   bindEmojiPicker();bindChatImagePicker("supportImage","supportImageButton","supportImageBadge");refreshIcons();
@@ -423,14 +457,15 @@ window.addEventListener("error",event=>{
 });
 async function geminiSupportReply(thread,userText){
   try{
-    if(!GEMINI_API_KEY)return;
+    if(!GEMINI_API_KEY)return null;
     const prompt=`أنت "مساعد علي شوب" — مساعد دعم ذكي لمتجر رقمي عربي يبيع منتجات رقمية وشحن ألعاب وتطبيقات وبرامج وخدمات سوشل ميديا. أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وإن كان السؤال عن حالة طلب أو مشكلة حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
     const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
     const json=await resp.json();
     const text=(json?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim();
-    if(!text)return;
-    await supabase.rpc("bot_support_reply",{p_thread_id:thread.id,p_body:"🤖 "+text});
-  }catch(err){console.warn("AI reply failed:",err)}
+    if(!text)return null;
+    await supabase.rpc("bot_support_reply",{p_thread_id:thread.id,p_body:text});
+    return text;
+  }catch(err){console.warn("AI reply failed:",err);return null}
 }
 function renderAppError(title,detail,actionText="إعادة المحاولة",action=()=>location.reload()){
   app.innerHTML=`<div class="card empty"><h2>${esc(title)}</h2><p>${esc(detail||"حدث خطأ غير متوقع")}</p><button id="retryView" class="btn primary">${esc(actionText)}</button></div>`;
@@ -923,7 +958,7 @@ function startAnnouncementRotation(){
 }
 async function loadNotes(){S.notes=[];if(!S.user)return;const[{data},{data:readRows}]=await Promise.all([supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50),supabase.from("notification_reads").select("notification_id")]);const readSet=new Set((readRows||[]).map(r=>r.notification_id));S.notes=(data||[]).map(n=>n.user_id===null&&readSet.has(n.id)?{...n,is_read:true}:n)}
 function updateHeader(){$("#notificationButton").classList.toggle("hidden",!S.user);const n=S.notes.filter(x=>!x.is_read).length;$("#notificationCount").textContent=n;$("#notificationCount").classList.toggle("hidden",!n)}
-function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();flashNotificationBell();navigator.vibrate?.([70,50,70]);toastNotificationMessage2(toastNotificationMessage(p.new));await loadNotes();updateHeader();flashNotificationBell()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts();if(document.querySelector(".sheet[open] .chat-messages,.sheet[open] #supportMessages,.sheet[open] .support-chat-body,.sheet[open] [id*=Messages]"))openSupportChat()}}).subscribe()}
+function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();flashNotificationBell();navigator.vibrate?.([70,50,70]);toastNotificationMessage2(toastNotificationMessage(p.new));await loadNotes();updateHeader();flashNotificationBell()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts();const clist=document.querySelector(".sheet[open] #supportMessages");if(clist&&p.new.body){const msg=document.createElement("div");msg.className="support-message theirs";msg.innerHTML=`<div>${esc(p.new.body)}</div><small>${new Date(p.new.created_at).toLocaleString("ar")}</small>`;clist.append(msg);clist.scrollTop=clist.scrollHeight;refreshIcons()}}}).subscribe()}
 function notificationTypeInfo(type){
   const map={
     order:{label:"طلب رقمي",icon:"package",tone:"digital"},
@@ -3004,7 +3039,18 @@ async function openAdminSupportThread(thread){
       const image=await uploadSupportImage(file);
       const{error}=await supabase.from("support_messages").insert({thread_id:thread.id,sender_id:S.user.id,body:body||null,image_url:image});
       if(error)throw error;
-      playChatSound(false);closeModal();openAdminSupportThread(thread);
+      playChatSound(false);
+      const alist=document.querySelector(".sheet[open] #adminSupportMessages,.sheet[open] #supportMessages");
+      if(alist){
+        const mine=document.createElement("div");
+        mine.className="support-message mine";
+        mine.innerHTML=`${image?`<img class="chat-image" src="${esc(image)}" alt="">`:""}${body?`<div>${esc(body)}</div>`:""}<small>${new Date().toLocaleString("ar")}</small>`;
+        alist.append(mine);
+        alist.scrollTop=alist.scrollHeight;
+      }
+      $("#adminSupportBody").value="";
+      const afile=$("#adminSupportImage");
+      if(afile){afile.value="";$("#adminSupportImageBadge")?.classList.add("hidden")}
     }catch(err){toast(err.message,"error")}
   };
   bindEmojiPicker();bindChatImagePicker("adminSupportImage","adminSupportImageButton","adminSupportImageBadge");refreshIcons();const list=$("#adminSupportMessages");if(list)list.scrollTop=list.scrollHeight;
