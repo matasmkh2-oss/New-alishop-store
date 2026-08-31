@@ -223,8 +223,9 @@ async function openSupportChat(){
     messages=[welcome];
   }
   await supabase.from("support_threads").update({user_unread_count:0}).eq("id",thread.id);
+  supabase.from("support_messages").update({is_read:true}).eq("thread_id",thread.id).eq("is_read",false).then(()=>{});
   openModal(`<div class="sheet-head support-head-pro"><div class="support-agent"><span class="support-avatar"><i data-lucide="headphones"></i></span><div><h2>الدعم الفني</h2><p class="support-status-line"><span class="support-dot"></span>${thread.is_user_blocked?"تم إيقاف الإرسال بواسطة الإدارة":"متصل الآن • يرد عادةً خلال دقائق"}</p></div></div><button data-close>×</button></div>
-    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.is_bot||m.sender_id===null;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`}).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
+    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.is_bot||m.sender_id===null;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)} ${m.sender_id===S.user.id&&!isBot?`<span class="msg-tick ${m.is_read?"read":""}"><i data-lucide="${m.is_read?"check-check":"check"}"></i></span>`:""}</small></div>`}).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
     ${thread.is_user_blocked?`<div class="chat-blocked"><i data-lucide="ban"></i><span>قام الدعم بإيقاف إرسال الرسائل مؤقتًا.</span></div>`:
     `<form id="supportSendForm" class="support-send-rich">
       <div class="chat-tools">
@@ -250,7 +251,7 @@ async function openSupportChat(){
         list.querySelector(".empty-chat")?.remove();
         const mine=document.createElement("div");
         mine.className="support-message mine";
-        mine.innerHTML=`${image?`<img class="chat-image" src="${esc(image)}" alt="">`:""}${body?`<div>${esc(body)}</div>`:""}<small>${new Date().toLocaleString("ar")}</small>`;
+        mine.innerHTML=`${image?`<img class="chat-image" src="${esc(image)}" alt="">`:""}${body?`<div>${esc(body)}</div>`:""}<small>${new Date().toLocaleString("ar")} <span class="msg-tick"><i data-lucide="check"></i></span></small>`;
         list.append(mine);
         list.scrollTop=list.scrollHeight;
       }
@@ -459,7 +460,7 @@ async function geminiSupportReply(thread,userText){
   try{
     if(!GEMINI_API_KEY)return null;
     const prompt=`أنت "مساعد علي شوب" — مساعد دعم ذكي لمتجر رقمي عربي يبيع منتجات رقمية وشحن ألعاب وتطبيقات وبرامج وخدمات سوشل ميديا. أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وإن كان السؤال عن حالة طلب أو مشكلة حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
     const json=await resp.json();
     const text=(json?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim();
     if(!text)return null;
@@ -3012,6 +3013,7 @@ async function adminSupport(){
 }
 async function openAdminSupportThread(thread){
   const{data:messages}=await supabase.from("support_messages").select("*,sender:profiles(full_name,role)").eq("thread_id",thread.id).order("created_at");
+  supabase.from("support_messages").update({is_read:true}).eq("thread_id",thread.id).eq("is_read",false).then(()=>{}); // admin_reads_marked
   await supabase.from("support_threads").update({admin_unread_count:0}).eq("id",thread.id);
   openModal(`<div class="sheet-head"><div><h2>${esc(thread.profile?.full_name||"عميل")}</h2><p>${thread.is_user_blocked?"المستخدم محظور من الإرسال":"محادثة الدعم"}</p></div><button data-close>×</button></div>
   <div class="support-admin-actions"><button id="toggleUserChatBlock" class="btn ${thread.is_user_blocked?"success":"danger"}"><i data-lucide="${thread.is_user_blocked?"unlock":"ban"}"></i>${thread.is_user_blocked?"فك حظر الإرسال":"حظر الإرسال"}</button></div>
