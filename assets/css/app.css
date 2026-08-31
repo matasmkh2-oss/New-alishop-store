@@ -1721,3 +1721,38 @@ input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)
 /* V19b — توحيد بطاقات ونوافذ طلبات الإدارة */
 .aop-target{margin:3px 0 0!important;font-size:11px;color:var(--m);display:flex;align-items:center;gap:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .aop-target svg{width:11px;height:11px;flex:none}
+
+/* V18 — ترويسة الأقسام بلا التفاف + شريط أدوات موحد */
+.catalog-top-tabs button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.catalog-top-tabs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catalog-toolbar{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.catalog-toolbar .catalog-view-switch{flex:none}
+.catalog-toolbar-search{flex:1;min-width:0;height:42px}
+.catalog-toolbar-cat{flex:none;width:auto;max-width:132px;height:42px}
+.catalog-toolbar .catalog-count{flex:none;font-size:10.5px}
+@media(max-width:430px){
+  .catalog-toolbar{gap:6px}
+  .catalog-toolbar-cat{max-width:108px;font-size:11px}
+  .catalog-toolbar .catalog-count{display:none}
+  .catalog-top-tabs button{padding:9px 4px;font-size:11px;gap:4px}
+  .catalog-top-tabs button svg{width:15px;height:15px;flex:none}
+}
+
+/* V18 — أيقونات التواصل العائمة المحسنة */
+.floating-contacts,.floating-contact{filter:drop-shadow(0 10px 24px rgba(10,14,30,.22))}
+.floating-contact{transition:.2s transform,.2s box-shadow;animation:fabIn .35s cubic-bezier(.34,1.4,.64,1) both}
+.floating-contact:hover{transform:translateY(-3px) scale(1.05)}
+.floating-contact:active{transform:scale(.94)}
+.floating-contact.support{background:linear-gradient(135deg,var(--p),var(--p2));color:#fff}
+.floating-badge{box-shadow:0 0 0 2px var(--bg)}
+@keyframes fabIn{0%{opacity:0;transform:translateY(14px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
+
+.wallet-discount-chip{display:inline-flex;align-items:center;gap:4px;margin-inline-start:auto;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:800;color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);border:1px solid color-mix(in srgb,var(--ok) 30%,transparent)}
+.wallet-discount-chip svg{width:12px;height:12px}
+
+/* V18 — نموذج الكوبون/البطاقة الاحترافي */
+.coupon-form-pro label{display:block;margin-bottom:11px}
+.coupon-code-row{display:flex;gap:7px}
+.coupon-code-row input{flex:1;min-width:0;font-family:monospace;letter-spacing:1px;font-weight:800}
+.coupon-code-row .btn{flex:none;display:inline-flex;align-items:center;gap:5px}
+.coupon-code-row .btn svg{width:14px;height:14px}

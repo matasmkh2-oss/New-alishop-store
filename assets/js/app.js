@@ -908,7 +908,7 @@ function startAnnouncementRotation(){
 }
 async function loadNotes(){S.notes=[];if(!S.user)return;const[{data},{data:readRows}]=await Promise.all([supabase.from("notifications").select("*").order("created_at",{ascending:false}).limit(50),supabase.from("notification_reads").select("notification_id")]);const readSet=new Set((readRows||[]).map(r=>r.notification_id));S.notes=(data||[]).map(n=>n.user_id===null&&readSet.has(n.id)?{...n,is_read:true}:n)}
 function updateHeader(){$("#notificationButton").classList.toggle("hidden",!S.user);const n=S.notes.filter(x=>!x.is_read).length;$("#notificationCount").textContent=n;$("#notificationCount").classList.toggle("hidden",!n)}
-function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();flashNotificationBell();navigator.vibrate?.([70,50,70]);toastNotificationMessage2(toastNotificationMessage(p.new));await loadNotes();updateHeader();flashNotificationBell()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts()}}).subscribe()}
+function subscribeRealtime(){if(!S.user)return;supabase.channel(`notes-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"notifications"},async p=>{if(p.new.user_id===S.user.id||p.new.user_id===null){playNotificationSound();flashNotificationBell();navigator.vibrate?.([70,50,70]);toastNotificationMessage2(toastNotificationMessage(p.new));await loadNotes();updateHeader();flashNotificationBell()}}).subscribe();supabase.channel(`support-${S.user.id}`).on("postgres_changes",{event:"INSERT",schema:"public",table:"support_messages"},async p=>{if(p.new.sender_id!==S.user.id){playChatSound(true);toast("رسالة جديدة من الدعم");renderFloatingContacts();if(document.querySelector(".sheet[open] .chat-messages,.sheet[open] #supportMessages,.sheet[open] .support-chat-body,.sheet[open] [id*=Messages]"))openSupportChat()}}).subscribe()}
 function notificationTypeInfo(type){
   const map={
     order:{label:"طلب رقمي",icon:"package",tone:"digital"},
@@ -1275,7 +1275,7 @@ async function home(){
     <div class="home-search"><i data-lucide="search"></i><input id="homeSearch" placeholder="ابحث عن منتج أو خدمة..." autocomplete="off"></div>
     ${activeOrder?`<a href="#/orders" class="active-order-card"><span class="ao-icon"><i data-lucide="package-search"></i></span><div><small>طلبك الآن</small><strong>${esc(activeOrder.product?.name||"طلب رقمي")}</strong><p>${esc(activeOrder.order_number||"")} • ${notificationStatusLabel(activeOrder.status)}</p></div><span class="ao-track">تتبع <i data-lucide="arrow-left"></i></span></a>`:""}
     <div class="wallet-card">
-      <div class="wallet-card-top"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>رصيدك المتاح</small><strong>${money(S.wallet.balance)}</strong></div></div>
+      <div class="wallet-card-top"><span class="wallet-icon"><i data-lucide="wallet-cards"></i></span><div><small>رصيدك المتاح</small><strong>${money(S.wallet.balance)}</strong></div>${Number(S.profile?.discount_percent)>0?`<span class="wallet-discount-chip"><i data-lucide="percent"></i> خصمك الخاص ${Number(S.profile.discount_percent)}% على كل المتجر</span>`:""}</div>
       <div class="wallet-card-actions">
         <a href="#/wallet" class="wc-action"><i data-lucide="plus-circle"></i><span>شحن</span></a>
         <button id="homeRedeem" type="button" class="wc-action"><i data-lucide="scan-line"></i><span>بطاقة</span></button>
@@ -1359,13 +1359,14 @@ async function products(){
 
     $("#catalogDynamic").innerHTML=`<div class="note" style="margin-bottom:12px"><strong>${esc(meta.title)}</strong><br>${esc(meta.userSubtitle)}</div>
     ${roots.length?`<div class="category-strip">${roots.map(category=>`<button class="category-pill" data-root-category="${category.id}">${category.image_url?`<img src="${esc(category.image_url)}">`:`<i data-lucide="${meta.icon}"></i>`}<span>${esc(category.name)}</span></button>`).join("")}</div>`:""}
-    <div class="search-row compact-search"><input id="search" class="input" placeholder="بحث في ${esc(meta.short)}..." value="${esc(incomingQuery)}"><select id="cat" class="input"><option value="">كل الأقسام</option>${categories.map(category=>`<option value="${category.id}">${esc(category.name)}</option>`).join("")}</select></div>
-    <div class="catalog-viewbar">
+    <div class="catalog-toolbar">
       <div class="catalog-view-switch">
         <button class="${S.productView==="compact"?"active":""}" data-view-mode="compact" title="عرض مضغوط"><i data-lucide="grid-3x3"></i></button>
         <button class="${S.productView==="grid"?"active":""}" data-view-mode="grid" title="عرض شبكة"><i data-lucide="layout-grid"></i></button>
         <button class="${S.productView==="list"?"active":""}" data-view-mode="list" title="عرض قائمة"><i data-lucide="list"></i></button>
       </div>
+      <input id="search" class="input catalog-toolbar-search" placeholder="بحث في ${esc(meta.short)}..." value="${esc(incomingQuery)}">
+      <select id="cat" class="input catalog-toolbar-cat"><option value="">كل الأقسام</option>${categories.map(category=>`<option value="${category.id}">${esc(category.name)}</option>`).join("")}</select>
       <span class="catalog-count" id="catalogCount"></span>
     </div>
     <div id="pgrid" class="catalog-image-grid view-${S.productView}">${sectionProducts.map(pcard).join("")||empty(meta.title,"سيظهر هذا القسم هنا بعد إضافة المنتجات",meta.icon)}</div>`;
@@ -1530,7 +1531,7 @@ async function buy(p,selectedPackage=null){
   fieldInputs.forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());
   const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${label}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});
   if(!approved)return;
-  const{error}=await supabase.rpc("purchase_product_v7",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData,p_package_id:selectedPackage?.id||null});
+  const{error}=await supabase.rpc("purchase_product_v8",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData,p_package_id:selectedPackage?.id||null});
   if(error)return toast(error.message,"error");
   toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders";
 }
@@ -2450,10 +2451,77 @@ async function adminTransactions(){
 
 async function adminPaymentMethods(){const{data,count}=await listQuery("payment_methods","*",q=>{if(S.query)q=q.ilike("name",`%${S.query}%`);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("طرق الدفع","إضافة وتعديل وتعطيل",`<button id="addMethod" class="btn primary">إضافة طريقة</button>`)}<div class="list">${r.map(m=>`<div class="card item"><div class="item-main"><h3>${esc(m.name)}</h3><p>${esc(m.account_number||"-")} • ${esc(m.currency)}</p></div><div class="item-actions">${m.is_active?badge("active"):badge("blocked")}<button class="small" data-method-edit="${m.id}">تعديل</button><button class="danger" data-method-delete="${m.id}">حذف</button></div></div>`).join("")||empty("لا توجد طرق")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminPaymentMethods);bindPager(adminPaymentMethods);$("#addMethod").onclick=()=>methodForm();$$("[data-method-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("payment_methods").select("*").eq("id",b.dataset.methodEdit).single();methodForm(data)});$$("[data-method-delete]").forEach(b=>b.onclick=()=>deleteRow("payment_methods",b.dataset.methodDelete,"طريقة الدفع",adminPaymentMethods))}
 function methodForm(m=null){openModal(`<div class="sheet-head"><h2>${m?"تعديل":"إضافة"} طريقة دفع</h2><button data-close>×</button></div><form id="methodForm"><label>الاسم<input id="mn" value="${esc(m?.name||"")}" required></label><label>العملة<input id="mc" value="${esc(m?.currency||CONFIG.CURRENCY)}"></label><label>اسم الحساب<input id="mo" value="${esc(m?.account_name||"")}"></label><label>رقم الحساب<input id="mnum" value="${esc(m?.account_number||"")}"></label><label>التعليمات<textarea id="mi">${esc(m?.instructions||"")}</textarea></label><label>الترتيب<input id="ms" type="number" value="${m?.sort_order||0}"></label><label><input id="ma" type="checkbox" ${m?.is_active!==false?"checked":""}> مفعلة</label><button class="btn primary block">حفظ</button></form>`);$("#methodForm").onsubmit=async e=>{e.preventDefault();const payload={name:$("#mn").value,currency:$("#mc").value,account_name:$("#mo").value,account_number:$("#mnum").value,instructions:$("#mi").value,sort_order:+$("#ms").value,is_active:$("#ma").checked};const q=m?supabase.from("payment_methods").update(payload).eq("id",m.id):supabase.from("payment_methods").insert(payload);const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminPaymentMethods()}}
-async function adminCards(){const{data,count}=await listQuery("recharge_cards","*",q=>{if(S.filter)q=q.eq("is_used",S.filter==="used");if(S.query)q=q.ilike("code",`%${S.query}%`);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("بطاقات الشحن","توليد وتعطيل وحذف وتصدير",`<button id="generateCards" class="btn primary">توليد</button><button id="exportCards" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.code)}</h3><p>${money(c.amount)} • ${c.is_used?"مستخدمة":"متاحة"}</p></div><div class="item-actions">${c.is_used?badge("delivered"):badge("available")}${!c.is_used?`<button class="danger" data-card-delete="${c.id}">حذف</button>`:""}</div></div>`).join("")||empty("لا توجد بطاقات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCards,[["available","متاحة"],["used","مستخدمة"]]);bindPager(adminCards);$("#generateCards").onclick=cardForm;$("#exportCards").onclick=()=>exportCsv("recharge_cards","recharge-cards.csv");$$("[data-card-delete]").forEach(b=>b.onclick=()=>deleteRow("recharge_cards",b.dataset.cardDelete,"البطاقة",adminCards))}
-function cardForm(){openModal(`<div class="sheet-head"><h2>توليد بطاقات</h2><button data-close>×</button></div><form id="cardForm"><label>القيمة<input id="cardAmount" type="number" min="1" required></label><label>العدد<input id="cardCount" type="number" min="1" max="100" value="1"></label><label>البادئة<input id="cardPrefix" value="ALI"></label><button class="btn primary block">توليد</button></form>`);$("#cardForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("generate_recharge_cards",{p_amount:+$("#cardAmount").value,p_count:+$("#cardCount").value,p_prefix:$("#cardPrefix").value});if(error)return toast(error.message,"error");toast("تم التوليد");closeModal();adminCards()}}
-async function adminCoupons(){const{data,count}=await listQuery("coupons","*",q=>{if(S.query)q=q.ilike("code",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الكوبونات","إضافة وتعديل وتعطيل",`<button id="addCoupon" class="btn primary">إضافة كوبون</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.code)}</h3><p>${c.discount_type==="percent"?c.discount_value+"%":money(c.discount_value)} • الاستخدام ${c.used_count}${c.usage_limit?"/"+c.usage_limit:""}</p></div><div class="item-actions">${c.is_active?badge("active"):badge("blocked")}<button class="small" data-coupon-edit="${c.id}">تعديل</button><button class="danger" data-coupon-delete="${c.id}">حذف</button></div></div>`).join("")||empty("لا توجد كوبونات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCoupons,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminCoupons);$("#addCoupon").onclick=()=>couponForm();$$("[data-coupon-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("coupons").select("*").eq("id",b.dataset.couponEdit).single();couponForm(data)});$$("[data-coupon-delete]").forEach(b=>b.onclick=()=>deleteRow("coupons",b.dataset.couponDelete,"الكوبون",adminCoupons))}
-function couponForm(c=null){openModal(`<div class="sheet-head"><h2>${c?"تعديل":"إضافة"} كوبون</h2><button data-close>×</button></div><form id="couponForm"><label>الرمز<input id="ccode" value="${esc(c?.code||"")}" required></label><label>نوع الخصم<select id="ctype"><option value="percent">نسبة</option><option value="fixed" ${c?.discount_type==="fixed"?"selected":""}>مبلغ ثابت</option></select></label><label>القيمة<input id="cvalue" type="number" min="0" step=".01" value="${c?.discount_value||0}" required></label><label>الحد الأدنى<input id="cmin" type="number" min="0" step=".01" value="${c?.minimum_order||0}"></label><label>الحد الأقصى للخصم<input id="cmax" type="number" min="0" step=".01" value="${c?.maximum_discount||""}"></label><label>حد الاستخدام<input id="climit" type="number" min="1" value="${c?.usage_limit||""}"></label><label>تاريخ الانتهاء<input id="cend" type="datetime-local"></label><label><input id="cactive" type="checkbox" ${c?.is_active!==false?"checked":""}> مفعّل</label><button class="btn primary block">حفظ</button></form>`);$("#couponForm").onsubmit=async e=>{e.preventDefault();const payload={code:$("#ccode").value.toUpperCase(),discount_type:$("#ctype").value,discount_value:+$("#cvalue").value,minimum_order:+$("#cmin").value,maximum_discount:$("#cmax").value?+$("#cmax").value:null,usage_limit:$("#climit").value?+$("#climit").value:null,ends_at:$("#cend").value||null,is_active:$("#cactive").checked};const q=c?supabase.from("coupons").update(payload).eq("id",c.id):supabase.from("coupons").insert({...payload,created_by:S.user.id});const{error}=await q;if(error)return toast(error.message,"error");toast("تم الحفظ");closeModal();adminCoupons()}}
+async function adminCards(){const{data,count}=await listQuery("recharge_cards","*",q=>{if(S.filter)q=q.eq("is_used",S.filter==="used");if(S.query)q=q.ilike("code",`%${S.query}%`);return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("بطاقات الشحن","توليد وتعطيل وحذف وتصدير",`<button id="generateCards" class="btn primary">توليد</button><button id="exportCards" class="btn soft">تصدير CSV</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.code)}</h3><p>${money(c.amount)} • ${c.is_used?"مستخدمة":"متاحة"}${c.assigned_to?" • مخصصة لمستخدم":" • عامة"}</p></div><div class="item-actions">${c.is_used?badge("delivered"):badge("available")}${!c.is_used?`<button class="danger" data-card-delete="${c.id}">حذف</button>`:""}</div></div>`).join("")||empty("لا توجد بطاقات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCards,[["available","متاحة"],["used","مستخدمة"]]);bindPager(adminCards);$("#generateCards").onclick=cardForm;$("#exportCards").onclick=()=>exportCsv("recharge_cards","recharge-cards.csv");$$("[data-card-delete]").forEach(b=>b.onclick=()=>deleteRow("recharge_cards",b.dataset.cardDelete,"البطاقة",adminCards))}
+async function cardForm(){
+  const usersResult=await supabase.rpc("admin_list_users");
+  const users=(usersResult.data||[]).slice().sort((a,b)=>String(a.full_name||"").localeCompare(String(b.full_name||""),"ar"));
+  openModal(`<div class="sheet-head"><div><h2>توليد بطاقات شحن</h2><p>بطاقات عامة أو مخصصة لمستخدم معين</p></div><button data-close>×</button></div>
+  <form id="cardForm" class="coupon-form-pro">
+    <div class="social-form-grid">
+      <label>قيمة البطاقة<input id="cardAmount" type="number" min="1" step=".01" required></label>
+      <label>العدد<input id="cardCount" type="number" min="1" max="100" value="1" required></label>
+    </div>
+    <label>تخصيص لمستخدم (اختياري)<select id="cardUser"><option value="">بطاقة عامة — لأي مستخدم</option>${users.map(u=>`<option value="${u.id}">${esc(u.full_name||u.email||u.id.slice(0,8))}</option>`).join("")}</select></label>
+    <label>تاريخ انتهاء (اختياري)<input id="cardExpiry" type="datetime-local"></label>
+    <button class="btn primary block"><i data-lucide="sparkles"></i> توليد البطاقات</button>
+  </form>`);
+  $("#cardForm").onsubmit=async e=>{
+    e.preventDefault();
+    const amount=Number($("#cardAmount").value||0),count=Number($("#cardCount").value||0);
+    if(!amount||!count)return toast("أدخل القيمة والعدد","error");
+    const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const gen=()=>{let code="ALI-";for(let i=0;i<4;i++){for(let j=0;j<4;j++)code+=chars[Math.floor(Math.random()*chars.length)];if(i<3)code+="-"}return code};
+    const assigned=$("#cardUser").value||null;
+    const expiry=$("#cardExpiry").value||null;
+    const rows=Array.from({length:count},()=>({code:gen(),amount,assigned_to:assigned,expires_at:expiry,created_by:S.user.id}));
+    const{error}=await supabase.from("recharge_cards").insert(rows);
+    if(error)return toast(error.message,"error");
+    toast(`تم توليد ${count} بطاقة${assigned?" مخصصة للمستخدم المحدد":""}`);closeModal();adminCards();
+  };
+  refreshIcons();
+}
+async function adminCoupons(){const{data,count}=await listQuery("coupons","*",q=>{if(S.query)q=q.ilike("code",`%${S.query}%`);if(S.filter)q=q.eq("is_active",S.filter==="active");return q});const r=data||[];$("#adminContent").innerHTML=`${adminHeader("الكوبونات","إضافة وتعديل وتعطيل",`<button id="addCoupon" class="btn primary">إضافة كوبون</button>`)}<div class="list">${r.map(c=>`<div class="card item"><div class="item-main"><h3>${esc(c.code)}</h3><p>${c.discount_type==="percent"?c.discount_value+"%":money(c.discount_value)} • الاستخدام ${c.used_count}${c.usage_limit?"/"+c.usage_limit:""}${c.user_id?" • مخصص لمستخدم":""}${c.catalog_section?` • ${c.catalog_section==="gaming"?"قسم الألعاب":"المنتجات الرقمية"}`:""}</p></div><div class="item-actions">${c.is_active?badge("active"):badge("blocked")}<button class="small" data-coupon-edit="${c.id}">تعديل</button><button class="danger" data-coupon-delete="${c.id}">حذف</button></div></div>`).join("")||empty("لا توجد كوبونات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCoupons,[["active","مفعّل"],["inactive","موقوف"]]);bindPager(adminCoupons);$("#addCoupon").onclick=()=>couponForm();$$("[data-coupon-edit]").forEach(b=>b.onclick=async()=>{const{data}=await supabase.from("coupons").select("*").eq("id",b.dataset.couponEdit).single();couponForm(data)});$$("[data-coupon-delete]").forEach(b=>b.onclick=()=>deleteRow("coupons",b.dataset.couponDelete,"الكوبون",adminCoupons))}
+async function couponForm(c=null){
+  const usersResult=await supabase.rpc("admin_list_users");
+  const users=(usersResult.data||[]).slice().sort((a,b)=>String(a.full_name||"").localeCompare(String(b.full_name||""),"ar"));
+  openModal(`<div class="sheet-head"><div><h2>${c?"تعديل":"إضافة"} كوبون</h2><p>كوبون عام أو مخصص لقسم أو مستخدم معين</p></div><button data-close>×</button></div>
+  <form id="couponForm" class="coupon-form-pro">
+    <label>رمز الكوبون
+      <div class="coupon-code-row"><input id="cc" value="${esc(c?.code||"")}" required placeholder="ALI-XXXX" style="text-transform:uppercase"><button type="button" id="genCoupon" class="btn soft"><i data-lucide="sparkles"></i> توليد</button></div>
+    </label>
+    <div class="social-form-grid">
+      <label>نوع الخصم<select id="ct"><option value="percent" ${c?.discount_type!=="fixed"?"selected":""}>نسبة %</option><option value="fixed" ${c?.discount_type==="fixed"?"selected":""}>مبلغ ثابت</option></select></label>
+      <label>قيمة الخصم<input id="cv" type="number" min="0" step=".01" value="${c?.discount_value??""}" required></label>
+    </div>
+    <div class="social-form-grid">
+      <label>الحد الأدنى للطلب<input id="cmin" type="number" min="0" step=".01" value="${c?.minimum_order??0}"></label>
+      <label>أقصى خصم (للنسبة)<input id="cmax" type="number" min="0" step=".01" value="${c?.maximum_discount??""}" placeholder="بدون حد"></label>
+    </div>
+    <div class="social-form-grid">
+      <label>حد الاستخدام<input id="climit" type="number" min="0" value="${c?.usage_limit??""}" placeholder="غير محدود"></label>
+      <label>تاريخ الانتهاء<input id="cend" type="datetime-local"></label>
+    </div>
+    <div class="social-form-grid">
+      <label>نطاق الكوبون<select id="csection"><option value="">كل الأقسام</option><option value="digital" ${c?.catalog_section==="digital"?"selected":""}>المنتجات الرقمية فقط</option><option value="gaming" ${c?.catalog_section==="gaming"?"selected":""}>الألعاب والتطبيقات والبرامج فقط</option></select></label>
+      <label>مخصص لمستخدم<select id="cuser"><option value="">كل المستخدمين</option>${users.map(u=>`<option value="${u.id}" ${c?.user_id===u.id?"selected":""}>${esc(u.full_name||u.email||u.id.slice(0,8))}</option>`).join("")}</select></label>
+    </div>
+    <label class="switch-label"><input id="ca" type="checkbox" ${c?.is_active!==false?"checked":""}> الكوبون مفعّل</label>
+    <button class="btn primary block"><i data-lucide="save"></i> حفظ الكوبون</button>
+  </form>`);
+  $("#genCoupon").onclick=()=>{const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";let code="ALI-";for(let i=0;i<6;i++)code+=chars[Math.floor(Math.random()*chars.length)];$("#cc").value=code};
+  if(c?.ends_at)$("#cend").value=toDatetimeLocal(c.ends_at);
+  $("#couponForm").onsubmit=async e=>{
+    e.preventDefault();
+    const code=$("#cc").value.trim().toUpperCase();
+    if(code.length<3)return toast("رمز الكوبون قصير جدًا","error");
+    const payload={code,discount_type:$("#ct").value,discount_value:Number($("#cv").value||0),minimum_order:Number($("#cmin").value||0),maximum_discount:$("#cmax").value?Number($("#cmax").value):null,usage_limit:$("#climit").value?Number($("#climit").value):null,ends_at:$("#cend").value||null,catalog_section:$("#csection").value||null,user_id:$("#cuser").value||null,is_active:$("#ca").checked};
+    const q=c?supabase.from("coupons").update(payload).eq("id",c.id):supabase.from("coupons").insert({...payload,created_by:S.user.id});
+    const{error}=await q;
+    if(error)return toast(error.message,"error");
+    toast("تم حفظ الكوبون");closeModal();adminCoupons();
+  };
+  refreshIcons();
+}
 async function adminUsers(){
   const{data,error}=await supabase.rpc("admin_list_users");
   if(error)return toast(error.message,"error");
@@ -2477,7 +2545,7 @@ async function adminUsers(){
           <div class="ucard-balance"><small>الرصيد</small><strong class="user-balance ${balance>0?"positive":"zero"}">${money(balance)}</strong></div>
         </div>
         <div class="ucard-meta">${badge(u.status)}<span class="user-role-label ${userRoleTone(u)}">${userRoleLabel(u)}</span><span class="ucard-date">انضم في ${dt(u.created_at)}</span></div>
-        <div class="ucard-actions">
+        <div class="ucard-actions"><button class="btn soft compact" data-user-discount="${u.id}" data-current-discount="${Number(u.discount_percent||0)}"><i data-lucide="percent"></i> خصم ${Number(u.discount_percent||0)}%</button>
           <button class="btn soft ucard-btn" data-user-details="${u.id}"><i data-lucide="info"></i><span>التفاصيل</span></button>
           ${whatsappBtn}
           <button class="btn soft ucard-btn ucard-more" data-user-actions="${u.id}"><i data-lucide="ellipsis-vertical"></i><span>إجراءات</span></button>
@@ -2943,3 +3011,17 @@ window.addEventListener("load",()=>setTimeout(()=>{
 },300));
 
 window.alert=message=>toast(String(message||""),"info");
+
+/* V18 — تخفيض مستخدم على مستوى المتجر (تفويض حدث عام) */
+document.addEventListener("click",async e=>{
+  const btn=e.target.closest("[data-user-discount]");
+  if(!btn)return;
+  const val=await appPrompt({title:"تخفيض المستخدم",message:"أدخل نسبة التخفيض الخاصة بهذا المستخدم على كل المتجر (0 لإلغاء التخفيض).",placeholder:"مثال: 10",confirmText:"حفظ",icon:"percent"});
+  if(val==null)return;
+  const pct=Number(val);
+  if(!Number.isFinite(pct)||pct<0||pct>90)return toast("النسبة يجب أن تكون بين 0 و 90","error");
+  const{error}=await supabase.from("profiles").update({discount_percent:pct}).eq("id",btn.dataset.userDiscount);
+  if(error)return toast(error.message,"error");
+  toast(pct>0?`تم تفعيل خصم ${pct}% للمستخدم`:"تم إلغاء التخفيض");
+  adminUsers();
+});
