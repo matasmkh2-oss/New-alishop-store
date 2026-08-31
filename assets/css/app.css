@@ -1717,3 +1717,7 @@ input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)
 .buy-total .price{font-size:20px}
 .buy-btn{flex:1;max-width:220px;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;font-size:15px}
 .buy-btn svg{width:18px;height:18px}
+
+/* V19b — توحيد بطاقات ونوافذ طلبات الإدارة */
+.aop-target{margin:3px 0 0!important;font-size:11px;color:var(--m);display:flex;align-items:center;gap:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.aop-target svg{width:11px;height:11px;flex:none}

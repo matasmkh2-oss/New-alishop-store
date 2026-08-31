@@ -706,6 +706,11 @@ function orderDetails(o){
   const skipKeys=new Set(["الباقة","عدد الباقة"]);
   const customRows=Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!skipKeys.has(k));
   const isSocial=!!o.service;
+  if(isSocial){
+    if(o.target_url)customRows.push(["الرابط / المعرف",o.target_url]);
+    if(o.quantity)customRows.push(["الكمية",String(o.quantity)]);
+    if(o.notes)customRows.push(["ملاحظات العميل",o.notes]);
+  }
   const title=o.product?.name||o.service?.name||"طلب";
   openModal(`<div class="sheet-head"><div><h2>تفاصيل الطلب</h2><p>${esc(o.order_number||"")}</p></div><button data-close>×</button></div>
   <div class="order-detail-pro">
@@ -1787,7 +1792,7 @@ async function adminOrders(){
       <select id="adminOrderStatus" class="input"><option value="">كل الحالات</option><option value="pending">معلق</option><option value="processing">قيد التنفيذ</option><option value="delivered">مكتمل</option><option value="cancelled">ملغي</option><option value="refunded">مسترد</option></select>
     </div>
     <div class="list">${filteredRows.map(order=>mode==="social"
-      ? `<div class="card item"><div class="platform-list-icon"><i data-lucide="${order.service?.platform?.icon||"messages-square"}"></i></div><div class="item-main"><h3>${esc(order.service?.name||"-")}</h3><p>${esc(order.profile?.full_name||"-")} • ${esc(order.order_number)} • ${order.quantity}</p></div><div class="item-actions">${badge(order.status)}${iconButton("settings-2","إدارة",`data-social-manage="${order.id}"`)}</div></div>`
+      ? `<div class="card item admin-order-pro"><div class="platform-list-icon"><i data-lucide="${order.service?.platform?.icon||"messages-square"}"></i></div><div class="item-main"><h3>${esc(order.service?.name||"-")}<span class="aop-package"><i data-lucide="chart-no-axes-column-increasing"></i>الكمية: ${order.quantity||0}</span></h3><p><i data-lucide="user"></i> ${esc(order.profile?.full_name||"-")} • ${esc(order.order_number)} • <strong class="aop-price">${money(order.total)}</strong></p><p class="aop-target" title="${esc(order.target_url||"")}"><i data-lucide="link"></i> ${esc((order.target_url||"").slice(0,42))}${(order.target_url||"").length>42?"…":""}</p></div><div class="item-actions">${badge(order.status)}${iconButton("settings-2","إدارة",`data-social-manage="${order.id}"`)}</div></div>`
       : `<div class="card item admin-order-pro"><div class="item-main"><h3>${esc(order.product?.name||"-")}${order.customer_data?.["الباقة"]?`<span class="aop-package"><i data-lucide="layers"></i>${esc(order.customer_data["الباقة"])}${order.customer_data?.["عدد الباقة"]?` ×${esc(order.customer_data["عدد الباقة"])}`:""}</span>`:""}</h3><p><i data-lucide="user"></i> ${esc(order.profile?.full_name||"-")} • ${esc(order.order_number)} • <strong class="aop-price">${money(order.total)}</strong></p></div><div class="item-actions">${badge(order.status)}${iconButton("settings-2","إدارة",`data-order-manage="${order.id}"`)}</div></div>`).join("")||empty("لا توجد نتائج")}</div>`;
     $("#adminOrderStatus").value=S.filter||"";
     $$("[data-order-admin-tab]").forEach(button=>button.onclick=()=>{S.orderTab=button.dataset.orderAdminTab;S.query="";S.filter="";render()});
@@ -2811,10 +2816,25 @@ async function adminSmmOrders(){
   bindAdminSearch(adminSmmOrders,[["pending","معلق"],["processing","قيد التنفيذ"],["delivered","مكتمل"],["cancelled","ملغي"]]);bindPager(adminSmmOrders);$$("[data-smm-order]").forEach(b=>b.onclick=()=>manageSmmOrder(r.find(x=>x.id===b.dataset.smmOrder)));refreshIcons()
 }
 function manageSmmOrder(o){
-  openModal(`<div class="sheet-head"><h2>إدارة طلب السوشل ميديا</h2><button data-close>×</button></div><div class="note">الخدمة: ${esc(o.service?.name||"-")}<br>الرابط: ${esc(o.target_url)}<br>الكمية: ${o.quantity}<br>القيمة: ${money(o.total)}</div><form id="manageSmm"><label>الحالة<select id="smmStatus"><option value="pending">معلق</option><option value="processing">قيد التنفيذ</option><option value="delivered">مكتمل</option><option value="cancelled">إلغاء وإعادة الرصيد</option></select></label><label>مرجع المزود<input id="providerRef" value="${esc(o.provider_reference||"")}"></label><label>ملاحظة الإدارة<textarea id="adminNote">${esc(o.admin_note||"")}</textarea></label><button class="btn primary block">حفظ</button></form>`);
-  $("#manageSmm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_update_smm_order",{p_order_id:o.id,p_status:$("#smmStatus").value,p_provider_reference:$("#providerRef").value||null,p_admin_note:$("#adminNote").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminSmmOrders()}
+  openModal(`<div class="sheet-head"><div><h2>${esc(o.order_number||"طلب سوشل")}</h2><p>${esc(o.profile?.full_name||"-")} • ${esc(o.profile?.phone||"-")}</p></div><button data-close>×</button></div>
+  <div class="admin-manage-pro">
+    <div class="amp-summary">
+      <div class="amp-row"><small>الخدمة</small><strong>${esc(o.service?.name||"-")}</strong></div>
+      <div class="amp-row"><small>المنصة</small><strong>${esc(o.service?.platform?.name||"-")}</strong></div>
+      <div class="amp-row"><small>الكمية</small><strong>${o.quantity||0}</strong></div>
+      <div class="amp-row"><small>القيمة</small><strong>${money(o.total)}</strong></div>
+      <div class="amp-row"><small>الحالة الحالية</small>${badge(o.status)}</div>
+    </div>
+    <div class="amp-fields"><h4><i data-lucide="clipboard-list"></i> بيانات العميل</h4>
+      <div class="amp-field"><small>الرابط / المعرف</small><strong>${esc(o.target_url||"-")}</strong></div>
+      ${o.notes?`<div class="amp-field"><small>ملاحظات العميل</small><strong>${esc(o.notes)}</strong></div>`:""}
+    </div>
+  </div>
+  <form id="manageSmm" style="margin-top:14px"><label>الحالة<select id="smmStatus"><option value="pending">معلق</option><option value="processing">قيد التنفيذ</option><option value="delivered">مكتمل</option><option value="cancelled">ملغي وإعادة الرصيد</option></select></label><label>مرجع المزود<input id="providerRef" value="${esc(o.provider_reference||"")}"></label><label>ملاحظة إدارية<textarea id="adminNote">${esc(o.admin_note||"")}</textarea></label><button class="btn primary block">حفظ</button></form>`);
+  $("#smmStatus").value=o.status||"pending";
+  $("#manageSmm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_update_smm_order",{p_order_id:o.id,p_status:$("#smmStatus").value,p_provider_reference:$("#providerRef").value||null,p_admin_note:$("#adminNote").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminOrders()};
+  refreshIcons();
 }
-
 async function adminSupport(){
   const threadsResult=await supabase
     .from("support_threads")
