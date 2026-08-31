@@ -701,13 +701,16 @@ async function toggleFavorite(productId){
 function orderDetails(o){
   const info=notificationTypeInfo("order");
   const status=o.status||"pending";
+  const skipKeys=new Set(["الباقة","عدد الباقة"]);
+  const customRows=Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!skipKeys.has(k)).map(([k,v])=>[k,v]);
   const rows=[
     ["رقم الطلب",o.order_number],
-    ["المنتج",o.product?.name],
-    ["الباقة",o.customer_data?.["الباقة"]],
+    ["المنتج",o.product?.name||o.service?.name],
+    ["الباقة",o.customer_data?.["الباقة"]?o.customer_data["الباقة"]+(o.customer_data?.["عدد الباقة"]?` (${o.customer_data["عدد الباقة"]})`:""):null],
     ["القيمة",o.total!=null?money(o.total):null],
-    ["التاريخ",dt(o.created_at)]
-  ].filter(x=>x[1]);
+    ["التاريخ",dt(o.created_at)],
+    ...customRows
+  ].filter(x=>x[1]!=null&&x[1]!=="");
   openModal(`<div class="sheet-head"><div><h2>تفاصيل الطلب</h2><p>${esc(o.order_number||"")}</p></div><button data-close>×</button></div>
   <div class="notification-card pro tone-digital">
     <div class="notification-card-head">
@@ -1463,6 +1466,8 @@ async function buy(p,selectedPackage=null){
   if(!approved)return;
   const code=$("#couponCode")?.value.trim()||null;
   const customerData={};
+  const missingField=$$(`[data-order-field][required]`,modal).find(x=>!x.value.trim());
+  if(missingField){toast(`حقل "${missingField.dataset.fieldLabel}" مطلوب لإتمام الطلب`,"error");missingField.focus();return}
   $$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());
   const{error}=await supabase.rpc("purchase_product_v7",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData,p_package_id:selectedPackage?.id||null});
   if(error)return toast(error.message,"error");
@@ -1732,7 +1737,7 @@ async function adminOrders(){
   };
   render();
 }
-function manageOrder(o){openModal(`<div class="sheet-head"><div><h2>${esc(o.order_number)}</h2><p>${esc(o.profile?.full_name||"-")} • ${esc(o.profile?.phone||"-")}</p></div><button data-close>×</button></div><div class="note">المنتج: ${esc(o.product?.name||"-")}${o.customer_data?.["الباقة"]?`<br>الباقة: ${esc(o.customer_data["الباقة"])}${o.customer_data?.["عدد الباقة"]?` (${esc(o.customer_data["عدد الباقة"])})`:""}`:""}<br>القيمة: ${money(o.total)}<br>الحالة: ${badge(o.status)}</div><form id="orderAdminForm" style="margin-top:14px"><label>بيانات التسليم<textarea id="delivery">${esc(o.delivery_data||"")}</textarea></label><label>الإجراء<select id="orderStatus"><option value="processing">قيد التنفيذ</option><option value="delivered">تم التسليم</option><option value="cancelled">إلغاء وإعادة الرصيد</option><option value="refunded">استرداد الرصيد</option></select></label><label>سبب العملية<textarea id="orderReason"></textarea></label><button class="btn primary block">حفظ</button></form>`);$("#orderAdminForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_process_order",{p_order_id:o.id,p_status:$("#orderStatus").value,p_delivery_data:$("#delivery").value||null,p_reason:$("#orderReason").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminOrders()}}
+function manageOrder(o){openModal(`<div class="sheet-head"><div><h2>${esc(o.order_number)}</h2><p>${esc(o.profile?.full_name||"-")} • ${esc(o.profile?.phone||"-")}</p></div><button data-close>×</button></div><div class="note">المنتج: ${esc(o.product?.name||"-")}${o.customer_data?.["الباقة"]?`<br>الباقة: ${esc(o.customer_data["الباقة"])}${o.customer_data?.["عدد الباقة"]?` (${esc(o.customer_data["عدد الباقة"])})`:""}`:""}${Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!["الباقة","عدد الباقة"].includes(k)).map(([k,v])=>`<br>${esc(k)}: ${esc(v)}`).join("")}<br>القيمة: ${money(o.total)}<br>الحالة: ${badge(o.status)}</div><form id="orderAdminForm" style="margin-top:14px"><label>بيانات التسليم<textarea id="delivery">${esc(o.delivery_data||"")}</textarea></label><label>الإجراء<select id="orderStatus"><option value="processing">قيد التنفيذ</option><option value="delivered">تم التسليم</option><option value="cancelled">إلغاء وإعادة الرصيد</option><option value="refunded">استرداد الرصيد</option></select></label><label>سبب العملية<textarea id="orderReason"></textarea></label><button class="btn primary block">حفظ</button></form>`);$("#orderAdminForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_process_order",{p_order_id:o.id,p_status:$("#orderStatus").value,p_delivery_data:$("#delivery").value||null,p_reason:$("#orderReason").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminOrders()}}
 async function adminCancelRequests(){const{data,count,error}=await listQuery("order_cancel_requests","*,order:orders(order_number,total,status),profile:profiles!order_cancel_requests_user_id_fkey(full_name)",q=>{if(S.filter)q=q.eq("status",S.filter);return q});if(error){console.error('cancel_requests load error:',error);toast("تعذر تحميل طلبات الإلغاء: "+error.message,"error")}const r=data||[];$("#adminContent").innerHTML=`${adminHeader("طلبات الإلغاء","مراجعة طلبات العملاء")}<div class="list">${r.map(x=>`<div class="card item"><div class="item-main"><h3>${esc(x.order?.order_number||"-")}</h3><p>${esc(x.profile?.full_name||"-")} • ${esc(x.reason)}</p></div><div class="item-actions">${badge(x.status)}${x.status==="pending"?`<button class="success" data-cancel-approve="${x.id}">قبول</button><button class="danger" data-cancel-reject="${x.id}">رفض</button>`:""}</div></div>`).join("")||empty("لا توجد طلبات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCancelRequests,[["pending","معلق"],["approved","مقبول"],["rejected","مرفوض"]]);bindPager(adminCancelRequests);$$("[data-cancel-approve]").forEach(b=>b.onclick=()=>reviewCancel(b.dataset.cancelApprove,true));$$("[data-cancel-reject]").forEach(b=>b.onclick=()=>reviewCancel(b.dataset.cancelReject,false))}
 async function reviewCancel(id,approve){const reason=approve?"قبول طلب الإلغاء":await appPrompt({title:"رفض طلب الإلغاء",message:"اكتب سبب رفض طلب الإلغاء ليظهر للمستخدم.",placeholder:"سبب الرفض",confirmText:"رفض الطلب",icon:"circle-x",danger:true});if(!approve&&!reason)return;let{error}=await supabase.rpc("admin_review_cancel_request",{p_request_id:id,p_approve:approve,p_reason:reason});if(error&&/schema cache|could not find the function/i.test(error.message||"")){error=null;const{data:reqRow}=await supabase.from("order_cancel_requests").select("order_id,user_id").eq("id",id).maybeSingle();if(approve&&reqRow&&reqRow.order_id){const r=await supabase.rpc("admin_process_order",{p_order_id:reqRow.order_id,p_status:"cancelled",p_delivery_data:null,p_reason:reason});if(r.error)error=r.error}if(!error){const u=await supabase.from("order_cancel_requests").update({status:approve?"approved":"rejected"}).eq("id",id).select("id");if(u.error)error=u.error;else if(!(u.data||[]).length)error={message:"تم تنفيذ العملية لكن تعذر تحديث حالة الطلب — شغّل ملف supabase/HOTFIX_admin_review_cancel_request.sql في SQL Editor لإصلاح جذري"}}}if(error)return toast(error.message,"error");toast("تمت معالجة الطلب");adminCancelRequests()}
 
