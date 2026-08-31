@@ -225,7 +225,7 @@ async function openSupportChat(){
   await supabase.from("support_threads").update({user_unread_count:0}).eq("id",thread.id);
   supabase.from("support_messages").update({is_read:true}).eq("thread_id",thread.id).eq("is_read",false).then(()=>{});
   openModal(`<div class="sheet-head support-head-pro"><div class="support-agent"><span class="support-avatar"><i data-lucide="headphones"></i></span><div><h2>الدعم الفني</h2><p class="support-status-line"><span class="support-dot"></span>${thread.is_user_blocked?"تم إيقاف الإرسال بواسطة الإدارة":"متصل الآن • يرد عادةً خلال دقائق"}</p></div></div><button data-close>×</button></div>
-    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.is_bot||m.sender_id===null;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)} ${m.sender_id===S.user.id&&!isBot?`<span class="msg-tick ${m.is_read?"read":""}"><i data-lucide="${m.is_read?"check-check":"check"}"></i></span>`:""}</small></div>`}).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
+    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.is_bot||m.sender_id===null;const isMineMsg=!isBot&&m.sender_id===S.user.id;const senderName=isBot?"":isMineMsg?(S.profile?.full_name||"أنت"):"إدارة علي شوب";return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:senderName?`<span class="sender-name ${isMineMsg?"mine-name":"admin-name"}">${isMineMsg?"":`<i data-lucide="shield-check"></i> `}${esc(senderName)}</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)} ${m.sender_id===S.user.id&&!isBot?`<span class="msg-tick ${m.is_read?"read":""}"><i data-lucide="${m.is_read?"check-check":"check"}"></i></span>`:""}</small></div>`}).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
     ${thread.is_user_blocked?`<div class="chat-blocked"><i data-lucide="ban"></i><span>قام الدعم بإيقاف إرسال الرسائل مؤقتًا.</span></div>`:
     `<form id="supportSendForm" class="support-send-rich">
       <div class="chat-tools">
@@ -468,11 +468,37 @@ function localBotFallback(userText){
   if(has("شكرا","شكراً","ممتاز","تمام"))return "العفو 🌟 سعداء بخدمتك — إن احتجت أي شيء آخر فأنا هنا.";
   return "تم استلام رسالتك بنجاح ✅ سيراجعها فريق الدعم ويرد عليك في أقرب وقت. وإن كان استفسارك عن الشحن أو الطلبات أو الكوبونات فيمكنني مساعدتك فورًا — اكتب لي التفاصيل.";
 }
+async function buildStoreContext(){
+  const now=Date.now();
+  if(window.__storeCtx&&now-window.__storeCtxAt<300000)return window.__storeCtx;
+  try{
+    const[{data:products},{data:categories},{data:faqs},{data:platforms}]=await Promise.all([
+      supabase.from("products_with_stock").select("name,price,packages,catalog_section,availability_status").eq("is_active",true).limit(60),
+      supabase.from("categories").select("name,catalog_section").eq("is_active",true).limit(30),
+      supabase.from("faqs").select("question,answer").eq("is_active",true).limit(10),
+      supabase.from("social_platforms").select("name").eq("is_active",true).limit(14)
+    ]);
+    const lines=[];
+    lines.push(`اسم المتجر: ${S.settings.store_name||"علي شوب"} — العملة: ${S.settings.currency||CONFIG.CURRENCY}`);
+    if(S.settings.support_whatsapp)lines.push(`واتساب الدعم: ${S.settings.support_whatsapp}`);
+    if(categories?.length)lines.push("الأقسام: "+categories.map(c=>c.name+(c.catalog_section==="gaming"?" (ألعاب/تطبيقات)":"")).join("، "));
+    if(products?.length)lines.push("المنتجات والأسعار الحالية: "+products.map(pr=>{
+      const pkgs=(pr.packages||[]).map(x=>`${x.name}=${x.price}$`).join(" / ");
+      return `${pr.name}: ${pkgs||pr.price+"$"}${pr.availability_status==="sold_out"?" (نفد حاليًا)":""}`;
+    }).join(" | "));
+    if(platforms?.length)lines.push("منصات السوشل المتوفرة: "+platforms.map(x=>x.name).join("، "));
+    if(faqs?.length)lines.push("أسئلة شائعة معتمدة: "+faqs.map(f=>`${f.question} = ${f.answer}`).join(" | "));
+    window.__storeCtx=lines.join("\n");
+    window.__storeCtxAt=now;
+    return window.__storeCtx;
+  }catch(err){console.warn("store context failed:",err);return ""}
+}
 async function geminiSupportReply(thread,userText){
   let text=null;
   try{
     if(GEMINI_API_KEY){
-      const prompt=`أنت "مساعد علي شوب" — مساعد دعم ذكي لمتجر رقمي عربي يبيع منتجات رقمية وشحن ألعاب وتطبيقات وبرامج وخدمات سوشل ميديا. أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وإن كان السؤال عن حالة طلب أو مشكلة حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
+      const storeInfo=await buildStoreContext();
+      const prompt=`أنت "مساعد علي شوب" — مساعد الدعم الرسمي لهذا المتجر. بيانات المتجر الحقيقية الحالية (المصدر الوحيد للحقيقة — لا تخترع أسعارًا أو منتجات غير موجودة هنا):\n${storeInfo||"لا تتوفر بيانات حاليًا"}\n\nقواعدك: أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وأجب من بيانات المتجر أعلاه حصرًا عند السؤال عن منتجات أو أسعار أو أقسام، وإن كان السؤال عن حالة طلب معيّن أو مشكلة حساب حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
       const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
       const json=await resp.json();
       text=(json?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim()||null;
@@ -3031,7 +3057,7 @@ async function openAdminSupportThread(thread){
   await supabase.from("support_threads").update({admin_unread_count:0}).eq("id",thread.id);
   openModal(`<div class="sheet-head"><div><h2>${esc(thread.profile?.full_name||"عميل")}</h2><p>${thread.is_user_blocked?"المستخدم محظور من الإرسال":"محادثة الدعم"}</p></div><button data-close>×</button></div>
   <div class="support-admin-actions"><button id="toggleUserChatBlock" class="btn ${thread.is_user_blocked?"success":"danger"}"><i data-lucide="${thread.is_user_blocked?"unlock":"ban"}"></i>${thread.is_user_blocked?"فك حظر الإرسال":"حظر الإرسال"}</button></div>
-  <div id="adminSupportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_bot;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> المساعد الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`}).join("")}</div>
+  <div id="adminSupportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_bot;const isMineMsg=!isBot&&m.sender_id===S.user.id;const senderName=isBot?"":isMineMsg?"إدارة علي شوب":(m.sender?.full_name||"العميل");return `<div class="support-message ${isBot?"bot":isMineMsg?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> المساعد الذكي</span>`:`<span class="sender-name ${isMineMsg?"mine-name":"admin-name"}">${isMineMsg?`<i data-lucide="shield-check"></i> `:""}${esc(senderName)}</span>`}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`}).join("")}</div>
   <form id="adminSupportForm" class="support-send-rich">
     <div class="chat-tools">
       <button type="button" class="icon-action" data-toggle-emoji="adminSupportBody" title="إيموجي"><i data-lucide="smile"></i></button>
