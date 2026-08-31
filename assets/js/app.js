@@ -1462,13 +1462,15 @@ function details(id){
 async function buy(p,selectedPackage=null){
   if(!needUser())return;
   const label=selectedPackage?`${p.name} — ${selectedPackage.name}`:p.name;
-  const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${label}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});
-  if(!approved)return;
+  // مهم: نجمع حقول العميل والكوبون قبل فتح نافذة التأكيد، لأن appConfirm يستبدل محتوى النافذة فيُمسح الإدخال
   const code=$("#couponCode")?.value.trim()||null;
   const customerData={};
-  const missingField=$$(`[data-order-field][required]`,modal).find(x=>!x.value.trim());
+  const fieldInputs=$$(`[data-order-field]`,modal);
+  const missingField=fieldInputs.find(x=>x.hasAttribute("required")&&!x.value.trim());
   if(missingField){toast(`حقل "${missingField.dataset.fieldLabel}" مطلوب لإتمام الطلب`,"error");missingField.focus();return}
-  $$(`[data-order-field]`,modal).forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());
+  fieldInputs.forEach(x=>customerData[x.dataset.fieldLabel]=x.value.trim());
+  const approved=await appConfirm({title:"تأكيد الشراء",message:`هل تريد شراء ${label}؟`,confirmText:"شراء الآن",icon:"shopping-cart"});
+  if(!approved)return;
   const{error}=await supabase.rpc("purchase_product_v7",{p_product_id:p.id,p_idempotency_key:crypto.randomUUID(),p_coupon_code:code,p_customer_data:customerData,p_package_id:selectedPackage?.id||null});
   if(error)return toast(error.message,"error");
   toast("تم الشراء");closeModal();await loadIdentity();location.hash="#/orders";
