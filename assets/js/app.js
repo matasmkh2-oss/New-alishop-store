@@ -456,17 +456,31 @@ window.addEventListener("error",event=>{
   const message=event.error?.message||event.message;
   if(message&&!String(message).includes("ResizeObserver"))toast(friendlyError(message),"error");
 });
+function localBotFallback(userText){
+  const t=String(userText||"").toLowerCase();
+  const has=(...ws)=>ws.some(w=>t.includes(w));
+  if(has("رصيد","شحن","محفظة","ايداع","إيداع"))return "لشحن رصيدك: افتح صفحة المحفظة واختر طريقة الدفع المناسبة، أو استخدم بطاقة شحن برمزها مباشرة. إن أرسلت طلب شحن ولم يُضَف الرصيد فأخبرني برقم الطلب وسيراجعه فريق الدعم فورًا.";
+  if(has("طلب","طلبي","طلبات","تسليم","كود"))return "يمكنك متابعة حالة طلبك من صفحة طلباتي — ستجد الحالة وبيانات التسليم فور توفرها. إن كان طلبك متأخرًا أخبرني برقمه وسيتولى فريق الدعم مراجعته.";
+  if(has("كوبون","خصم","تخفيض"))return "لاستخدام كوبون الخصم: افتح صفحة المنتج المطلوب وأدخل الرمز في خانة كوبون الخصم قبل الضغط على شراء — سيظهر لك السعر بعد الخصم مباشرة.";
+  if(has("سعر","اسعار","أسعار","باقة","باقات"))return "تجد أسعار المنتجات وباقاتها داخل بطاقة كل منتج — اضغط على المنتج وستظهر لك الباقات المتاحة مع أسعارها لتختار الأنسب.";
+  if(has("مشكلة","خطأ","لا يعمل","ما يشتغل","عطل"))return "أعتذر عن أي إزعاج — صف لي المشكلة بالتفصيل (في أي صفحة وماذا يحدث بالضبط) وسيراجعها فريق الدعم معك فورًا.";
+  if(has("مرحبا","اهلا","أهلا","هلا","سلام","هاي"))return "أهلًا وسهلًا بك في دعم علي شوب 👋 كيف أستطيع مساعدتك اليوم؟";
+  if(has("شكرا","شكراً","ممتاز","تمام"))return "العفو 🌟 سعداء بخدمتك — إن احتجت أي شيء آخر فأنا هنا.";
+  return "تم استلام رسالتك بنجاح ✅ سيراجعها فريق الدعم ويرد عليك في أقرب وقت. وإن كان استفسارك عن الشحن أو الطلبات أو الكوبونات فيمكنني مساعدتك فورًا — اكتب لي التفاصيل.";
+}
 async function geminiSupportReply(thread,userText){
+  let text=null;
   try{
-    if(!GEMINI_API_KEY)return null;
-    const prompt=`أنت "مساعد علي شوب" — مساعد دعم ذكي لمتجر رقمي عربي يبيع منتجات رقمية وشحن ألعاب وتطبيقات وبرامج وخدمات سوشل ميديا. أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وإن كان السؤال عن حالة طلب أو مشكلة حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
-    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
-    const json=await resp.json();
-    const text=(json?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim();
-    if(!text)return null;
-    await supabase.rpc("bot_support_reply",{p_thread_id:thread.id,p_body:text});
-    return text;
-  }catch(err){console.warn("AI reply failed:",err);return null}
+    if(GEMINI_API_KEY){
+      const prompt=`أنت "مساعد علي شوب" — مساعد دعم ذكي لمتجر رقمي عربي يبيع منتجات رقمية وشحن ألعاب وتطبيقات وبرامج وخدمات سوشل ميديا. أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وإن كان السؤال عن حالة طلب أو مشكلة حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
+      const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
+      const json=await resp.json();
+      text=(json?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim()||null;
+    }
+  }catch(err){console.warn("AI reply failed:",err)}
+  if(!text)text=localBotFallback(userText);
+  try{await supabase.rpc("bot_support_reply",{p_thread_id:thread.id,p_body:text})}catch(e){console.warn("bot save failed:",e)}
+  return text;
 }
 function renderAppError(title,detail,actionText="إعادة المحاولة",action=()=>location.reload()){
   app.innerHTML=`<div class="card empty"><h2>${esc(title)}</h2><p>${esc(detail||"حدث خطأ غير متوقع")}</p><button id="retryView" class="btn primary">${esc(actionText)}</button></div>`;
@@ -3017,7 +3031,7 @@ async function openAdminSupportThread(thread){
   await supabase.from("support_threads").update({admin_unread_count:0}).eq("id",thread.id);
   openModal(`<div class="sheet-head"><div><h2>${esc(thread.profile?.full_name||"عميل")}</h2><p>${thread.is_user_blocked?"المستخدم محظور من الإرسال":"محادثة الدعم"}</p></div><button data-close>×</button></div>
   <div class="support-admin-actions"><button id="toggleUserChatBlock" class="btn ${thread.is_user_blocked?"success":"danger"}"><i data-lucide="${thread.is_user_blocked?"unlock":"ban"}"></i>${thread.is_user_blocked?"فك حظر الإرسال":"حظر الإرسال"}</button></div>
-  <div id="adminSupportMessages" class="support-messages">${(messages||[]).map(m=>`<div class="support-message ${m.sender_id===S.user.id?"mine":"theirs"}">${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`).join("")}</div>
+  <div id="adminSupportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_bot;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> المساعد الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`}).join("")}</div>
   <form id="adminSupportForm" class="support-send-rich">
     <div class="chat-tools">
       <button type="button" class="icon-action" data-toggle-emoji="adminSupportBody" title="إيموجي"><i data-lucide="smile"></i></button>
