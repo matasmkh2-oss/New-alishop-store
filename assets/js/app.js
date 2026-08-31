@@ -4,7 +4,7 @@ const PRIMARY_ADMIN_ID="60fb1f4a-5df4-4d05-9956-1ad1d59aa957";
 const isPrimaryAdmin=id=>id===PRIMARY_ADMIN_ID;
 const $=(s,p=document)=>p.querySelector(s),$$=(s,p=document)=>[...p.querySelectorAll(s)];
 const app=$("#app"),modal=$("#modalDialog"),auth=$("#authDialog");
-const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),catalogAt:0,authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"digital",catalogMode:"digital",categorySection:"digital",inventorySection:"digital",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
+const S={user:null,profile:null,wallet:{balance:0},products:[],categories:[],notes:[],slides:[],announcements:[],settings:{},favorites:new Set(),catalogAt:0,authMode:"login",adminGroup:"dashboard",adminPage:"overview",page:1,query:"",filter:"",deferredInstall:null,productMode:"digital",catalogMode:"digital",productView:localStorage.getItem("alishop_product_view")||"grid",categorySection:"digital",inventorySection:"digital",orderTab:"digital",noteTab:"digital",platforms:[],socialCategories:[],adminBadges:{},floatingHidden:false,supportUnread:0};
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const money=n=>`${Number(n||0).toFixed(2)} ${CONFIG.CURRENCY}`,dt=v=>new Date(v).toLocaleString("ar");
 const toDatetimeLocal=value=>{if(!value)return"";const date=new Date(value);if(Number.isNaN(date.getTime()))return"";const offset=date.getTimezoneOffset();const local=new Date(date.getTime()-offset*60000);return local.toISOString().slice(0,16)};
@@ -1183,14 +1183,32 @@ function pcard(p){
   const sold=p.availability_status==="sold_out";
   const pkgs=normalizeProductPackages(p.packages||[]);
   const displayPrice=pkgs.length?Math.min(...pkgs.map(x=>x.price)):p.price;
-  return `<article class="catalog-image-card ${sold?"soldout":""}" data-product="${p.id}" role="button" tabindex="0">
+  const priceLabel=pkgs.length?`من ${money(displayPrice)}`:money(p.price);
+  const imgHtml=p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:`<div class="image-fallback"><i data-lucide="package-open"></i></div>`;
+  const view=S.productView||"grid";
+  if(view==="list"){
+    return `<article class="pcard-row ${sold?"soldout":""}" data-product="${p.id}" role="button" tabindex="0">
+      <div class="pcard-row-thumb">${imgHtml}</div>
+      <div class="pcard-row-main">
+        <h3>${esc(p.name)}</h3>
+        <div class="pcard-row-sub"><span class="pcard-cat">${esc(p.category_name||"منتج رقمي")}</span>${pkgs.length?`<span class="pcard-pkgs"><i data-lucide="layers"></i>${pkgs.length} باقات</span>`:""}</div>
+      </div>
+      <div class="pcard-row-side">
+        ${sold?'<span class="pcard-sold">نفد</span>':`<strong class="pcard-price">${priceLabel}</strong>`}
+        <button class="favorite-btn static ${S.favorites.has(p.id)?"active":""}" data-favorite="${p.id}" aria-label="المفضلة"><i data-lucide="heart"></i></button>
+      </div>
+    </article>`;
+  }
+  const compact=view==="compact";
+  return `<article class="catalog-image-card ${compact?"pcard-compact":""} ${sold?"soldout":""}" data-product="${p.id}" role="button" tabindex="0">
     ${sold?'<div class="soldout-ribbon">نفد المخزون</div>':""}
-    <div class="catalog-image">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" decoding="async">`:`<div class="image-fallback"><i data-lucide="package-open"></i></div>`}</div>
+    <div class="catalog-image">${imgHtml}</div>
     <div class="catalog-overlay">
       <span class="catalog-category">${esc(p.category_name||"منتج رقمي")}</span>
       <h3>${esc(p.name)}</h3>
-      <div class="catalog-meta"><strong>${pkgs.length?`من ${money(displayPrice)}`:money(p.price)}</strong><span><i data-lucide="arrow-up-left"></i></span></div>
+      <div class="catalog-meta"><strong>${priceLabel}</strong><span><i data-lucide="arrow-up-left"></i></span></div>
     </div>
+    ${pkgs.length?`<span class="pcard-pkg-chip"><i data-lucide="layers"></i>${pkgs.length} باقات</span>`:""}
     <button class="favorite-btn ${S.favorites.has(p.id)?"active":""}" data-favorite="${p.id}" aria-label="المفضلة"><i data-lucide="heart"></i></button>
   </article>`;
 }
@@ -1337,9 +1355,18 @@ async function products(){
     $("#catalogDynamic").innerHTML=`<div class="note" style="margin-bottom:12px"><strong>${esc(meta.title)}</strong><br>${esc(meta.userSubtitle)}</div>
     ${roots.length?`<div class="category-strip">${roots.map(category=>`<button class="category-pill" data-root-category="${category.id}">${category.image_url?`<img src="${esc(category.image_url)}">`:`<i data-lucide="${meta.icon}"></i>`}<span>${esc(category.name)}</span></button>`).join("")}</div>`:""}
     <div class="search-row compact-search"><input id="search" class="input" placeholder="بحث في ${esc(meta.short)}..." value="${esc(incomingQuery)}"><select id="cat" class="input"><option value="">كل الأقسام</option>${categories.map(category=>`<option value="${category.id}">${esc(category.name)}</option>`).join("")}</select></div>
-    <div id="pgrid" class="catalog-image-grid">${sectionProducts.map(pcard).join("")||empty(meta.title,"سيظهر هذا القسم هنا بعد إضافة المنتجات",meta.icon)}</div>`;
+    <div class="catalog-viewbar">
+      <div class="catalog-view-switch">
+        <button class="${S.productView==="compact"?"active":""}" data-view-mode="compact" title="عرض مضغوط"><i data-lucide="grid-3x3"></i></button>
+        <button class="${S.productView==="grid"?"active":""}" data-view-mode="grid" title="عرض شبكة"><i data-lucide="layout-grid"></i></button>
+        <button class="${S.productView==="list"?"active":""}" data-view-mode="list" title="عرض قائمة"><i data-lucide="list"></i></button>
+      </div>
+      <span class="catalog-count" id="catalogCount"></span>
+    </div>
+    <div id="pgrid" class="catalog-image-grid view-${S.productView}">${sectionProducts.map(pcard).join("")||empty(meta.title,"سيظهر هذا القسم هنا بعد إضافة المنتجات",meta.icon)}</div>`;
 
     let selectedRoot="";
+    const updateCount=n=>{const c=$("#catalogCount");if(c)c.textContent=n?`${n} منتجًا`:""};
     const draw=()=>{
       const query=$("#search").value.toLowerCase();
       const categoryId=$("#cat").value;
@@ -1349,8 +1376,17 @@ async function products(){
         return (!categoryId||product.category_id===categoryId)&&(!allowed||allowed.includes(product.category_id))&&haystack.includes(query);
       });
       $("#pgrid").innerHTML=filtered.map(pcard).join("")||empty("لا توجد نتائج","جرّب تغيير البحث أو اختيار قسم آخر",meta.icon);
+      updateCount(filtered.length);
       bindProducts();
     };
+    updateCount(sectionProducts.length);
+    $$("[data-view-mode]").forEach(btn=>btn.onclick=()=>{
+      S.productView=btn.dataset.viewMode;
+      localStorage.setItem("alishop_product_view",S.productView);
+      $$("[data-view-mode]").forEach(x=>x.classList.toggle("active",x===btn));
+      $("#pgrid").className=`catalog-image-grid view-${S.productView}`;
+      draw();
+    });
 
     $$("[data-root-category]").forEach(button=>button.onclick=()=>{
       $$("[data-root-category]").forEach(node=>node.classList.remove("active"));
@@ -1438,14 +1474,31 @@ function details(id){
   const sold=p.availability_status==="sold_out";
   const fields=p.required_fields||[];
   const packages=normalizeProductPackages(p.packages||[]);
+  const pkgsMin=packages.length?Math.min(...packages.map(x=>x.price)):null;
   openModal(`<div class="sheet-head"><div><h2>${esc(p.name)}</h2><p>${sold?"نفد المخزون":"متوفر الآن"}</p></div><button data-close>×</button></div>
-  <div class="product-image" style="height:230px;border-radius:19px">${p.image_url?`<img src="${esc(p.image_url)}">`:"🛍️"}</div>
-  <p style="line-height:1.9;color:var(--m)">${esc(p.description||"")}</p>
-  ${packages.length?`<div class="packages-select-block"><h3 class="packages-title">اختر الباقة</h3><div class="packages-list">${packages.map((pkg,i)=>`<button type="button" class="package-option ${i===0?"active":""}" data-package-option="${esc(pkg.id)}"><span class="pkg-name">${esc(pkg.name)}</span>${pkg.quantity?`<span class="pkg-qty">${esc(pkg.quantity)}</span>`:""}<span class="pkg-price">${money(pkg.price)}</span></button>`).join("")}</div></div>`:""}
-  ${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" ${f.required?"required":""}></label>`).join("")}
-  <label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label>
-  <div id="couponPreview" class="coupon-preview hidden"></div>
-  <div class="product-foot"><span class="price" id="orderPrice">${money(packages.length?packages[0].price:p.price)}</span><button id="buy" class="btn ${sold?"soft":"primary"}" ${sold?"disabled":""}>${sold?"غير متوفر حاليًا":"شراء الآن"}</button></div>`);
+  <div class="buy-sheet">
+    <div class="buy-hero">
+      <div class="buy-hero-image">${p.image_url?`<img src="${esc(p.image_url)}" alt="${esc(p.name)}">`:`<i data-lucide="package-open"></i>`}</div>
+      <div class="buy-hero-main">
+        <span class="buy-cat">${esc(p.category_name||"منتج رقمي")}</span>
+        <h3>${esc(p.name)}</h3>
+        <div class="buy-price-line">${packages.length?`<small>يبدأ من</small><strong>${money(pkgsMin)}</strong>`:`<small>السعر</small><strong>${money(p.price)}</strong>`}</div>
+        <div class="buy-badges">
+          <span class="buy-badge ${sold?"bad":"ok"}"><i data-lucide="${sold?"package-x":"package-check"}"></i>${sold?"نفد المخزون":"متوفر"}</span>
+          <span class="buy-badge"><i data-lucide="${p.delivery_type==="automatic"?"zap":"hand"}"></i>${p.delivery_type==="automatic"?"تسليم تلقائي فوري":"تسليم من الإدارة"}</span>
+        </div>
+      </div>
+    </div>
+    ${p.description?`<p class="buy-desc">${esc(p.description)}</p>`:""}
+    ${packages.length?`<div class="packages-select-block"><h3 class="packages-title"><i data-lucide="layers"></i> اختر الباقة</h3><div class="packages-list">${packages.map((pkg,i)=>`<button type="button" class="package-option ${i===0?"active":""}" data-package-option="${esc(pkg.id)}"><span class="pkg-name">${esc(pkg.name)}</span>${pkg.quantity?`<span class="pkg-qty">${esc(pkg.quantity)}</span>`:""}<span class="pkg-price">${money(pkg.price)}</span></button>`).join("")}</div></div>`:""}
+    ${fields.length?`<div class="buy-fields"><h3 class="packages-title"><i data-lucide="clipboard-pen"></i> معلومات مطلوبة للطلب</h3>${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" placeholder="${esc(f.placeholder||"")}" ${f.required?"required":""}></label>`).join("")}</div>`:""}
+    <label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label>
+    <div id="couponPreview" class="coupon-preview hidden"></div>
+    <div class="buy-footer">
+      <div class="buy-total"><small>الإجمالي</small><span class="price" id="orderPrice">${money(packages.length?packages[0].price:p.price)}</span></div>
+      <button id="buy" class="btn ${sold?"soft":"primary"} buy-btn" ${sold?"disabled":""}><i data-lucide="shopping-cart"></i>${sold?"غير متوفر حاليًا":"شراء الآن"}</button>
+    </div>
+  </div>`);
   let selectedPackage=packages.length?packages[0]:null;
   $$("[data-package-option]",modal).forEach(btn=>btn.onclick=()=>{
     $$("[data-package-option]",modal).forEach(x=>x.classList.remove("active"));
