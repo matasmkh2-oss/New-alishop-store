@@ -1,4 +1,4 @@
-import{CONFIG}from"./config.js";import{supabase}from"./supabase-client.js";
+import{CONFIG,GEMINI_API_KEY}from"./config.js";import{supabase}from"./supabase-client.js";
 const APP_BUILD="15.0.1";
 const PRIMARY_ADMIN_ID="60fb1f4a-5df4-4d05-9956-1ad1d59aa957";
 const isPrimaryAdmin=id=>id===PRIMARY_ADMIN_ID;
@@ -224,7 +224,7 @@ async function openSupportChat(){
   }
   await supabase.from("support_threads").update({user_unread_count:0}).eq("id",thread.id);
   openModal(`<div class="sheet-head support-head-pro"><div class="support-agent"><span class="support-avatar"><i data-lucide="headphones"></i></span><div><h2>الدعم الفني</h2><p class="support-status-line"><span class="support-dot"></span>${thread.is_user_blocked?"تم إيقاف الإرسال بواسطة الإدارة":"متصل الآن • يرد عادةً خلال دقائق"}</p></div></div><button data-close>×</button></div>
-    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>`<div class="support-message ${m.sender_id===S.user.id?"mine":"theirs"}">${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
+    <div id="supportMessages" class="support-messages">${(messages||[]).map(m=>{const isBot=m.is_auto||m.sender_id===null;return `<div class="support-message ${isBot?"bot":m.sender_id===S.user.id?"mine":"theirs"}">${isBot?`<span class="bot-badge"><i data-lucide="sparkles"></i> مساعد علي شوب الذكي</span>`:""}${m.image_url?`<img class="chat-image" src="${esc(m.image_url)}" alt="">`:""}${m.body?`<div>${esc(m.body)}</div>`:""}<small>${dt(m.created_at)}</small></div>`).join("")||`<div class="empty-chat">ابدأ المحادثة مع الدعم</div>`}</div>
     ${thread.is_user_blocked?`<div class="chat-blocked"><i data-lucide="ban"></i><span>قام الدعم بإيقاف إرسال الرسائل مؤقتًا.</span></div>`:
     `<form id="supportSendForm" class="support-send-rich">
       <div class="chat-tools">
@@ -244,7 +244,7 @@ async function openSupportChat(){
       const image=await uploadSupportImage(file);
       const{error}=await supabase.from("support_messages").insert({thread_id:thread.id,sender_id:S.user.id,body:body||null,image_url:image});
       if(error)throw error;
-      playChatSound(false);closeModal();openSupportChat();
+      playChatSound(false);if(body)geminiSupportReply(thread,body);closeModal();openSupportChat();
     }catch(err){toast(err.message,"error")}
   };
   bindEmojiPicker();bindChatImagePicker("supportImage","supportImageButton","supportImageBadge");refreshIcons();
@@ -421,6 +421,17 @@ window.addEventListener("error",event=>{
   const message=event.error?.message||event.message;
   if(message&&!String(message).includes("ResizeObserver"))toast(friendlyError(message),"error");
 });
+async function geminiSupportReply(thread,userText){
+  try{
+    if(!GEMINI_API_KEY)return;
+    const prompt=`أنت "مساعد علي شوب" — مساعد دعم ذكي لمتجر رقمي عربي يبيع منتجات رقمية وشحن ألعاب وتطبيقات وبرامج وخدمات سوشل ميديا. أجب بالعربية بلهجة ودودة مختصرة (3 جمل كحد أقصى)، وإن كان السؤال عن حالة طلب أو مشكلة حساسة فأخبر العميل أن فريق الدعم سيراجع طلبه فورًا. سؤال العميل: ${userText}`;
+    const resp=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:240,temperature:.6}})});
+    const json=await resp.json();
+    const text=(json?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim();
+    if(!text)return;
+    await supabase.rpc("bot_support_reply",{p_thread_id:thread.id,p_body:"🤖 "+text});
+  }catch(err){console.warn("AI reply failed:",err)}
+}
 function renderAppError(title,detail,actionText="إعادة المحاولة",action=()=>location.reload()){
   app.innerHTML=`<div class="card empty"><h2>${esc(title)}</h2><p>${esc(detail||"حدث خطأ غير متوقع")}</p><button id="retryView" class="btn primary">${esc(actionText)}</button></div>`;
   $("#retryView")?.addEventListener("click",action);
@@ -725,7 +736,7 @@ function orderDetails(o){
       </div>
       <h3 class="odp-title">${esc(title)}</h3>
       ${packageName?`<div class="odp-package"><i data-lucide="layers"></i><span>الباقة: <strong>${esc(packageName)}</strong>${packageQty?` • العدد: <strong>${esc(packageQty)}</strong>`:""}</span></div>`:""}
-      <div class="odp-price-row"><small>إجمالي الطلب</small><strong>${o.total!=null?money(o.total):"—"}</strong></div>
+      <div class="odp-price-row"><small>إجمالي الطلب</small><strong>${o.total!=null?money(o.total):"—"}</strong></div>${Number(S.profile?.discount_percent)>0?`<div class="odp-discount-note"><i data-lucide="badge-percent"></i> تم تطبيق خصمك الخاص (${Number(S.profile.discount_percent)}%) على هذا الطلب</div>`:""}
     </div>
     ${customRows.length?`<div class="odp-section"><h4><i data-lucide="clipboard-list"></i> بيانات العميل</h4><div class="odp-grid">${customRows.map(([k,v])=>`<div class="odp-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join("")}</div></div>`:""}
     ${o.delivery_data&&["delivered","processing"].includes(status)?`<div class="odp-section"><h4><i data-lucide="key-round"></i> بيانات التسليم</h4><div class="odp-delivery"><code>${esc(o.delivery_data)}</code></div></div>`:""}
@@ -1361,7 +1372,10 @@ async function products(){
     const roots=categories.filter(category=>!category.parent_id);
     const sectionProducts=S.products.filter(product=>productSection(product)===sectionKey);
 
-    $("#catalogDynamic").innerHTML=`<div class="note" style="margin-bottom:12px"><strong>${esc(meta.title)}</strong><br>${esc(meta.userSubtitle)}</div>
+    $("#catalogDynamic").innerHTML=`<div class="section-hero-pro shp-${sectionKey}">
+      <span class="shp-orb orb-a"></span><span class="shp-orb orb-b"></span><span class="shp-orb orb-c"></span><span class="shp-shine"></span>
+      <div class="shp-content"><span class="shp-icon"><i data-lucide="${meta.icon}"></i></span><div class="shp-text"><h3>${esc(meta.title)}</h3><p>${esc(meta.userSubtitle)}</p></div></div>
+    </div>
     ${roots.length?`<div class="category-strip">${roots.map(category=>`<button class="category-pill" data-root-category="${category.id}">${category.image_url?`<img src="${esc(category.image_url)}">`:`<i data-lucide="${meta.icon}"></i>`}<span>${esc(category.name)}</span></button>`).join("")}</div>`:""}
     <div class="catalog-toolbar">
       <div class="catalog-view-switch">
@@ -1503,7 +1517,7 @@ function details(id){
       </div>
     </div>
     ${p.description?`<p class="buy-desc">${esc(p.description)}</p>`:""}
-    ${packages.length?`<div class="packages-select-block"><h3 class="packages-title"><i data-lucide="layers"></i> اختر الباقة</h3><div class="packages-list">${packages.map((pkg,i)=>`<button type="button" class="package-option ${i===0?"active":""}" data-package-option="${esc(pkg.id)}"><span class="pkg-name">${esc(pkg.name)}</span>${pkg.quantity?`<span class="pkg-qty">${esc(pkg.quantity)}</span>`:""}<span class="pkg-price">${money(pkg.price)}</span></button>`).join("")}</div></div>`:""}
+    ${packages.length?`<div class="packages-select-block"><h3 class="packages-title"><i data-lucide="layers"></i> اختر الباقة</h3><div class="packages-list">${packages.map((pkg,i)=>`<button type="button" class="package-option ${i===0?"active":""}" data-package-option="${esc(pkg.id)}" data-pkg-price="${pkg.price}"><span class="pkg-name">${esc(pkg.name)}</span>${pkg.quantity?`<span class="pkg-qty">${esc(pkg.quantity)}</span>`:""}<span class="pkg-price">${userPct>0?`<del>${money(pkg.price)}</del><strong>${money(disc(pkg.price))}</strong>`:money(pkg.price)}</span></button>`).join("")}</div></div>`:""}
     ${fields.length?`<div class="buy-fields"><h3 class="packages-title"><i data-lucide="clipboard-pen"></i> معلومات مطلوبة للطلب</h3>${fields.map((f,i)=>`<label>${esc(f.label)}${f.required?" *":""}<input data-order-field="${i}" data-field-label="${esc(f.label)}" type="${f.type==="url"?"url":f.type==="number"?"number":"text"}" placeholder="${esc(f.placeholder||"")}" ${f.required?"required":""}></label>`).join("")}</div>`:""}
     <label>كوبون الخصم<input id="couponCode" placeholder="اكتب رمز الكوبون"></label>
     <div id="couponPreview" class="coupon-preview hidden"></div>
@@ -1518,7 +1532,7 @@ function details(id){
     btn.classList.add("active");
     selectedPackage=packages.find(pkg=>pkg.id===btn.dataset.packageOption)||null;
     const priceBox=$("#orderPrice");
-    if(priceBox)priceBox.textContent=money(selectedPackage?selectedPackage.price:p.price);
+    if(priceBox){const base=selectedPackage?selectedPackage.price:p.price;priceBox.textContent=money(userPct>0?disc(base):base)}
     const code=$("#couponCode")?.value.trim();
     if(code)previewCoupon(code,p,selectedPackage);
   });

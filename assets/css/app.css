@@ -1798,3 +1798,35 @@ input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)
 .floating-contact.telegram:before{content:"";position:absolute;inset:-4px;border-radius:20px;border:2px solid #2AABEE;opacity:0;animation:fabRing 2.4s ease-out .8s infinite;pointer-events:none}
 .floating-contact.support.fab-live:before{color:var(--p)}
 @keyframes fabRing{0%{opacity:.7;transform:scale(.86)}70%{opacity:0;transform:scale(1.22)}100%{opacity:0;transform:scale(1.22)}}
+
+/* V20 — بطاقة القسم المتحركة */
+.section-hero-pro{position:relative;overflow:hidden;margin-bottom:13px;padding:16px 15px;border-radius:20px;border:1px solid color-mix(in srgb,var(--p) 30%,var(--b));background:linear-gradient(135deg,color-mix(in srgb,var(--p) 14%,var(--card-bg,var(--s))),color-mix(in srgb,var(--p2) 10%,var(--card-bg,var(--s))))}
+.shp-shp-gaming{background:linear-gradient(135deg,color-mix(in srgb,#7c3aed 16%,var(--card-bg,var(--s))),color-mix(in srgb,#2563eb 10%,var(--card-bg,var(--s))))}
+.shp-content{position:relative;z-index:2;display:flex;align-items:center;gap:12px}
+.shp-icon{width:46px;height:46px;flex:none;display:grid;place-items:center;border-radius:15px;color:#fff;background:linear-gradient(135deg,var(--p),var(--p2));box-shadow:0 10px 22px color-mix(in srgb,var(--p) 35%,transparent);animation:shpIconFloat 3.2s ease-in-out infinite}
+.shp-icon svg{width:22px;height:22px}
+.shp-text h3{margin:0;font-size:15.5px;font-weight:800}
+.shp-text p{margin:3px 0 0;font-size:11.5px;color:var(--m);font-weight:600;line-height:1.6}
+.shp-orb{position:absolute;border-radius:50%;filter:blur(2px);opacity:.5;pointer-events:none}
+.orb-a{width:64px;height:64px;top:-24px;left:-18px;background:radial-gradient(circle,color-mix(in srgb,var(--p) 45%,transparent),transparent 70%);animation:orbDrift1 7s ease-in-out infinite}
+.orb-b{width:46px;height:46px;bottom:-14px;right:12%;background:radial-gradient(circle,color-mix(in srgb,var(--p2) 50%,transparent),transparent 70%);animation:orbDrift2 9s ease-in-out infinite}
+.orb-c{width:26px;height:26px;top:16px;right:26%;background:radial-gradient(circle,color-mix(in srgb,var(--ok) 55%,transparent),transparent 70%);animation:orbDrift1 5.5s ease-in-out infinite reverse}
+.shp-shine{position:absolute;top:0;bottom:0;width:60px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);animation:shpShine 4.5s ease-in-out infinite;pointer-events:none}
+@keyframes orbDrift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(14px,8px) scale(1.12)}}
+@keyframes orbDrift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-16px,-9px) scale(.92)}}
+@keyframes shpShine{0%{right:-70px}55%,100%{right:calc(100% + 70px)}}
+@keyframes shpIconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+.odp-discount-note{display:flex;align-items:center;gap:6px;margin-top:9px;padding:8px 11px;border-radius:11px;font-size:11px;font-weight:800;color:var(--ok);background:color-mix(in srgb,var(--ok) 8%,transparent)}
+.odp-discount-note svg{width:13px;height:13px;flex:none}
+.pkg-price del{font-size:10.5px;color:var(--m);font-weight:600;margin-inline-end:5px}
+.pkg-price strong{color:inherit}
+.package-option.active .pkg-price strong{color:var(--p)}
+.tx-discount-chip{display:inline-flex;align-items:center;gap:3px;margin-inline-start:6px;padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:800;color:var(--ok);background:color-mix(in srgb,var(--ok) 10%,transparent)}
+.tx-discount-chip svg{width:10px;height:10px}
+
+/* V20 — فقاعة المساعد الذكي */
+.support-message.bot{background:linear-gradient(135deg,color-mix(in srgb,var(--p) 12%,var(--s2)),var(--s2));border:1px solid color-mix(in srgb,var(--p) 28%,transparent)}
+.bot-badge{display:inline-flex;align-items:center;gap:4px;margin-bottom:5px;font-size:10px;font-weight:800;color:var(--p)}
+.bot-badge svg{width:11px;height:11px;animation:sparkleSpin 2.4s linear infinite}
+@keyframes sparkleSpin{0%{transform:rotate(0) scale(1)}50%{transform:rotate(180deg) scale(1.15)}100%{transform:rotate(360deg) scale(1)}}

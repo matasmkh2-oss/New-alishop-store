@@ -6,3 +6,4 @@ export const CONFIG={
   SUPPORT_EMAIL:"matasmkh2@gmail.com",
   PAGE_SIZE:10
 };
+export const GEMINI_API_KEY="AIzaSyCH2ofsv0VzPn58ECXRgkR3qXB83cDQamI";
