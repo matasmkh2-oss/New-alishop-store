@@ -699,27 +699,28 @@ async function toggleFavorite(productId){
   toast(isFav?"أُزيل من المفضلة":"أُضيف إلى المفضلة");
 }
 function orderDetails(o){
-  const info=notificationTypeInfo("order");
-  const status=o.status||"pending";
+  const status=o.status||"paid";
+  const toneClass=["delivered","approved"].includes(status)?"ok":status==="processing"||status==="paid"?"run":["cancelled","refunded","rejected"].includes(status)?"bad":"wait";
+  const packageName=o.customer_data?.["الباقة"];
+  const packageQty=o.customer_data?.["عدد الباقة"];
   const skipKeys=new Set(["الباقة","عدد الباقة"]);
-  const customRows=Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!skipKeys.has(k)).map(([k,v])=>[k,v]);
-  const rows=[
-    ["رقم الطلب",o.order_number],
-    ["المنتج",o.product?.name||o.service?.name],
-    ["الباقة",o.customer_data?.["الباقة"]?o.customer_data["الباقة"]+(o.customer_data?.["عدد الباقة"]?` (${o.customer_data["عدد الباقة"]})`:""):null],
-    ["القيمة",o.total!=null?money(o.total):null],
-    ["التاريخ",dt(o.created_at)],
-    ...customRows
-  ].filter(x=>x[1]!=null&&x[1]!=="");
+  const customRows=Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!skipKeys.has(k));
+  const isSocial=!!o.service;
+  const title=o.product?.name||o.service?.name||"طلب";
   openModal(`<div class="sheet-head"><div><h2>تفاصيل الطلب</h2><p>${esc(o.order_number||"")}</p></div><button data-close>×</button></div>
-  <div class="notification-card pro tone-digital">
-    <div class="notification-card-head">
-      <span class="notification-icon-badge"><i data-lucide="${info.icon}"></i></span>
-      <div class="notification-head-copy"><div class="notification-kicker-row"><span class="notification-kicker">طلب رقمي</span></div><h3>${esc(o.product?.name||"منتج رقمي")}</h3></div>
-      <span class="notification-detail-item status"><small>الحالة</small><strong class="st-${["delivered","approved"].includes(status)?"ok":status==="processing"?"run":["cancelled","refunded","rejected"].includes(status)?"bad":"wait"}">${esc(notificationStatusLabel(status))}</strong></span>
+  <div class="order-detail-pro">
+    <div class="odp-hero">
+      <div class="odp-hero-top">
+        <span class="odp-kind">${isSocial?"خدمة سوشل":"منتج رقمي"}</span>
+        <span class="odp-status st-${toneClass}">${esc(notificationStatusLabel(status))}</span>
+      </div>
+      <h3 class="odp-title">${esc(title)}</h3>
+      ${packageName?`<div class="odp-package"><i data-lucide="layers"></i><span>الباقة: <strong>${esc(packageName)}</strong>${packageQty?` • العدد: <strong>${esc(packageQty)}</strong>`:""}</span></div>`:""}
+      <div class="odp-price-row"><small>إجمالي الطلب</small><strong>${o.total!=null?money(o.total):"—"}</strong></div>
     </div>
-    <div class="notification-details-list">${rows.map(([k,v])=>`<div class="notification-detail-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join("")}</div>
-    ${o.delivery_data&&["delivered","processing"].includes(status)?`<div class="notification-detail-item delivery"><small>بيانات التسليم</small><strong>${esc(o.delivery_data)}</strong></div>`:""}
+    ${customRows.length?`<div class="odp-section"><h4><i data-lucide="clipboard-list"></i> بيانات العميل</h4><div class="odp-grid">${customRows.map(([k,v])=>`<div class="odp-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join("")}</div></div>`:""}
+    ${o.delivery_data&&["delivered","processing"].includes(status)?`<div class="odp-section"><h4><i data-lucide="key-round"></i> بيانات التسليم</h4><div class="odp-delivery"><code>${esc(o.delivery_data)}</code></div></div>`:""}
+    <div class="odp-meta"><span><i data-lucide="hash"></i> ${esc(o.order_number||"")}</span><span><i data-lucide="calendar-clock"></i> ${esc(dt(o.created_at))}</span></div>
   </div>`);
   refreshIcons();
 }
@@ -1522,17 +1523,25 @@ async function orders(){
       </div>
       <div class="list">${mode==="social"
         ? socialOrders.map(order=>`<div class="card order-card">
-            <button class="order-card-main" data-social-order-details="${order.id}">
+            <button class="order-card-main order-card-pro" data-social-order-details="${order.id}">
               <div class="platform-list-icon"><i data-lucide="${order.service?.platform?.icon||"messages-square"}"></i></div>
-              <div class="item-main"><h3>${esc(order.service?.name||"منتج سوشل")}</h3><p>${order.quantity||0} • ${esc(order.order_number||"")} • ${dt(order.created_at)}</p></div>
-              ${badge(order.status)}
+              <div class="item-main">
+                <h3>${esc(order.service?.name||"منتج سوشل")}</h3>
+                <div class="ocp-line"><span class="ocp-package"><i data-lucide="chart-no-axes-column-increasing"></i>الكمية: ${order.quantity||0}</span><span class="ocp-price">${money(order.total)}</span></div>
+                <div class="ocp-sub">${esc(order.order_number||"")} • ${esc(dt(order.created_at))}</div>
+              </div>
+              <span class="ocp-status">${badge(order.status)}</span>
             </button>
           </div>`).join("")||empty("لا توجد طلبات سوشل")
         : currentRows.map(order=>`<div class="card order-card">
-            <button class="order-card-main" data-order-details="${order.id}">
+            <button class="order-card-main order-card-pro" data-order-details="${order.id}">
               <div class="order-thumb">${order.product?.image_url?`<img src="${esc(order.product.image_url)}">`:`<i data-lucide="${mode==="gaming"?"gamepad-2":"package"}"></i>`}</div>
-              <div class="item-main"><h3>${esc(order.product?.name||modeTitle)}</h3><p>${esc(order.order_number||"")} • ${money(order.total)} • ${dt(order.created_at)}</p></div>
-              ${badge(order.status)}
+              <div class="item-main">
+                <h3>${esc(order.product?.name||modeTitle)}</h3>
+                <div class="ocp-line">${order.customer_data?.["الباقة"]?`<span class="ocp-package"><i data-lucide="layers"></i>${esc(order.customer_data["الباقة"])}${order.customer_data?.["عدد الباقة"]?` ×${esc(order.customer_data["عدد الباقة"])}`:""}</span>`:""}<span class="ocp-price">${money(order.total)}</span></div>
+                <div class="ocp-sub">${esc(order.order_number||"")} • ${esc(dt(order.created_at))}</div>
+              </div>
+              <span class="ocp-status">${badge(order.status)}</span>
             </button>
             <div class="order-card-actions">${orderCancelButton(order)}</div>
           </div>`).join("")||empty(`لا توجد طلبات ${mode==="gaming"?"لهذا القسم":"رقمية"}`)}
@@ -1726,7 +1735,7 @@ async function adminOrders(){
     </div>
     <div class="list">${filteredRows.map(order=>mode==="social"
       ? `<div class="card item"><div class="platform-list-icon"><i data-lucide="${order.service?.platform?.icon||"messages-square"}"></i></div><div class="item-main"><h3>${esc(order.service?.name||"-")}</h3><p>${esc(order.profile?.full_name||"-")} • ${esc(order.order_number)} • ${order.quantity}</p></div><div class="item-actions">${badge(order.status)}${iconButton("settings-2","إدارة",`data-social-manage="${order.id}"`)}</div></div>`
-      : `<div class="card item"><div class="item-main"><h3>${esc(order.product?.name||"-")}</h3><p>${esc(order.profile?.full_name||"-")} • ${esc(order.order_number)} • ${money(order.total)}</p></div><div class="item-actions">${badge(order.status)}${iconButton("settings-2","إدارة",`data-order-manage="${order.id}"`)}</div></div>`).join("")||empty("لا توجد نتائج")}</div>`;
+      : `<div class="card item admin-order-pro"><div class="item-main"><h3>${esc(order.product?.name||"-")}${order.customer_data?.["الباقة"]?`<span class="aop-package"><i data-lucide="layers"></i>${esc(order.customer_data["الباقة"])}${order.customer_data?.["عدد الباقة"]?` ×${esc(order.customer_data["عدد الباقة"])}`:""}</span>`:""}</h3><p><i data-lucide="user"></i> ${esc(order.profile?.full_name||"-")} • ${esc(order.order_number)} • <strong class="aop-price">${money(order.total)}</strong></p></div><div class="item-actions">${badge(order.status)}${iconButton("settings-2","إدارة",`data-order-manage="${order.id}"`)}</div></div>`).join("")||empty("لا توجد نتائج")}</div>`;
     $("#adminOrderStatus").value=S.filter||"";
     $$("[data-order-admin-tab]").forEach(button=>button.onclick=()=>{S.orderTab=button.dataset.orderAdminTab;S.query="";S.filter="";render()});
     $("#adminOrderSearch").oninput=debounce(()=>{S.query=$("#adminOrderSearch").value.trim();render()},220);
@@ -1739,7 +1748,24 @@ async function adminOrders(){
   };
   render();
 }
-function manageOrder(o){openModal(`<div class="sheet-head"><div><h2>${esc(o.order_number)}</h2><p>${esc(o.profile?.full_name||"-")} • ${esc(o.profile?.phone||"-")}</p></div><button data-close>×</button></div><div class="note">المنتج: ${esc(o.product?.name||"-")}${o.customer_data?.["الباقة"]?`<br>الباقة: ${esc(o.customer_data["الباقة"])}${o.customer_data?.["عدد الباقة"]?` (${esc(o.customer_data["عدد الباقة"])})`:""}`:""}${Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!["الباقة","عدد الباقة"].includes(k)).map(([k,v])=>`<br>${esc(k)}: ${esc(v)}`).join("")}<br>القيمة: ${money(o.total)}<br>الحالة: ${badge(o.status)}</div><form id="orderAdminForm" style="margin-top:14px"><label>بيانات التسليم<textarea id="delivery">${esc(o.delivery_data||"")}</textarea></label><label>الإجراء<select id="orderStatus"><option value="processing">قيد التنفيذ</option><option value="delivered">تم التسليم</option><option value="cancelled">إلغاء وإعادة الرصيد</option><option value="refunded">استرداد الرصيد</option></select></label><label>سبب العملية<textarea id="orderReason"></textarea></label><button class="btn primary block">حفظ</button></form>`);$("#orderAdminForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_process_order",{p_order_id:o.id,p_status:$("#orderStatus").value,p_delivery_data:$("#delivery").value||null,p_reason:$("#orderReason").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminOrders()}}
+function manageOrder(o){
+  const packageName=o.customer_data?.["الباقة"];
+  const packageQty=o.customer_data?.["عدد الباقة"];
+  const customRows=Object.entries(o.customer_data||{}).filter(([k,v])=>v&&!["الباقة","عدد الباقة"].includes(k));
+  openModal(`<div class="sheet-head"><div><h2>${esc(o.order_number)}</h2><p>${esc(o.profile?.full_name||"-")} • ${esc(o.profile?.phone||"-")}</p></div><button data-close>×</button></div>
+  <div class="admin-manage-pro">
+    <div class="amp-summary">
+      <div class="amp-row"><small>المنتج</small><strong>${esc(o.product?.name||"-")}</strong></div>
+      ${packageName?`<div class="amp-row highlight"><small>الباقة المطلوبة</small><strong>${esc(packageName)}${packageQty?` ×${esc(packageQty)}`:""}</strong></div>`:""}
+      <div class="amp-row"><small>القيمة</small><strong>${money(o.total)}</strong></div>
+      <div class="amp-row"><small>الحالة الحالية</small>${badge(o.status)}</div>
+    </div>
+    ${customRows.length?`<div class="amp-fields"><h4><i data-lucide="clipboard-list"></i> بيانات العميل</h4>${customRows.map(([k,v])=>`<div class="amp-field"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join("")}</div>`:""}
+  </div>
+  <form id="orderAdminForm" style="margin-top:14px"><label>بيانات التسليم<textarea id="delivery">${esc(o.delivery_data||"")}</textarea></label><label>الإجراء<select id="orderStatus"><option value="processing">قيد التنفيذ</option><option value="delivered">تم التسليم</option><option value="cancelled">إلغاء وإعادة الرصيد</option><option value="refunded">استرداد الرصيد</option></select></label><label>سبب العملية<textarea id="orderReason"></textarea></label><button class="btn primary block">حفظ</button></form>`);
+  $("#orderAdminForm").onsubmit=async e=>{e.preventDefault();const{error}=await supabase.rpc("admin_process_order",{p_order_id:o.id,p_status:$("#orderStatus").value,p_delivery_data:$("#delivery").value||null,p_reason:$("#orderReason").value||null});if(error)return toast(error.message,"error");toast("تم تحديث الطلب");closeModal();adminOrders()};
+  refreshIcons();
+}
 async function adminCancelRequests(){const{data,count,error}=await listQuery("order_cancel_requests","*,order:orders(order_number,total,status),profile:profiles!order_cancel_requests_user_id_fkey(full_name)",q=>{if(S.filter)q=q.eq("status",S.filter);return q});if(error){console.error('cancel_requests load error:',error);toast("تعذر تحميل طلبات الإلغاء: "+error.message,"error")}const r=data||[];$("#adminContent").innerHTML=`${adminHeader("طلبات الإلغاء","مراجعة طلبات العملاء")}<div class="list">${r.map(x=>`<div class="card item"><div class="item-main"><h3>${esc(x.order?.order_number||"-")}</h3><p>${esc(x.profile?.full_name||"-")} • ${esc(x.reason)}</p></div><div class="item-actions">${badge(x.status)}${x.status==="pending"?`<button class="success" data-cancel-approve="${x.id}">قبول</button><button class="danger" data-cancel-reject="${x.id}">رفض</button>`:""}</div></div>`).join("")||empty("لا توجد طلبات")}</div>${pager(S.page,count||0,CONFIG.PAGE_SIZE)}`;bindAdminSearch(adminCancelRequests,[["pending","معلق"],["approved","مقبول"],["rejected","مرفوض"]]);bindPager(adminCancelRequests);$$("[data-cancel-approve]").forEach(b=>b.onclick=()=>reviewCancel(b.dataset.cancelApprove,true));$$("[data-cancel-reject]").forEach(b=>b.onclick=()=>reviewCancel(b.dataset.cancelReject,false))}
 async function reviewCancel(id,approve){const reason=approve?"قبول طلب الإلغاء":await appPrompt({title:"رفض طلب الإلغاء",message:"اكتب سبب رفض طلب الإلغاء ليظهر للمستخدم.",placeholder:"سبب الرفض",confirmText:"رفض الطلب",icon:"circle-x",danger:true});if(!approve&&!reason)return;let{error}=await supabase.rpc("admin_review_cancel_request",{p_request_id:id,p_approve:approve,p_reason:reason});if(error&&/schema cache|could not find the function/i.test(error.message||"")){error=null;const{data:reqRow}=await supabase.from("order_cancel_requests").select("order_id,user_id").eq("id",id).maybeSingle();if(approve&&reqRow&&reqRow.order_id){const r=await supabase.rpc("admin_process_order",{p_order_id:reqRow.order_id,p_status:"cancelled",p_delivery_data:null,p_reason:reason});if(r.error)error=r.error}if(!error){const u=await supabase.from("order_cancel_requests").update({status:approve?"approved":"rejected"}).eq("id",id).select("id");if(u.error)error=u.error;else if(!(u.data||[]).length)error={message:"تم تنفيذ العملية لكن تعذر تحديث حالة الطلب — شغّل ملف supabase/HOTFIX_admin_review_cancel_request.sql في SQL Editor لإصلاح جذري"}}}if(error)return toast(error.message,"error");toast("تمت معالجة الطلب");adminCancelRequests()}
 
