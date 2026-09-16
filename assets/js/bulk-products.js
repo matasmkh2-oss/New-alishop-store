@@ -51,7 +51,12 @@
     root.querySelectorAll('[data-bulk-rename]').forEach((button) => button.onclick = () => { const group = read().find((item) => item.id === button.dataset.bulkRename); if (!group) return; dialog({ title: 'تعديل اسم المجموعة', body: `<label class="bulk-dialog-field">اسم المجموعة<input data-bulk-dialog-name value="${esc(group.name)}"></label>`, onConfirm: (node) => { const name = node.querySelector('[data-bulk-dialog-name]').value.trim(); if (!name) return notify('اكتب اسمًا صحيحًا للمجموعة.', 'error'); const list = read(); list.find((item) => item.id === group.id).name = name; save(list); render('edit'); notify('تم تعديل اسم المجموعة.'); } }); });
     root.querySelectorAll('[data-bulk-delete]').forEach((button) => button.onclick = () => { const group = read().find((item) => item.id === button.dataset.bulkDelete); if (!group) return; dialog({ title: 'حذف تنظيم المجموعة', body: `<p>سيتم حذف تنظيم «${esc(group.name)}» فقط، ولن تُحذف المنتجات من المتجر.</p>`, confirmText: 'حذف التنظيم', danger: true, onConfirm: async () => { const { error } = await db().from('bulk_product_groups').delete().eq('id', group.id); if (error) return notify('تعذر حذف المجموعة.', 'error'); save(read().filter((item) => item.id !== group.id)); if (activeId() === group.id) setActive(''); render('edit'); notify('تم حذف تنظيم المجموعة.'); } }); });
     root.querySelectorAll('[data-bulk-complete]').forEach((button) => button.onclick = async () => { const { error } = await db().from('bulk_product_groups').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', button.dataset.bulkComplete); if (error) return notify('تعذر حفظ المجموعة.', 'error'); if (activeId() === button.dataset.bulkComplete) setActive(''); render('edit'); notify('تم حفظ المجموعة كاملة بنجاح.'); });
-    root.querySelectorAll('[data-bulk-edit-product]').forEach((button) => button.onclick = () => notify('سيتم فتح نموذج تعديل المنتج بعد ربطه بالمجموعة.', 'info'));
+    root.querySelectorAll('[data-bulk-edit-product]').forEach((button) => button.onclick = async () => {
+      const { data, error } = await db().from('products').select('*').eq('id', button.dataset.bulkEditProduct).single();
+      if (error || !data) return notify('تعذر تحميل بيانات المنتج للتعديل.', 'error');
+      if (typeof window.productForm !== 'function') return notify('نموذج تعديل المنتج غير متاح حاليًا.', 'error');
+      window.productForm(data, data.catalog_section);
+    });
   }
 
   function showSection() { const app = document.querySelector('#app'); if (!app) return; app.innerHTML = '<div id="bulkProductsWorkspace"></div>'; render('add'); }
