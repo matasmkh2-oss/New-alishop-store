@@ -4,28 +4,36 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#11B8B1"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>علي شوب</title>
-<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./assets/icons/icon-192.png">
+  <link rel="manifest" href="./manifest.webmanifest"><link id="dynamicFavicon" rel="icon" href="./assets/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://jcnbbingctwuathvfqty.supabase.co"><link rel="preconnect" href="https://esm.sh"><link rel="preconnect" href="https://unpkg.com"><link rel="dns-prefetch" href="https://jcnbbingctwuathvfqty.supabase.co">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./assets/css/app.css">
+<link rel="stylesheet" href="./assets/css/luxury-slider.css">
+<link rel="stylesheet" href="./assets/css/home-polish.css?v=28">
+<link rel="stylesheet" href="./assets/css/brand-polish.css?v=3">
+<link rel="stylesheet" href="./assets/css/recent-products-slider.css?v=28">
+<link rel="stylesheet" href="./assets/css/live-notifications.css">
+<link rel="stylesheet" href="./assets/css/toast-polish.css?v=1">
+<link rel="stylesheet" href="./assets/css/theme-cohesion.css?v=1">
+<link rel="stylesheet" href="./assets/css/bulk-products.css?v=1">
 </head>
 <body>
 <div id="splash" class="splash">
   <div class="splash-scene">
     <span class="splash-ring ring-one"></span><span class="splash-ring ring-two"></span>
-    <div class="splash-logo">A</div>
+    <div id="splashLogo" class="splash-logo">A</div>
   </div>
-  <h1>علي شوب</h1><p>جارٍ تجهيز تجربتك...</p>
+  <h1 id="splashName">علي شوب</h1><p>جارٍ تجهيز تجربتك...</p>
   <div class="splash-progress"><span></span></div>
 </div>
 <script>
 /* ضمان ألا تعلق شاشة التحميل أبداً - مستقل عن app.js */
 (function(){
   function hideSplash(){var s=document.getElementById("splash");if(s)s.classList.add("hide");}
-  window.addEventListener("load",function(){setTimeout(hideSplash,250);});
-  document.addEventListener("DOMContentLoaded",function(){setTimeout(hideSplash,3500);});
-  setTimeout(hideSplash,4000);
+  window.addEventListener("load",function(){setTimeout(hideSplash,8500);});
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(hideSplash,9000);});
+  setTimeout(hideSplash,11000);
 })();
 </script>
 <div id="announcementBar" class="announcement-bar hidden"></div>
@@ -59,7 +67,16 @@
 <dialog id="modalDialog" class="sheet wide"></dialog>
 <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 <script src="./assets/vendor/supabase.min.js"></script>
-<script type="module" src="./assets/js/app.js"></script>
+<script src="./assets/js/toast-polish.js?v=1"></script>
+<script src="./assets/js/auth-feedback.js?v=2"></script>
+<script type="module" src="./assets/js/app.js?v=20260916-4"></script>
+<script src="./assets/js/luxury-slider.js" defer></script>
+<script src="./assets/js/home-polish.js?v=28" defer></script>
+<script src="./assets/js/tab-state.js?v=1" defer></script>
+<script src="./assets/js/recent-products-slider.js?v=2" defer></script>
+<script src="./assets/js/live-notifications.js" defer></script>
+<script src="./assets/js/brand-sync.js?v=4" defer></script>
+<script src="./assets/js/bulk-products.js?v=6" defer></script>
 <script>
 /* حارس تحميل التطبيق: إذا تعذر بدء app.js أظهر رسالة بدل الشاشة الفارغة */
 setTimeout(function(){
