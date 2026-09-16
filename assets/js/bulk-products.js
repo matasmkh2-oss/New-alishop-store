@@ -7,7 +7,10 @@
   const icon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5v-9Z"/><path d="m4 7.5 8 3.5 8-3.5M12 11v9"/></svg>';
   const workspace = () => document.querySelector('#bulkProductsWorkspace');
   const notify = (message, type = 'success') => window.toast?.(message, type);
-  const existingProductButton = () => [...document.querySelectorAll('button')].find((button) => !button.closest('#bulkProductsWorkspace') && /إضافة منتج|منتج جديد/.test(button.textContent || ''));
+  const db = () => window.__alishopSupabase;
+  const activeId = () => sessionStorage.getItem('alishop-active-bulk-group') || '';
+  const setActive = (id) => id ? sessionStorage.setItem('alishop-active-bulk-group', id) : sessionStorage.removeItem('alishop-active-bulk-group');
+  const existingProductButton = () => window.productForm ? () => window.productForm() : null;
 
   function dialog({ title, body, confirmText = 'حفظ', danger = false, onConfirm }) {
     document.querySelector('[data-bulk-dialog]')?.remove();
@@ -23,7 +26,7 @@
 
   function groupCard(group) {
     const products = Array.isArray(group.products) ? group.products : [];
-    return `<article class="item bulk-group-card"><div class="item-main"><div class="bulk-group-heading"><span class="tile-icon bulk-group-icon">${icon}</span><div><h3>${esc(group.name)}</h3><p>${products.length} منتجات محفوظة · ${new Date(group.createdAt).toLocaleDateString('ar')}</p></div></div>${group.open ? `<div class="bulk-products-list">${products.length ? products.map((product, index) => `<div class="bulk-product-row"><span>${esc(product.name || `المنتج ${index + 1}`)}</span><small>${esc(product.price || '')}</small><button class="btn soft" data-bulk-edit-product="${esc(product.id || '')}">تعديل</button></div>`).join('') : '<div class="bulk-empty small"><strong>لا توجد منتجات مرتبطة بعد</strong><p>أنشئ المنتج الأول من زر الإضافة ليظهر هنا.</p></div>'}</div>` : ''}</div><div class="item-actions bulk-group-actions"><button class="icon-action" type="button" data-bulk-open="${esc(group.id)}">${group.open ? 'إخفاء' : 'عرض المنتجات'}</button><button class="icon-action" type="button" data-bulk-rename="${esc(group.id)}">تعديل</button><button class="icon-action danger" type="button" data-bulk-delete="${esc(group.id)}">حذف</button></div></article>`;
+    return `<article class="item bulk-group-card"><div class="item-main"><div class="bulk-group-heading"><span class="tile-icon bulk-group-icon">${icon}</span><div><h3>${esc(group.name)}</h3><p>${products.length} منتجات محفوظة · ${new Date(group.createdAt).toLocaleDateString('ar')}</p></div></div>${group.open ? `<div class="bulk-products-list">${products.length ? products.map((product, index) => `<div class="bulk-product-row"><span>${esc(product.name || `المنتج ${index + 1}`)}</span><small>${esc(product.price || '')}</small><button class="btn soft" data-bulk-edit-product="${esc(product.id || '')}">تعديل</button></div>`).join('') : '<div class="bulk-empty small"><strong>لا توجد منتجات مرتبطة بعد</strong><p>أنشئ المنتج الأول من زر الإضافة ليظهر هنا.</p></div>'}</div>` : ''}</div><div class="item-actions bulk-group-actions"><button class="icon-action" type="button" data-bulk-open="${esc(group.id)}">${group.open ? 'إخفاء' : 'عرض المنتجات'}</button>${activeId() === group.id && group.products?.length ? '<button class="icon-action bulk-complete" type="button" data-bulk-complete="'+esc(group.id)+'">حفظ المجموعة</button>' : ''}<button class="icon-action" type="button" data-bulk-rename="${esc(group.id)}">تعديل</button><button class="icon-action danger" type="button" data-bulk-delete="${esc(group.id)}">حذف</button></div></article>`;
   }
 
   function render(mode = 'add') {
@@ -36,20 +39,24 @@
   function bind(root) {
     root.querySelectorAll('[data-bulk-tab]').forEach((button) => button.onclick = () => render(button.dataset.bulkTab));
     root.querySelector('[data-bulk-back]')?.addEventListener('click', () => { workspace()?.remove(); injectEntry(); });
-    root.querySelector('[data-bulk-new]')?.addEventListener('click', () => {
+    root.querySelector('[data-bulk-new]')?.addEventListener('click', async () => {
       const input = root.querySelector('[data-bulk-name]'); const name = input?.value.trim();
       if (!name) return notify('اكتب اسم المجموعة أولًا.', 'error');
-      const list = read(); list.unshift({ id: crypto.randomUUID(), name, products: [], createdAt: Date.now(), open: false }); save(list); render('add'); notify('تم إنشاء المجموعة بنجاح. يمكنك الآن إضافة المنتج الأول.');
-      window.setTimeout(() => existingProductButton()?.click(), 160);
+      const { data: created, error } = await db().from('bulk_product_groups').insert({ name, status: 'draft' }).select('id,name,created_at').single();
+      if (error || !created) return notify('تعذر إنشاء المجموعة في قاعدة البيانات.', 'error');
+      const list = read(); list.unshift({ id: created.id, name: created.name, products: [], createdAt: created.created_at || Date.now(), open: true }); save(list); setActive(created.id); render('add'); notify('تم إنشاء المجموعة. أضف المنتج الأول الآن.');
+      window.setTimeout(() => existingProductButton()?.(), 160);
     });
     root.querySelectorAll('[data-bulk-open]').forEach((button) => button.onclick = () => { const list = read(); const group = list.find((item) => item.id === button.dataset.bulkOpen); if (!group) return; group.open = !group.open; save(list); render(root.querySelector('[data-bulk-tab].active')?.dataset.bulkTab || 'edit'); });
     root.querySelectorAll('[data-bulk-rename]').forEach((button) => button.onclick = () => { const group = read().find((item) => item.id === button.dataset.bulkRename); if (!group) return; dialog({ title: 'تعديل اسم المجموعة', body: `<label class="bulk-dialog-field">اسم المجموعة<input data-bulk-dialog-name value="${esc(group.name)}"></label>`, onConfirm: (node) => { const name = node.querySelector('[data-bulk-dialog-name]').value.trim(); if (!name) return notify('اكتب اسمًا صحيحًا للمجموعة.', 'error'); const list = read(); list.find((item) => item.id === group.id).name = name; save(list); render('edit'); notify('تم تعديل اسم المجموعة.'); } }); });
-    root.querySelectorAll('[data-bulk-delete]').forEach((button) => button.onclick = () => { const group = read().find((item) => item.id === button.dataset.bulkDelete); if (!group) return; dialog({ title: 'حذف تنظيم المجموعة', body: `<p>سيتم حذف تنظيم «${esc(group.name)}» فقط، ولن تُحذف المنتجات من المتجر.</p>`, confirmText: 'حذف التنظيم', danger: true, onConfirm: () => { save(read().filter((item) => item.id !== group.id)); render('edit'); notify('تم حذف تنظيم المجموعة.'); } }); });
+    root.querySelectorAll('[data-bulk-delete]').forEach((button) => button.onclick = () => { const group = read().find((item) => item.id === button.dataset.bulkDelete); if (!group) return; dialog({ title: 'حذف تنظيم المجموعة', body: `<p>سيتم حذف تنظيم «${esc(group.name)}» فقط، ولن تُحذف المنتجات من المتجر.</p>`, confirmText: 'حذف التنظيم', danger: true, onConfirm: async () => { const { error } = await db().from('bulk_product_groups').delete().eq('id', group.id); if (error) return notify('تعذر حذف المجموعة.', 'error'); save(read().filter((item) => item.id !== group.id)); if (activeId() === group.id) setActive(''); render('edit'); notify('تم حذف تنظيم المجموعة.'); } }); });
+    root.querySelectorAll('[data-bulk-complete]').forEach((button) => button.onclick = async () => { const { error } = await db().from('bulk_product_groups').update({ status: 'completed', updated_at: new Date().toISOString() }).eq('id', button.dataset.bulkComplete); if (error) return notify('تعذر حفظ المجموعة.', 'error'); if (activeId() === button.dataset.bulkComplete) setActive(''); render('edit'); notify('تم حفظ المجموعة كاملة بنجاح.'); });
     root.querySelectorAll('[data-bulk-edit-product]').forEach((button) => button.onclick = () => notify('سيتم فتح نموذج تعديل المنتج بعد ربطه بالمجموعة.', 'info'));
   }
 
   function showSection() { const app = document.querySelector('#app'); if (!app) return; app.innerHTML = '<div id="bulkProductsWorkspace"></div>'; render('add'); }
   function injectEntry() { const nav = document.querySelector('.admin-groups') || document.querySelector('[data-admin-groups]'); const old = document.querySelector('[data-bulk-main-nav]'); if (!nav) { old?.remove(); return; } if (old) return; const entry = document.createElement('article'); entry.className = 'admin-tile bulk-main-nav'; entry.dataset.bulkMainNav = '1'; entry.innerHTML = `<div class="tile-icon">${icon}</div><h3>المنتجات المجمعة</h3><p>إضافة وتنظيم وتعديل مجموعات المنتجات</p>`; entry.onclick = showSection; nav.appendChild(entry); }
+  window.addEventListener('alishop:product-saved', async (event) => { const id = activeId(); const productId = event.detail?.id; if (!id || !productId || event.detail?.mode !== 'insert') return; const list = read(); const group = list.find((item) => item.id === id); if (!group) return; const position = group.products.length; const { error } = await db().from('bulk_product_group_items').upsert({ group_id: id, product_id: productId, position }, { onConflict: 'group_id,product_id' }); if (error) return notify('تم حفظ المنتج لكن تعذر ربطه بالمجموعة.', 'error'); group.products.push({ id: productId, name: event.detail.product?.name, price: event.detail.product?.price }); group.open = true; save(list); notify('تمت إضافة المنتج إلى المجموعة. يمكنك إضافة منتج آخر.'); window.setTimeout(() => { if (workspace()) render('add'); }, 120); });
   new MutationObserver(() => window.setTimeout(injectEntry, 0)).observe(document.documentElement, { childList: true, subtree: true });
   window.addEventListener('hashchange', () => window.setTimeout(injectEntry, 80));
   injectEntry();
