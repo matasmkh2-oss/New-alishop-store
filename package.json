@@ -1,0 +1,11 @@
+{
+  "name": "alishop",
+  "version": "1.0.0",
+  "description": "Ali Shop - Digital Products Store",
+  "type": "module",
+  "scripts": {
+    "dev": "npx serve .",
+    "build": "echo 'Static site, no build needed'",
+    "start": "npx serve ."
+  }
+}
