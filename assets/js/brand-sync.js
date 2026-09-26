@@ -1,4 +1,4 @@
-/* Safe, idempotent brand synchronization for header, splash, favicon, auth modal, and PWA metadata based on manager settings. */
+/* Safe, idempotent brand synchronization for splash, favicon, auth modal, and metadata based on manager settings. */
 (() => {
   const logoKeys = ['logo_url', 'logoUrl', 'store_logo', 'storeLogo', 'brand_logo', 'brandLogo', 'image_url', 'imageUrl'];
   const nameKeys = ['store_name', 'storeName', 'site_name', 'siteName', 'brand_name', 'brandName', 'name'];
@@ -49,15 +49,13 @@
     const fromSettings = findSetting(logoKeys);
     if (fromSettings) return fromSettings;
 
-    // Fallback check DOM if image already set
-    return document.querySelector('.brand-logo img, #splashLogo img')?.getAttribute('src') || '';
+    return document.querySelector('#splashLogo img')?.getAttribute('src') || '';
   }
 
   function findName() {
     const fromSettings = findSetting(nameKeys);
     if (fromSettings) return fromSettings;
 
-    // Fallback check DOM
     return document.querySelector('#storeName')?.textContent?.trim() || 'علي شوب';
   }
 
@@ -65,7 +63,6 @@
     if (!container) return;
 
     if (!logo) {
-      // Show first character of store name if no logo image uploaded
       const firstChar = (name && name.trim()) ? name.trim().charAt(0) : 'A';
       if (!container.querySelector('img')) {
         container.textContent = firstChar;
@@ -90,7 +87,6 @@
       container.appendChild(image);
     }
     container.classList.add('has-image');
-    container.classList.remove('hidden');
   }
 
   function sync() {
@@ -103,8 +99,7 @@
 
     const name = findName();
     if (name && name !== lastName) {
-      // Update all name elements
-      const nameElements = document.querySelectorAll('#storeName, #splashName, .store-name-text, .brand-title-text, .app-bar-store-name, .top-bar-title');
+      const nameElements = document.querySelectorAll('#storeName, #splashName');
       nameElements.forEach((el) => {
         if (el) el.textContent = name;
       });
@@ -127,8 +122,8 @@
     if (logo !== lastLogo || !lastLogo) {
       lastLogo = logo;
 
-      // Update all logo elements (splash, brand header, auth modal mark, etc.)
-      const logoContainers = document.querySelectorAll('#splashLogo, .brand-logo, #storeLogo, .auth-mark, .header-brand-logo, .app-brand-logo, .top-bar-logo');
+      // Update splash screen logo and auth modal mark only (DO NOT inject into app header)
+      const logoContainers = document.querySelectorAll('#splashLogo, .auth-mark');
       logoContainers.forEach((container) => {
         setImage(container, logo, name || lastName);
       });
@@ -185,7 +180,6 @@
 
   fetchStoreSettingsFromSupabase();
 
-  // Interval checks to handle async Supabase settings loading instantly
   const syncInterval = setInterval(sync, 400);
   setTimeout(() => {
     clearInterval(syncInterval);
