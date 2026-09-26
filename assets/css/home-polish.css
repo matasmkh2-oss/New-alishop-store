@@ -647,6 +647,16 @@ html[data-theme="dark"] .user-balance.positive {
 /* ==========================================================================
    ضمان ظهور عناوين المنتجات باللون الأبيض الناصع في الوضع الليلي
    ========================================================================== */
+/* ==========================================================================
+   عناوين الأقسام والمنتجات في #catalogDynamic: أسود بالوضع النهاري وأبيض بالوضع الليلي
+   ========================================================================== */
+:root:not([data-theme="dark"]) #catalogDynamic h3,
+html:not([data-theme="dark"]) #catalogDynamic h3,
+body:not([data-theme="dark"]) #catalogDynamic h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic h3 {
+  color: #000000 !important;
+}
+
 [data-theme="dark"] #catalogDynamic h3,
 html[data-theme="dark"] #catalogDynamic h3,
 body[data-theme="dark"] #catalogDynamic h3,
@@ -661,7 +671,7 @@ html[data-theme="dark"] .product-card h3,
 html[data-theme="dark"] .pcard-row-main h3,
 [data-theme="dark"] .catalog-overlay h3,
 html[data-theme="dark"] .catalog-overlay h3,
-main#app > div#view-products > div#catalogDynamic h3 {
+html[data-theme="dark"] main#app > div#view-products > div#catalogDynamic h3 {
   color: #ffffff !important;
 }
 
