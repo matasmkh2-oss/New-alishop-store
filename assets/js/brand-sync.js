@@ -16,7 +16,7 @@
     ];
 
     for (const src of sources) {
-      if (src && typeof src === 'object') return src;
+      if (src && typeof src === 'object' && Object.keys(src).length > 0) return src;
     }
 
     try {
@@ -82,7 +82,7 @@
     image.alt = name || 'شعار المتجر';
     image.style.width = '100%';
     image.style.height = '100%';
-    image.style.objectFit = 'contain';
+    image.style.objectFit = 'cover';
     image.style.borderRadius = 'inherit';
 
     if (!current) {
@@ -153,12 +153,40 @@
     }
   }
 
-  document.addEventListener('DOMContentLoaded', sync, { once: true });
-  window.addEventListener('alishop:branding-updated', sync);
+  async function fetchStoreSettingsFromSupabase() {
+    try {
+      const url = "https://jcnbbingctwuathvfqty.supabase.co/rest/v1/store_settings?select=*&limit=1";
+      const key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpjbmJiaW5nY3R3dWF0aHZmcXR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3Nzg3NTUsImV4cCI6MjEwMTM1NDc1NX0.jQY17YOKCYD9g5O04WX6RuqQkHJx_NyGUzEWc_Rh8s4";
+      const res = await fetch(url, { headers: { apikey: key, Authorization: "Bearer " + key } });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0 && data[0]) {
+          const settings = data[0];
+          if (window.S) window.S.settings = settings;
+          localStorage.setItem('alishop_store_settings', JSON.stringify(settings));
+          sync();
+        }
+      }
+    } catch (e) {
+      console.warn("Brand sync fetch notice:", e);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    sync();
+    fetchStoreSettingsFromSupabase();
+  }, { once: true });
+
+  window.addEventListener('alishop:branding-updated', () => {
+    fetchStoreSettingsFromSupabase();
+    sync();
+  });
   window.addEventListener('storage', sync);
 
+  fetchStoreSettingsFromSupabase();
+
   // Interval checks to handle async Supabase settings loading instantly
-  const syncInterval = setInterval(sync, 500);
+  const syncInterval = setInterval(sync, 400);
   setTimeout(() => {
     clearInterval(syncInterval);
     setInterval(sync, 2000);
