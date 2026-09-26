@@ -58,57 +58,6 @@ html[data-theme="dark"] .native-app-bar {
   width: 100% !important;
 }
 
-/* شعار واسم المتجر من إعدادات المدير */
-.app-bar-brand {
-  display: flex !important;
-  align-items: center !important;
-  gap: 9px !important;
-  text-decoration: none !important;
-  color: var(--text-color, #171b2c) !important;
-  flex-shrink: 0 !important;
-}
-
-.header-brand-logo {
-  width: 38px !important;
-  height: 38px !important;
-  border-radius: 12px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  overflow: hidden !important;
-  background: linear-gradient(135deg, var(--p, #087f82), var(--p2, #11b8b1)) !important;
-  color: #ffffff !important;
-  font-weight: 800 !important;
-  font-size: 18px !important;
-  box-shadow: 0 4px 14px rgba(8, 127, 130, 0.22) !important;
-}
-
-.header-brand-logo img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: inherit !important;
-}
-
-.store-name-text {
-  font-size: 16px !important;
-  font-weight: 800 !important;
-  color: var(--text-color, #171b2c) !important;
-  white-space: nowrap !important;
-  letter-spacing: -0.01em !important;
-}
-
-[data-theme="dark"] .store-name-text,
-html[data-theme="dark"] .store-name-text {
-  color: #ffffff !important;
-}
-
-.app-bar-right-group {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
 /* القسم الأيمن (بيانات المستخدم كزر تفاعلي) */
 .app-bar-user {
   cursor: pointer !important;

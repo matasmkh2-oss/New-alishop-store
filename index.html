@@ -85,50 +85,46 @@ window.addEventListener('error',function(e){
 <div id="toastRoot" class="toast-root"></div>
 
 <header class="app-header native-app-bar">
+  <!-- عناصر مخفية لاسم المتجر وعنوان الصفحة والشعار لضمان التوافق التام مع سكربتات التطبيق والراوتر -->
+  <span id="storeName" class="hidden">علي شوب</span>
   <span id="pageTitle" class="hidden">المنتجات الرقمية</span>
+  <span class="brand-logo hidden">A</span>
 
-  <!-- الصف الأول: الشعار واسم المتجر والمستخدم والأزرار -->
+  <!-- الصف الأول: بيانات المستخدم والأزرار -->
   <div class="app-bar-top">
-    <!-- القسم الأيمن: شعار المتجر واسمه المحفوظين من إعدادات المدير -->
-    <a href="#/home" class="app-bar-brand" title="الصفحة الرئيسية">
-      <div class="brand-logo header-brand-logo" id="headerStoreLogo">A</div>
-      <span id="storeName" class="store-name-text">علي شوب</span>
+    <!-- القسم الأيمن: صورة شخصية دائرية مع نصوص الترحيب وسهم صغير للأسفل -->
+    <a href="#/account" class="app-bar-user" id="headerProfileTrigger" title="حسابي">
+      <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" alt="صورة المستخدم" class="app-bar-avatar" onerror="this.onerror=null;this.src='./assets/icons/icon-192.png';">
+      <div class="app-bar-user-info">
+        <strong class="app-bar-user-name">محمد علي</strong>
+        <span class="app-bar-user-greeting">مرحباً بك مجدداً</span>
+      </div>
+      <span class="app-bar-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </span>
     </a>
 
-    <!-- القسم الأيسر: بيانات المستخدم والأزرار -->
-    <div class="app-bar-right-group">
-      <a href="#/account" class="app-bar-user" id="headerProfileTrigger" title="حسابي">
-        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" alt="صورة المستخدم" class="app-bar-avatar" onerror="this.onerror=null;this.src='./assets/icons/icon-192.png';">
-        <div class="app-bar-user-info">
-          <strong class="app-bar-user-name">محمد علي</strong>
-          <span class="app-bar-user-greeting">مرحباً بك</span>
-        </div>
-        <span class="app-bar-chevron" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m6 9 6 6 6-6"/>
-          </svg>
-        </span>
-      </a>
+    <!-- القسم الأيسر: الأيقونات التفاعلية وزر التثبيت -->
+    <div class="app-bar-actions">
+      <!-- زر تثبيت التطبيق الكبسولي PWA لجميع الزوار قبل وبعد تسجيل الدخول (مخفي افتراضياً، يظهر ديناميكياً فقط عند دعم التثبيت) -->
+      <button id="installButton" class="app-bar-install-btn hidden" title="تثبيت التطبيق" aria-label="تثبيت التطبيق">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>تثبيت</span>
+      </button>
 
-      <div class="app-bar-actions">
-        <!-- زر تثبيت التطبيق الكبسولي PWA لجميع الزوار قبل وبعد تسجيل الدخول (مخفي افتراضياً، يظهر ديناميكياً فقط عند دعم التثبيت) -->
-        <button id="installButton" class="app-bar-install-btn hidden" title="تثبيت التطبيق" aria-label="تثبيت التطبيق">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          <span>تثبيت</span>
-        </button>
-
-        <button id="headerSearchBtn" class="icon-btn app-bar-icon-btn" title="البحث في المنتجات" aria-label="البحث في المنتجات" onclick="goToProductSearch()">
-          <i data-lucide="search"></i>
-        </button>
-        <button id="notificationButton" class="icon-btn app-bar-icon-btn hidden" title="الإشعارات" aria-label="الإشعارات">
-          <i data-lucide="bell"></i>
-          <i id="notificationCount" class="counter hidden" style="display: none;">0</i>
-        </button>
-      </div>
+      <button id="headerSearchBtn" class="icon-btn app-bar-icon-btn" title="البحث في المنتجات" aria-label="البحث في المنتجات" onclick="goToProductSearch()">
+        <i data-lucide="search"></i>
+      </button>
+      <button id="notificationButton" class="icon-btn app-bar-icon-btn hidden" title="الإشعارات" aria-label="الإشعارات">
+        <i data-lucide="bell"></i>
+        <i id="notificationCount" class="counter hidden" style="display: none;">0</i>
+      </button>
     </div>
   </div>
 </header>
