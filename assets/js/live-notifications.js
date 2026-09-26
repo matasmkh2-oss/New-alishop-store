@@ -35,7 +35,13 @@
     if (!button || !count) return;
     button.classList.remove('hidden');
     count.textContent = unread > 99 ? '99+' : String(unread);
-    count.classList.toggle('hidden', unread < 1);
+    if (unread > 0) {
+      count.classList.remove('hidden');
+      count.style.display = 'flex';
+    } else {
+      count.classList.add('hidden');
+      count.style.display = 'none';
+    }
     button.classList.toggle('has-live-notification', unread > 0);
   }
 
