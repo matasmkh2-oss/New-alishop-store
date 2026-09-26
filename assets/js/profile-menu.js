@@ -429,11 +429,13 @@
   function isAppStandalone() {
     return window.matchMedia('(display-mode: standalone)').matches ||
            window.navigator.standalone === true ||
-           (document.referrer && document.referrer.includes('android-app://'));
+           (document.referrer && document.referrer.includes('android-app://')) ||
+           localStorage.getItem('alishop_pwa_installed') === 'true';
   }
 
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
+    if (isAppStandalone()) return;
     deferredInstallPrompt = e;
     if (window.S) window.S.deferredInstall = e;
     updateHeaderInstallButton();
@@ -442,6 +444,7 @@
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
     if (window.S) window.S.deferredInstall = null;
+    localStorage.setItem('alishop_pwa_installed', 'true');
     updateHeaderInstallButton();
     showToast('تم تثبيت التطبيق بنجاح!', 'success');
   });
@@ -515,19 +518,21 @@
 
     if (isAppStandalone()) {
       btn.classList.add('hidden');
+      btn.style.display = 'none';
       return;
     }
 
     const canPrompt = !!(
       deferredInstallPrompt ||
-      window.S?.deferredInstall ||
-      (!btn.classList.contains('hidden'))
+      window.S?.deferredInstall
     );
 
     if (canPrompt) {
       btn.classList.remove('hidden');
+      btn.style.display = '';
     } else {
       btn.classList.add('hidden');
+      btn.style.display = 'none';
     }
   }
 
@@ -545,17 +550,33 @@
         promptEvent.prompt();
         const choice = await promptEvent.userChoice;
         if (choice && choice.outcome === 'accepted') {
+          localStorage.setItem('alishop_pwa_installed', 'true');
           showToast('شكراً لتثبيت التطبيق!', 'success');
         }
         deferredInstallPrompt = null;
         if (window.S) window.S.deferredInstall = null;
-        if (btn) btn.classList.add('hidden');
+        if (btn) {
+          btn.classList.add('hidden');
+          btn.style.display = 'none';
+        }
         updateHeaderInstallButton();
       } catch (e) {
         console.warn('Install error:', e);
+        deferredInstallPrompt = null;
+        if (window.S) window.S.deferredInstall = null;
+        if (btn) {
+          btn.classList.add('hidden');
+          btn.style.display = 'none';
+        }
+        updateHeaderInstallButton();
       }
     } else {
       showToast('التطبيق مثبت بالفعل أو أن متصفحك لا يدعم التثبيت المباشر', 'info');
+      localStorage.setItem('alishop_pwa_installed', 'true');
+      if (btn) {
+        btn.classList.add('hidden');
+        btn.style.display = 'none';
+      }
     }
   }
 
