@@ -33,16 +33,23 @@
     const button = $('#notificationButton');
     const count = $('#notificationCount');
     if (!button || !count) return;
+
+    const numericUnread = Math.max(0, Number(unread) || 0);
+
     button.classList.remove('hidden');
-    count.textContent = unread > 99 ? '99+' : String(unread);
-    if (unread > 0) {
+    count.textContent = numericUnread > 99 ? '99+' : String(numericUnread);
+    count.setAttribute('data-count', String(numericUnread));
+
+    if (numericUnread > 0) {
       count.classList.remove('hidden');
-      count.style.display = 'flex';
+      count.removeAttribute('hidden');
+      count.style.setProperty('display', 'inline-flex', 'important');
     } else {
       count.classList.add('hidden');
-      count.style.display = 'none';
+      count.setAttribute('hidden', '');
+      count.style.setProperty('display', 'none', 'important');
     }
-    button.classList.toggle('has-live-notification', unread > 0);
+    button.classList.toggle('has-live-notification', numericUnread > 0);
   }
 
   async function refreshUnread(playSound = false) {

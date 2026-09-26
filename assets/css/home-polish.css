@@ -445,4 +445,224 @@ article.catalog-image-card,
   background-color: #f0f1ff !important;
 }
 
+/* ==========================================================================
+   توحيد شبكات حاويات منتجات الشاشة الرئيسية (الألعاب والتطبيقات والمنتجات المميزة)
+   لتصبح صغيرة ومقبولة بمقاس شبكة المنتجات المصغرة تماماً (مع استثناء وصل حديثاً)
+   ========================================================================== */
+#view-home .grid:not(.recent-products-slider):not(.recent-products-track):not(.recent-products-set),
+#view-home .home-product-grid:not(.recent-products-slider):not(.recent-products-track),
+#view-home .catalog-image-grid:not(.recent-products-slider):not(.recent-products-track),
+#view-home #homeGrid:not(.recent-products-slider) {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+#view-home .recent-products-slider,
+#view-home .recent-products-slider.grid,
+#view-home .recent-products-track {
+  display: block !important;
+}
+
+#view-home .recent-products-track {
+  display: flex !important;
+}
+
+#view-home .grid:not(.recent-products-slider) article:not(.recent-products-track article),
+#view-home .home-product-grid article:not(.recent-products-track article),
+#view-home .catalog-image-grid article:not(.recent-products-track article),
+#view-home #homeGrid article:not(.recent-products-track article),
+#view-home .grid:not(.recent-products-slider) .catalog-image-card:not(.recent-products-track .catalog-image-card),
+#view-home .home-product-grid .catalog-image-card:not(.recent-products-track .catalog-image-card),
+#view-home .catalog-image-grid .catalog-image-card:not(.recent-products-track .catalog-image-card),
+#view-home #homeGrid .catalog-image-card:not(.recent-products-track .catalog-image-card),
+#view-home .grid:not(.recent-products-slider) .product-card:not(.recent-products-track .product-card),
+#view-home .home-product-grid .product-card:not(.recent-products-track .product-card),
+#view-home .catalog-image-grid .product-card:not(.recent-products-track .product-card),
+#view-home #homeGrid .product-card:not(.recent-products-track .product-card) {
+  height: 150px !important;
+  border-radius: 17px !important;
+  margin-bottom: 0 !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .catalog-overlay:not(.recent-products-track .catalog-overlay),
+#view-home .home-product-grid .catalog-overlay:not(.recent-products-track .catalog-overlay),
+#view-home .catalog-image-grid .catalog-overlay:not(.recent-products-track .catalog-overlay),
+#view-home #homeGrid .catalog-overlay:not(.recent-products-track .catalog-overlay) {
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  width: 100% !important;
+  padding: 16px 5px 4px 5px !important;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0) 100%) !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-end !important;
+  gap: 1px !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .catalog-overlay h3:not(.recent-products-track h3),
+#view-home .home-product-grid .catalog-overlay h3:not(.recent-products-track h3),
+#view-home .catalog-image-grid .catalog-overlay h3:not(.recent-products-track h3),
+#view-home #homeGrid .catalog-overlay h3:not(.recent-products-track h3) {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  margin: 1px 0 2px 0 !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .catalog-overlay .catalog-category:not(.recent-products-track .catalog-category),
+#view-home .home-product-grid .catalog-overlay .catalog-category:not(.recent-products-track .catalog-category),
+#view-home .catalog-image-grid .catalog-overlay .catalog-category:not(.recent-products-track .catalog-category),
+#view-home #homeGrid .catalog-overlay .catalog-category:not(.recent-products-track .catalog-category) {
+  font-size: 7.5px !important;
+  font-weight: 700 !important;
+  opacity: 0.8 !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .catalog-overlay .catalog-meta:not(.recent-products-track .catalog-meta),
+#view-home .home-product-grid .catalog-overlay .catalog-meta:not(.recent-products-track .catalog-meta),
+#view-home .catalog-image-grid .catalog-overlay .catalog-meta:not(.recent-products-track .catalog-meta),
+#view-home #homeGrid .catalog-overlay .catalog-meta:not(.recent-products-track .catalog-meta) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+  width: 100% !important;
+  margin-top: 1px !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .catalog-overlay .catalog-meta strong:not(.recent-products-track strong),
+#view-home .home-product-grid .catalog-overlay .catalog-meta strong:not(.recent-products-track strong),
+#view-home .catalog-image-grid .catalog-overlay .catalog-meta strong:not(.recent-products-track strong),
+#view-home #homeGrid .catalog-overlay .catalog-meta strong:not(.recent-products-track strong) {
+  font-size: 11px !important;
+  font-weight: bold !important;
+  color: #ffffff !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .catalog-overlay .catalog-meta span:not(.recent-products-track span),
+#view-home .home-product-grid .catalog-overlay .catalog-meta span:not(.recent-products-track span),
+#view-home .catalog-image-grid .catalog-overlay .catalog-meta span:not(.recent-products-track span),
+#view-home #homeGrid .catalog-overlay .catalog-meta span:not(.recent-products-track span),
+#view-home .grid:not(.recent-products-slider) .pcard-pkg-chip:not(.recent-products-track .pcard-pkg-chip),
+#view-home .home-product-grid .pcard-pkg-chip:not(.recent-products-track .pcard-pkg-chip) {
+  display: none !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .favorite-btn:not(.recent-products-track .favorite-btn),
+#view-home .home-product-grid .favorite-btn:not(.recent-products-track .favorite-btn) {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 9px !important;
+  top: 7px !important;
+  right: 7px !important;
+  left: auto !important;
+}
+
+#view-home .grid:not(.recent-products-slider) .favorite-btn svg:not(.recent-products-track svg),
+#view-home .home-product-grid .favorite-btn svg:not(.recent-products-track svg) {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+@media (max-width: 430px) {
+  #view-home .grid:not(.recent-products-slider) article:not(.recent-products-track article),
+  #view-home .home-product-grid article:not(.recent-products-track article),
+  #view-home .catalog-image-grid article:not(.recent-products-track article),
+  #view-home #homeGrid article:not(.recent-products-track article),
+  #view-home .grid:not(.recent-products-slider) .catalog-image-card:not(.recent-products-track .catalog-image-card),
+  #view-home .home-product-grid .catalog-image-card:not(.recent-products-track .catalog-image-card),
+  #view-home .catalog-image-grid .catalog-image-card:not(.recent-products-track .catalog-image-card),
+  #view-home #homeGrid .catalog-image-card:not(.recent-products-track .catalog-image-card),
+  #view-home .grid:not(.recent-products-slider) .product-card:not(.recent-products-track .product-card),
+  #view-home .home-product-grid .product-card:not(.recent-products-track .product-card),
+  #view-home .catalog-image-grid .product-card:not(.recent-products-track .product-card),
+  #view-home #homeGrid .product-card:not(.recent-products-track .product-card) {
+    height: 132px !important;
+  }
+}
+
+/* ==========================================================================
+   ألوان تركوازية زاهية ومريحة متوافقة مع الوضع الليلي بدلاً من الأخضر
+   ========================================================================== */
+[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  --ok: #2dd4bf !important;
+}
+
+[data-theme="dark"] .wallet-discount-inline-badge,
+html[data-theme="dark"] .wallet-discount-inline-badge,
+body[data-theme="dark"] .wallet-discount-inline-badge {
+  color: #2dd4bf !important;
+  background: rgba(45, 212, 191, 0.15) !important;
+  border-color: rgba(45, 212, 191, 0.38) !important;
+  box-shadow: 0 0 12px rgba(45, 212, 191, 0.15) !important;
+}
+
+[data-theme="dark"] .wallet-discount-row,
+html[data-theme="dark"] .wallet-discount-row,
+body[data-theme="dark"] .wallet-discount-row,
+[data-theme="dark"] .buy-discount-note,
+html[data-theme="dark"] .buy-discount-note,
+[data-theme="dark"] .odp-discount-note,
+html[data-theme="dark"] .odp-discount-note,
+[data-theme="dark"] .tx-discount-chip,
+html[data-theme="dark"] .tx-discount-chip {
+  color: #2dd4bf !important;
+  background: rgba(45, 212, 191, 0.12) !important;
+  border-color: rgba(45, 212, 191, 0.32) !important;
+}
+
+[data-theme="dark"] .badge.success,
+html[data-theme="dark"] .badge.success,
+[data-theme="dark"] .buy-badge.ok,
+html[data-theme="dark"] .buy-badge.ok,
+[data-theme="dark"] .odp-status.st-ok,
+html[data-theme="dark"] .odp-status.st-ok {
+  color: #2dd4bf !important;
+  background: rgba(45, 212, 191, 0.15) !important;
+}
+
+[data-theme="dark"] .transaction-icon.in,
+html[data-theme="dark"] .transaction-icon.in,
+[data-theme="dark"] .amount-in,
+html[data-theme="dark"] .amount-in,
+[data-theme="dark"] .user-balance.positive,
+html[data-theme="dark"] .user-balance.positive {
+  color: #2dd4bf !important;
+  background: rgba(45, 212, 191, 0.12) !important;
+}
+
+/* ==========================================================================
+   ضمان ظهور عناوين المنتجات باللون الأبيض الناصع في الوضع الليلي
+   ========================================================================== */
+[data-theme="dark"] #catalogDynamic h3,
+html[data-theme="dark"] #catalogDynamic h3,
+body[data-theme="dark"] #catalogDynamic h3,
+[data-theme="dark"] #view-products h3,
+html[data-theme="dark"] #view-products h3,
+body[data-theme="dark"] #view-products h3,
+[data-theme="dark"] .catalog-image-card h3,
+html[data-theme="dark"] .catalog-image-card h3,
+[data-theme="dark"] .product-card h3,
+html[data-theme="dark"] .product-card h3,
+[data-theme="dark"] .pcard-row-main h3,
+html[data-theme="dark"] .pcard-row-main h3,
+[data-theme="dark"] .catalog-overlay h3,
+html[data-theme="dark"] .catalog-overlay h3,
+main#app > div#view-products > div#catalogDynamic h3 {
+  color: #ffffff !important;
+}
+
 

@@ -77,7 +77,13 @@
       section.classList.add('home-section', `home-section-${index + 1}`);
       const next = section.nextElementSibling;
       if (next?.classList.contains('platforms-rail')) next.classList.add('home-rail');
-      if (next?.classList.contains('grid')) next.classList.add('home-product-grid');
+      if (next?.classList.contains('grid') && !next.classList.contains('recent-products-slider') && !next.querySelector('.recent-products-track')) {
+        next.classList.add('home-product-grid', 'home-grid-compact', 'view-compact');
+      }
+    });
+    app.querySelectorAll('.grid, .home-product-grid, .catalog-image-grid, #homeGrid').forEach((grid) => {
+      if (grid.classList.contains('recent-products-slider') || grid.closest('.recent-products-slider') || grid.querySelector('.recent-products-track')) return;
+      grid.classList.add('home-grid-compact', 'view-compact');
     });
     app.querySelectorAll('a,button').forEach((control) => {
       const text = (control.textContent || '').replace(/\s+/g, ' ').trim();
@@ -91,5 +97,68 @@
   }
   const observer = new MutationObserver(organize);
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  document.addEventListener('DOMContentLoaded', organize);
+
+  function syncWalletDiscount() {
+    const app = document.querySelector('#view-home') || document.querySelector('#app');
+    if (!app) return;
+    const wallet = app.querySelector('.wallet-card') || app.querySelector('.home-wallet');
+    if (!wallet) return;
+
+    const discountPercent = Number(window.S?.profile?.discount_percent) || 0;
+    const currentKey = String(discountPercent);
+
+    // Strict guard to prevent redundant DOM operations or loops
+    if (wallet.dataset.syncedDiscount === currentKey) return;
+    wallet.dataset.syncedDiscount = currentKey;
+
+    const topRow = wallet.querySelector('.wallet-card-top');
+    let discountBadge = wallet.querySelector('.wallet-discount-inline-badge');
+
+    if (discountPercent > 0) {
+      if (!discountBadge) {
+        discountBadge = document.createElement('div');
+        discountBadge.className = 'wallet-discount-inline-badge';
+        if (topRow) {
+          topRow.appendChild(discountBadge);
+        } else {
+          wallet.prepend(discountBadge);
+        }
+      }
+      const desiredHtml = `<i data-lucide="percent"></i>خصم خاص <strong>${discountPercent}%</strong>`;
+      if (discountBadge.innerHTML !== desiredHtml) {
+        discountBadge.innerHTML = desiredHtml;
+        if (window.lucide?.createIcons) {
+          try {
+            window.lucide.createIcons({
+              nameAttr: 'data-lucide',
+              attrs: { class: 'lucide' },
+              elements: [discountBadge]
+            });
+          } catch (_) {}
+        }
+      }
+      discountBadge.style.display = 'inline-flex';
+
+      // Clean up old row element if present
+      const oldRow = wallet.querySelector('.wallet-discount-row');
+      if (oldRow) oldRow.remove();
+    } else {
+      if (discountBadge) discountBadge.remove();
+      const oldRow = wallet.querySelector('.wallet-discount-row');
+      if (oldRow) oldRow.remove();
+    }
+  }
+
+  window.syncWalletDiscount = syncWalletDiscount;
+
+  window.addEventListener('alishop:identity-loaded', syncWalletDiscount);
+  window.addEventListener('alishop:profile-updated', syncWalletDiscount);
+  window.addEventListener('alishop:branding-updated', syncWalletDiscount);
+  window.addEventListener('hashchange', () => setTimeout(syncWalletDiscount, 50));
+  window.addEventListener('focus', syncWalletDiscount);
+
+  document.addEventListener('DOMContentLoaded', () => {
+    organize();
+    syncWalletDiscount();
+  });
 })();
