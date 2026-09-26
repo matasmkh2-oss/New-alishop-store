@@ -1,0 +1,20 @@
+{
+  "name": "alishop",
+  "version": "1.0.0",
+  "description": "Ali Shop - Digital Products Store",
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "echo 'Static build ready'",
+    "start": "node server.js",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.14.0",
+    "typescript": "^5.0.0"
+  }
+}

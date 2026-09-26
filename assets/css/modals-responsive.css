@@ -1,0 +1,427 @@
+/* ==========================================================================
+   AliShop - Unified Responsive Modals, Dialogs & Bottom Sheet Drawers
+   فصل التنسيقات بين النوافذ المنبثقة الوسطية (Centered Modals) 
+   ودرج التفاصيل المنزلق من الأسفل (Bottom Sheet / Product & Order Drawer)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. النوافذ المنبثقة الوسطية فقط (Centered Dialogs / Confirm / Prompts)
+   -------------------------------------------------------------------------- */
+.modal-overlay,
+.modal-backdrop,
+.popup-overlay,
+.popup-backdrop,
+.dialog-backdrop,
+.auth-modal-overlay,
+dialog.centered-dialog[open],
+dialog:not(.bottom-sheet):not(.sheet)[open] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  inset: 0 !important;
+  width: 100% !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  z-index: 99999 !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 0 !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+dialog:not([open]) {
+  display: none !important;
+}
+
+/* توحيد خلفية الـ backdrop الأصلية للمتصفح */
+dialog::backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  z-index: 99998 !important;
+}
+
+/* حجم وشكل النوافذ الوسطية */
+.centered-dialog .dialog-body,
+.popup-box,
+.popup-card,
+.popup-dialog,
+.popup-announce {
+  width: 90% !important;
+  max-width: 440px !important;
+  min-width: 0 !important;
+  position: relative !important;
+  margin: auto !important;
+  border-radius: 24px !important;
+  background: var(--surface, var(--s, #ffffff)) !important;
+  color: var(--text, var(--t, #172033)) !important;
+  border: 1px solid var(--border, var(--b, rgba(255, 255, 255, 0.15))) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35) !important;
+  padding: 22px !important;
+  box-sizing: border-box !important;
+  animation: modalBoxFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+[data-theme="dark"] .centered-dialog .dialog-body,
+[data-theme="dark"] .popup-box,
+[data-theme="dark"] .popup-card,
+[data-theme="dark"] .popup-dialog,
+[data-theme="dark"] .popup-announce {
+  background: var(--surface, var(--s, #151b28)) !important;
+  color: var(--text, var(--t, #f5f7ff)) !important;
+  border-color: var(--border, var(--b, #283246)) !important;
+}
+
+/* إلغاء الحاوية الداخلية لمودال التأكيد لتبقى حاوية واحدة فقط */
+.app-dialog {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .app-dialog {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+@keyframes modalBoxFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. استرجاع تصميم وحركة الدرج السفلي (Bottom Sheet / Slide-up Drawer)
+   (تفاصيل شراء المنتج، تفاصيل طلبات المستخدم، وتفاصيل طلبات الإدارة)
+   -------------------------------------------------------------------------- */
+dialog.bottom-sheet,
+dialog#modalDialog.bottom-sheet,
+.bottom-sheet,
+.product-drawer {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  inset: auto 0 0 !important;
+  width: 100% !important;
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  box-sizing: border-box !important;
+  border-radius: 24px 24px 0 0 !important;
+  border: 1px solid var(--border, var(--b, rgba(255, 255, 255, 0.15))) !important;
+  border-bottom: 0 !important;
+  background: var(--surface, var(--s, #ffffff)) !important;
+  color: var(--text, var(--t, #172033)) !important;
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.35) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  z-index: 100000 !important;
+  padding: 0 !important;
+  display: block !important;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* عند الفتح (Active class): ينزلق الدرج بسلاسة من الأسفل للأعلى */
+dialog.bottom-sheet.active,
+dialog#modalDialog.bottom-sheet.active,
+.bottom-sheet.active,
+.product-drawer.active {
+  transform: translateY(0) !important;
+}
+
+/* خلفية الدرج الزجاجية الداكنة عند الفتح في الوضع الداكن */
+[data-theme="dark"] dialog.bottom-sheet,
+[data-theme="dark"] dialog#modalDialog.bottom-sheet,
+[data-theme="dark"] .bottom-sheet,
+[data-theme="dark"] .product-drawer,
+html[data-theme="dark"] dialog.bottom-sheet,
+html[data-theme="dark"] dialog#modalDialog.bottom-sheet,
+html[data-theme="dark"] .bottom-sheet,
+html[data-theme="dark"] .product-drawer {
+  background: linear-gradient(180deg, rgba(24, 30, 48, 0.96), rgba(15, 18, 30, 0.98)) !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #f5f7ff !important;
+  box-shadow: 0 -20px 70px rgba(0, 0, 0, 0.65) !important;
+}
+
+/* المحتوى الداخلي للدرج المنزلق: يملأ الدرج بدون تشويه أو تصغير وسطي */
+dialog.bottom-sheet > .dialog-body,
+dialog#modalDialog.bottom-sheet > .dialog-body,
+.bottom-sheet > .dialog-body,
+.bottom-sheet > .sheet-body {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 16px 20px calc(24px + env(safe-area-inset-bottom, 0px)) !important;
+  border-radius: 24px 24px 0 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  box-sizing: border-box !important;
+  animation: none !important;
+  transform: none !important;
+  max-height: 90vh !important;
+  max-height: 90dvh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* استرجاع مقبض السحب الأنيق (Grip) في أعلى الدرج */
+dialog.bottom-sheet .grip,
+dialog#modalDialog.bottom-sheet .grip,
+.bottom-sheet .grip {
+  display: block !important;
+  width: 48px !important;
+  height: 5px !important;
+  margin: 0 auto 16px auto !important;
+  border-radius: 10px !important;
+  background: var(--border, var(--b, rgba(120, 140, 180, 0.3))) !important;
+}
+
+/* --------------------------------------------------------------------------
+   إعادة بناء وهيكلة بطاقة معلومات المنتج الداخلية (Flexbox Hierarchy)
+   -------------------------------------------------------------------------- */
+
+/* 1. الحاوية الأم للبطاقة (Main Card Container) */
+.buy-hero {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  padding: 16px !important;
+  background: rgba(20, 24, 40, 0.75) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 16px !important;
+  direction: rtl !important;
+  text-align: right !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+}
+
+/* 2. الصف الأول: الصورة + النصوص الأساسية (Image & Info Row) */
+.buy-hero-top {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  gap: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* عنصر الصورة (يمين) */
+.buy-hero-image {
+  width: 80px !important;
+  height: 80px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.buy-hero-image img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 12px !important;
+  display: block !important;
+}
+
+.buy-hero-image svg,
+.buy-hero-image i {
+  width: 32px !important;
+  height: 32px !important;
+  color: var(--primary, var(--p, #3b82f6)) !important;
+  opacity: 0.85 !important;
+}
+
+/* عمود النصوص (يسار) */
+.buy-hero-main {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  flex: 1 1 0% !important;
+  min-width: 0 !important; /* لمنع تمدد البطاقة وإجبار الالتفاف */
+}
+
+/* الفئة */
+.buy-hero-main .buy-cat,
+.buy-cat {
+  font-size: 0.75rem !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  margin-bottom: 4px !important;
+  display: block !important;
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+/* عنوان المنتج */
+.buy-hero-main h3 {
+  font-size: 1rem !important;
+  font-weight: bold !important;
+  color: #fff !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.4 !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* حاوية السعر في أسفل عمود النصوص */
+.buy-hero-main .buy-price-line,
+.buy-price-line {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin: 0 !important;
+}
+
+.buy-price-line strong {
+  font-size: 1.1rem !important;
+  font-weight: bold !important;
+  color: #4caf50 !important;
+}
+
+.buy-price-line del {
+  font-size: 0.85rem !important;
+  text-decoration: line-through !important;
+  color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.buy-price-line small {
+  font-size: 0.8rem !important;
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+/* 3. الصف الثاني: لافتة الخصم (Discount Banner) */
+.buy-discount-note {
+  padding: 9px 14px !important;
+  border-radius: 12px !important;
+  background: rgba(76, 175, 80, 0.08) !important;
+  border: 1.5px dashed #4caf50 !important;
+  text-align: center !important;
+  font-size: 0.88rem !important;
+  font-weight: 700 !important;
+  color: #4caf50 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  margin: 8px 0 !important;
+  box-sizing: border-box !important;
+}
+
+.buy-discount-note strong {
+  font-weight: 800 !important;
+  color: #4caf50 !important;
+}
+
+.buy-discount-note svg,
+.buy-discount-note i {
+  width: 15px !important;
+  height: 15px !important;
+  flex: none !important;
+  color: #4caf50 !important;
+}
+
+/* 4. الصف الثالث: حاوية الشارات (Badges Row) */
+.buy-badges {
+  display: flex !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  margin-top: 4px !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+.buy-badges .buy-badge,
+.buy-badges span {
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  font-size: 0.75rem !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: #ddd !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+}
+
+.buy-badges .buy-badge svg,
+.buy-badges span svg,
+.buy-badges .buy-badge i,
+.buy-badges span i {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.buy-badges .buy-badge.ok {
+  background: rgba(76, 175, 80, 0.15) !important;
+  border-color: rgba(76, 175, 80, 0.25) !important;
+  color: #4ade80 !important;
+}
+
+.buy-badges .buy-badge.bad,
+.buy-badges .buy-badge.sold,
+.buy-badges .buy-badge.sold_out {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  color: #f87171 !important;
+}
+
+
+

@@ -1,0 +1,8 @@
+{
+  "name": "علي شوب - متجر المنتجات الرقمية",
+  "description": "متجر إلكتروني متكامل للمنتجات الرقمية، شحن الألعاب والبطاقات والمحفظة الإلكترونية",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

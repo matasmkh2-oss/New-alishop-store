@@ -1,0 +1,762 @@
+/* ==========================================================================
+   AliShop Native App Bar - Floating Glass Island Card (مثل بطاقة المحفظة)
+   ========================================================================== */
+
+/* 1. الحاوية الرئيسية للهيدر كبطاقة طافية غير ملتصقة بالحواف */
+header:nth-of-type(1),
+.app-header.native-app-bar,
+.native-app-bar {
+  position: sticky !important;
+  top: 10px !important;
+  z-index: 100 !important;
+  width: calc(100% - 24px) !important;
+  max-width: 820px !important;
+  height: auto !important;
+  min-height: auto !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  margin: 10px auto 6px auto !important;
+  padding: 12px 16px !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--b) !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 9%, var(--card-bg)), var(--card-bg)) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  box-shadow: 0 14px 34px rgba(4, 4, 25, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease !important;
+}
+
+/* Remove old header underline / gradient after-effect */
+.app-header.native-app-bar::after,
+.app-header.native-app-bar:after,
+header:nth-of-type(1)::after,
+header:nth-of-type(1):after {
+  display: none !important;
+}
+
+/* الوضع الليلي للحاوية الرئيسية (نفس تدرج وظل كرت المحفظة في الدارك مود) */
+[data-theme="dark"] header:nth-of-type(1),
+[data-theme="dark"] .app-header.native-app-bar,
+[data-theme="dark"] .native-app-bar,
+html[data-theme="dark"] header:nth-of-type(1),
+html[data-theme="dark"] .app-header.native-app-bar,
+html[data-theme="dark"] .native-app-bar {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 12%, rgba(22, 27, 46, 0.90)), rgba(15, 18, 32, 0.92)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 2. الصف الأول (بيانات المستخدم والأزرار) */
+.app-bar-top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 0 !important;
+  width: 100% !important;
+}
+
+/* القسم الأيمن (بيانات المستخدم كزر تفاعلي) */
+.app-bar-user {
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  min-width: 0 !important;
+  border-radius: 50px !important;
+  padding: 4px 12px 4px 8px !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.app-bar-user:hover,
+.app-bar-user.pdm-active {
+  background: var(--surface-color, rgba(150, 150, 150, 0.1)) !important;
+  border-radius: 50px !important;
+  padding: 4px 12px 4px 8px !important;
+}
+
+[data-theme="dark"] .app-bar-user:hover,
+[data-theme="dark"] .app-bar-user.pdm-active {
+  background: var(--surface-color, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.app-bar-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-color, #171b2c) !important;
+  opacity: 0.7 !important;
+  width: 15px !important;
+  height: 15px !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  margin-inline-start: 4px !important;
+  transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease !important;
+}
+
+[data-theme="dark"] .app-bar-chevron {
+  color: var(--text-color, #f7f8fc) !important;
+}
+
+.app-bar-user:hover .app-bar-chevron,
+.app-bar-user.pdm-active .app-bar-chevron {
+  opacity: 1 !important;
+}
+
+.app-bar-user.pdm-active .app-bar-chevron {
+  transform: rotate(180deg) !important;
+}
+
+.app-bar-avatar {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 2px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  flex-shrink: 0 !important;
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+[data-theme="dark"] .app-bar-avatar {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.app-bar-user-info {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  line-height: 1.3 !important;
+  min-width: 0 !important;
+}
+
+.app-bar-user-name {
+  display: block !important;
+  font-size: 15.5px !important;
+  font-weight: 800 !important;
+  color: #171b2c !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  letter-spacing: -0.2px !important;
+}
+
+[data-theme="dark"] .app-bar-user-name {
+  color: #f7f8fc !important;
+}
+
+.app-bar-user-greeting {
+  display: block !important;
+  font-size: 11.5px !important;
+  font-weight: 500 !important;
+  color: #7a8295 !important;
+  white-space: nowrap !important;
+}
+
+[data-theme="dark"] .app-bar-user-greeting {
+  color: #9ca6ba !important;
+}
+
+/* زر تثبيت التطبيق الكبسولي في الهيدر (Pill-shaped Install Button) */
+.app-bar-install-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  height: 38px !important;
+  padding: 0 14px 0 12px !important;
+  border-radius: 9999px !important;
+  background: linear-gradient(135deg, rgba(17, 184, 177, 0.12) 0%, rgba(17, 184, 177, 0.22) 100%) !important;
+  border: 1px solid rgba(17, 184, 177, 0.35) !important;
+  color: #0d827d !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  outline: none !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  box-shadow: 0 2px 8px rgba(17, 184, 177, 0.15) !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+
+/* مخفي افتراضياً وطالما يحمل كلاس hidden أو في وضع standalone */
+.app-bar-install-btn.hidden,
+.app-bar-install-btn[hidden] {
+  display: none !important;
+}
+
+@media all and (display-mode: standalone) {
+  .app-bar-install-btn {
+    display: none !important;
+  }
+}
+
+.app-bar-install-btn:hover {
+  background: linear-gradient(135deg, rgba(17, 184, 177, 0.22) 0%, rgba(17, 184, 177, 0.35) 100%) !important;
+  border-color: rgba(17, 184, 177, 0.55) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(17, 184, 177, 0.25) !important;
+  color: #086662 !important;
+}
+
+.app-bar-install-btn:active {
+  transform: scale(0.95) !important;
+}
+
+.app-bar-install-btn svg,
+.app-bar-install-btn i {
+  width: 15px !important;
+  height: 15px !important;
+  stroke-width: 2.3 !important;
+  color: inherit !important;
+  display: block !important;
+  flex-shrink: 0 !important;
+}
+
+.app-bar-install-btn span {
+  display: inline-block !important;
+  line-height: 1 !important;
+  letter-spacing: -0.2px !important;
+}
+
+/* الوضع الليلي لزر التثبيت */
+[data-theme="dark"] .app-bar-install-btn,
+html[data-theme="dark"] .app-bar-install-btn {
+  background: linear-gradient(135deg, rgba(17, 184, 177, 0.2) 0%, rgba(17, 184, 177, 0.35) 100%) !important;
+  border: 1px solid rgba(17, 184, 177, 0.45) !important;
+  color: #2dd4bf !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3), 0 0 12px rgba(17, 184, 177, 0.2) !important;
+}
+
+[data-theme="dark"] .app-bar-install-btn:hover,
+html[data-theme="dark"] .app-bar-install-btn:hover {
+  background: linear-gradient(135deg, rgba(17, 184, 177, 0.3) 0%, rgba(17, 184, 177, 0.48) 100%) !important;
+  border-color: rgba(17, 184, 177, 0.7) !important;
+  color: #5eead4 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 16px rgba(17, 184, 177, 0.35) !important;
+}
+
+/* القسم الأيسر (حاوية الأزرار مع gap: 10px) */
+.app-bar-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+/* أزرار التحكم الدائرية بتأثير زجاجي متناسق */
+.app-bar-actions .app-bar-icon-btn,
+.app-bar-actions .icon-btn {
+  position: relative !important;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  min-height: 42px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.55) !important;
+  border: 1px solid rgba(255, 255, 255, 0.65) !important;
+  color: #29345b !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+.app-bar-actions .app-bar-icon-btn:hover,
+.app-bar-actions .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(255, 255, 255, 0.95) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+
+.app-bar-actions .app-bar-icon-btn:active,
+.app-bar-actions .icon-btn:active {
+  transform: scale(0.93) !important;
+}
+
+.app-bar-actions .app-bar-icon-btn i,
+.app-bar-actions .app-bar-icon-btn svg,
+.app-bar-actions .icon-btn i,
+.app-bar-actions .icon-btn svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke-width: 2 !important;
+  color: inherit !important;
+  display: block !important;
+  pointer-events: none !important;
+}
+
+/* الوضع الليلي للأزرار */
+[data-theme="dark"] .app-bar-actions .app-bar-icon-btn,
+[data-theme="dark"] .app-bar-actions .icon-btn,
+html[data-theme="dark"] .app-bar-actions .app-bar-icon-btn,
+html[data-theme="dark"] .app-bar-actions .icon-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #f7f8fc !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .app-bar-actions .app-bar-icon-btn:hover,
+[data-theme="dark"] .app-bar-actions .icon-btn:hover,
+html[data-theme="dark"] .app-bar-actions .app-bar-icon-btn:hover,
+html[data-theme="dark"] .app-bar-actions .icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+}
+
+/* شارة عدد الإشعارات */
+.app-bar-actions .counter {
+  position: absolute !important;
+  top: -2px !important;
+  left: -2px !important;
+  min-width: 18px !important;
+  height: 18px !important;
+  padding: 0 5px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 999px !important;
+  background: #ff334b !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  border: 2px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 2px 6px rgba(255, 51, 75, 0.4) !important;
+  line-height: 1 !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .app-bar-actions .counter {
+  border-color: #121212 !important;
+}
+
+/* 3. شريط البحث القديم (مخفي لأن البحث أصبح زراً أيقونة في الهيدر) */
+.app-bar-bottom,
+.app-bar-search-form {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* تأثير تمييز حقل البحث عند الانتقال إليه */
+.search-focus-pulse {
+  animation: searchInputGlow 1.2s ease-out !important;
+}
+
+@keyframes searchInputGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(109, 94, 214, 0.6) !important;
+    border-color: #6d5ed6 !important;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(109, 94, 214, 0.25) !important;
+    border-color: #6d5ed6 !important;
+  }
+  100% {
+    box-shadow: none !important;
+  }
+}
+
+
+.app-bar-search-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+/* أيقونة البحث مدمجة في اليمين (RTL right) */
+.app-bar-search-icon {
+  position: absolute !important;
+  right: 16px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: #7a8295 !important;
+  pointer-events: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 2 !important;
+  transition: color 0.2s ease, transform 0.2s ease !important;
+}
+
+.app-bar-search-icon svg,
+.app-bar-search-icon i {
+  width: 18px !important;
+  height: 18px !important;
+  stroke-width: 2 !important;
+  display: block !important;
+}
+
+/* تصميم الإدخال بحواف دائرية بالكامل وبدون حدود مزعجة */
+.app-bar-search-input {
+  width: 100% !important;
+  height: 44px !important;
+  border-radius: 50px !important;
+  border: none !important;
+  outline: none !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  color: #171b2c !important;
+  font-family: inherit !important;
+  font-size: 13.5px !important;
+  font-weight: 500 !important;
+  padding: 0 46px 0 18px !important; /* مساحة للأيقونة على اليمين في نمط RTL */
+  box-sizing: border-box !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease !important;
+}
+
+.app-bar-search-input::placeholder {
+  color: #8c95a8 !important;
+  font-weight: 400 !important;
+  opacity: 0.9 !important;
+}
+
+.app-bar-search-input:focus {
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: 0 0 0 2px rgba(105, 88, 245, 0.3), 0 4px 18px rgba(0, 0, 0, 0.06) !important;
+}
+
+.app-bar-search-wrapper:focus-within .app-bar-search-icon {
+  color: #6958f5 !important;
+}
+
+/* الوضع الليلي لشريط البحث */
+[data-theme="dark"] .app-bar-search-icon,
+html[data-theme="dark"] .app-bar-search-icon {
+  color: #8a96aa !important;
+}
+
+[data-theme="dark"] .app-bar-search-input,
+html[data-theme="dark"] .app-bar-search-input {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f7f8fc !important;
+}
+
+[data-theme="dark"] .app-bar-search-input::placeholder,
+html[data-theme="dark"] .app-bar-search-input::placeholder {
+  color: #7b879c !important;
+}
+
+[data-theme="dark"] .app-bar-search-input:focus,
+html[data-theme="dark"] .app-bar-search-input:focus {
+  background: rgba(255, 255, 255, 0.13) !important;
+  box-shadow: 0 0 0 2px rgba(155, 124, 255, 0.4), 0 4px 22px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .app-bar-search-wrapper:focus-within .app-bar-search-icon,
+html[data-theme="dark"] .app-bar-search-wrapper:focus-within .app-bar-search-icon {
+  color: #a78bfa !important;
+}
+
+/* التجاوب مع مختلف أحجام الشاشات */
+@media (max-width: 520px) {
+  header:nth-of-type(1),
+  .app-header.native-app-bar,
+  .native-app-bar {
+    width: calc(100% - 18px) !important;
+    margin: 8px auto 4px auto !important;
+    padding: 10px 14px !important;
+    border-radius: 18px !important;
+    top: 8px !important;
+  }
+  .app-bar-top {
+    margin-bottom: 0 !important;
+  }
+  .app-bar-avatar {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+  .app-bar-actions .app-bar-icon-btn,
+  .app-bar-actions .icon-btn {
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    min-height: 38px !important;
+  }
+  .app-bar-actions .app-bar-icon-btn i,
+  .app-bar-actions .app-bar-icon-btn svg,
+  .app-bar-actions .icon-btn i,
+  .app-bar-actions .icon-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+  .app-bar-user-name {
+    font-size: 14px !important;
+  }
+  .app-bar-user-greeting {
+    font-size: 10.5px !important;
+  }
+  .app-bar-search-input {
+    height: 40px !important;
+    font-size: 13px !important;
+    padding: 0 42px 0 16px !important;
+  }
+  .app-bar-search-icon {
+    right: 14px !important;
+    width: 16px !important;
+    height: 16px !important;
+  }
+  .app-bar-search-icon svg,
+  .app-bar-search-icon i {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+/* Home redundant greeting and search - safely targeted by specific class names only */
+.home-header-row,
+.home-hello,
+.home-search,
+#homeSearch,
+#homeSearchBtn,
+button#homeSearchBtn,
+[id*="homeSearchBtn"] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+}
+
+/* Explicit guarantee that all wallet card contents remain fully visible and interactive */
+.wallet-card,
+.wallet-card *,
+.home-wallet,
+.home-wallet *,
+.wallet-card-actions,
+.wallet-card-top,
+.wc-action {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.wallet-card-actions {
+  display: grid !important;
+}
+
+/* ==========================================================================
+   1. Floating Top Banner - شريط الإعلانات العلوي كبطاقة عائمة بنفس أبعاد الهيدر
+   ========================================================================== */
+#announcementBar,
+.announcement-bar {
+  position: relative !important;
+  width: calc(100% - 24px) !important;
+  max-width: 820px !important;
+  margin: 10px auto 8px auto !important;
+  padding: 10px 16px !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--b) !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 9%, var(--card-bg)), var(--card-bg)) !important;
+  backdrop-filter: blur(15px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(15px) saturate(180%) !important;
+  box-shadow: 0 8px 24px rgba(4, 4, 25, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  z-index: 90 !important;
+  top: auto !important;
+}
+
+#announcementBar.hidden,
+.announcement-bar.hidden {
+  display: none !important;
+}
+
+#announcementBar::before,
+.announcement-bar::before {
+  display: none !important;
+}
+
+[data-theme="dark"] #announcementBar,
+[data-theme="dark"] .announcement-bar,
+html[data-theme="dark"] #announcementBar,
+html[data-theme="dark"] .announcement-bar {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 12%, rgba(22, 27, 46, 0.90)), rgba(15, 18, 32, 0.92)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.40), 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* ==========================================================================
+   2. Floating Bottom Nav - شريط التنقل السفلي العائم بنفس أبعاد الهيدر
+   ========================================================================== */
+.bottom-nav {
+  position: fixed !important;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: calc(100% - 24px) !important;
+  max-width: 820px !important;
+  margin: 0 auto !important;
+  height: 66px !important;
+  min-height: 66px !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--b) !important;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 9%, var(--card-bg)), var(--card-bg)) !important;
+  backdrop-filter: blur(15px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(15px) saturate(180%) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16), 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+  z-index: 125 !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 4px !important;
+  align-items: center !important;
+}
+
+[data-theme="dark"] .bottom-nav,
+html[data-theme="dark"] .bottom-nav {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 12%, rgba(22, 27, 46, 0.90)), rgba(15, 18, 32, 0.92)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.40), 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+}
+
+.bottom-nav a {
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  border-radius: 16px !important;
+  padding: 4px 2px !important;
+  height: 100% !important;
+  color: var(--m) !important;
+  text-decoration: none !important;
+  transition: color 0.2s ease, transform 0.2s ease !important;
+}
+
+.bottom-nav a.active {
+  color: var(--p) !important;
+}
+
+.bottom-nav a.active::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 1px !important;
+  width: 22px !important;
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, var(--p), var(--p2)) !important;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--p) 60%, transparent) !important;
+}
+
+.bottom-nav a .nav-ic {
+  width: 38px !important;
+  height: 24px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  transition: background 0.25s ease, transform 0.2s ease !important;
+}
+
+.bottom-nav a.active .nav-ic {
+  background: color-mix(in srgb, var(--p) 16%, transparent) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* التجاوب لشريط الإعلانات وشريط التنقل للشاشات الصغيرة */
+@media (max-width: 520px) {
+  #announcementBar,
+  .announcement-bar {
+    width: calc(100% - 18px) !important;
+    margin: 8px auto 6px auto !important;
+    padding: 8px 12px !important;
+    border-radius: 18px !important;
+  }
+
+  .bottom-nav {
+    width: calc(100% - 18px) !important;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    padding: 4px 6px !important;
+    border-radius: 18px !important;
+  }
+}
+
+/* ==========================================================================
+   3. Scroll Padding - مساحة تمرير تضمن بقاء المنتجات الأخيرة ظاهرة ومرتاحة
+   ========================================================================== */
+#app,
+main.page,
+.page {
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+  box-sizing: border-box !important;
+}
+
+/* ==========================================================================
+   4. SPA Tab Switching & Instant Native App Views
+   ========================================================================== */
+.spa-view {
+  display: none !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.spa-view.active {
+  display: block !important;
+  animation: spaFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.spa-view.hidden {
+  display: none !important;
+}
+
+@keyframes spaFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+
