@@ -11,6 +11,14 @@
 <meta name="twitter:card" content="summary_large_image" />
 <script>
 try{var t=localStorage.getItem('theme')||'light';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}
+try{
+  var cachedBrand = localStorage.getItem('alishop_store_settings') || localStorage.getItem('alishop_settings');
+  if(cachedBrand){
+    var sb = JSON.parse(cachedBrand);
+    var bn = sb.store_name || sb.storeName || sb.name;
+    if(bn){ document.title = bn; }
+  }
+}catch(e){}
 
 // Robust fetch safeguard: Absorbs offline / CORS / test runner network errors gracefully
 (function() {
@@ -73,8 +81,33 @@ window.addEventListener('error',function(e){
   <div class="splash-progress"><span></span></div>
 </div>
 <script>
-/* ضمان ألا تعلق شاشة التحميل أبداً - مستقل عن app.js */
+/* ضمان ألا تعلق شاشة التحميل أبداً ومزامنة الشعار والاسم فوراً */
 (function(){
+  try {
+    var cached = localStorage.getItem('alishop_store_settings') || localStorage.getItem('alishop_settings');
+    if(cached){
+      var s = JSON.parse(cached);
+      var name = s.store_name || s.storeName || s.name;
+      var logo = s.logo_url || s.logoUrl || s.store_logo;
+      if(name){
+        var sn = document.getElementById("splashName");
+        if(sn) sn.textContent = name;
+        var stn = document.getElementById("storeName");
+        if(stn) stn.textContent = name;
+        document.title = name;
+      }
+      if(logo){
+        var sl = document.getElementById("splashLogo");
+        if(sl) {
+          sl.innerHTML = '<img src="' + logo + '" alt="شعار المتجر" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">';
+          sl.classList.add("has-image");
+        }
+        var fav = document.getElementById("dynamicFavicon");
+        if(fav) fav.href = logo;
+      }
+    }
+  }catch(e){}
+
   function hideSplash(){var s=document.getElementById("splash");if(s)s.classList.add("hide");}
   window.addEventListener("load",function(){setTimeout(hideSplash,8500);});
   document.addEventListener("DOMContentLoaded",function(){setTimeout(hideSplash,9000);});

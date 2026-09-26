@@ -1,4 +1,4 @@
-/* Safe, idempotent brand synchronization for splash, favicon, auth modal, and metadata based on manager settings. */
+/* Safe, idempotent brand synchronization for splash, favicon, auth modal, PWA manifest, and page metadata based on manager settings. */
 (() => {
   const logoKeys = ['logo_url', 'logoUrl', 'store_logo', 'storeLogo', 'brand_logo', 'brandLogo', 'image_url', 'imageUrl'];
   const nameKeys = ['store_name', 'storeName', 'site_name', 'siteName', 'brand_name', 'brandName', 'name'];
@@ -89,6 +89,42 @@
     container.classList.add('has-image');
   }
 
+  function updateDynamicManifest(name, logo) {
+    try {
+      let manifestLink = document.querySelector('link[rel="manifest"]');
+      if (!manifestLink) return;
+
+      const manifestObj = {
+        name: name || 'علي شوب',
+        short_name: name || 'علي شوب',
+        id: window.location.pathname,
+        start_url: window.location.pathname + '#/home',
+        scope: window.location.pathname,
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#0b0f18',
+        theme_color: '#11B8B1',
+        lang: 'ar',
+        dir: 'rtl',
+        icons: logo ? [
+          { src: logo, sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: logo, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ] : [
+          { src: './assets/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: './assets/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+        ],
+        description: 'متجر المنتجات الرقمية وخدمات السوشل ميديا'
+      };
+
+      const stringified = JSON.stringify(manifestObj);
+      const blob = new Blob([stringified], { type: 'application/json' });
+      const manifestUrl = URL.createObjectURL(blob);
+      manifestLink.href = manifestUrl;
+    } catch (e) {
+      console.warn("Dynamic manifest update notice:", e);
+    }
+  }
+
   function sync() {
     const settings = getStoredSettings();
     if (settings && window.S?.settings && window.S.settings === settings) {
@@ -98,18 +134,16 @@
     }
 
     const name = findName();
+    let nameChanged = false;
     if (name && name !== lastName) {
+      nameChanged = true;
       const nameElements = document.querySelectorAll('#storeName, #splashName');
       nameElements.forEach((el) => {
         if (el) el.textContent = name;
       });
 
       // Update Document Title
-      if (name !== 'علي شوب' && (!document.title || document.title.includes('علي شوب'))) {
-        document.title = document.title.replace(/علي شوب/g, name);
-      } else if (!document.title) {
-        document.title = name;
-      }
+      document.title = name;
 
       // Update Meta Tags
       const ogTitle = document.querySelector('meta[property="og:title"]');
@@ -119,10 +153,12 @@
     }
 
     const logo = findLogo();
+    let logoChanged = false;
     if (logo !== lastLogo || !lastLogo) {
+      logoChanged = true;
       lastLogo = logo;
 
-      // Update splash screen logo and auth modal mark only (DO NOT inject into app header)
+      // Update splash screen logo and auth modal mark only
       const logoContainers = document.querySelectorAll('#splashLogo, .auth-mark');
       logoContainers.forEach((container) => {
         setImage(container, logo, name || lastName);
@@ -145,6 +181,10 @@
           appleIcon.href = logo;
         }
       }
+    }
+
+    if (nameChanged || logoChanged) {
+      updateDynamicManifest(name || lastName, logo || lastLogo);
     }
   }
 
