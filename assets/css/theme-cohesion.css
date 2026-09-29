@@ -1,0 +1,1538 @@
+/* Final theme layer: luxury ambient background gradients with slow animated floating orbs for both Light & Dark modes. */
+
+@keyframes ambientDrift1 {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(5vw, 7vh, 0) scale(1.15) rotate(8deg); }
+  100% { transform: translate3d(-3vw, -4vh, 0) scale(0.96) rotate(-6deg); }
+}
+
+@keyframes ambientDrift2 {
+  0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50% { transform: translate3d(-7vw, -8vh, 0) scale(1.2) rotate(-10deg); }
+  100% { transform: translate3d(4vw, 5vh, 0) scale(0.92) rotate(12deg); }
+}
+
+@keyframes ambientDrift3 {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(6vw, -5vh, 0) scale(1.12); }
+  100% { transform: translate3d(-5vw, 7vh, 0) scale(0.94); }
+}
+
+html, body {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================
+   1. Light Mode Background & Floating Orbs
+   ========================================== */
+body {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(140deg, #e8f0fe 0%, #ede9fe 35%, #fce7f3 70%, #e0f2fe 100%) !important;
+  background-attachment: fixed !important;
+  color: #29345b !important;
+  position: relative;
+  isolation: isolate;
+}
+
+body::before, body::after {
+  content: "" !important;
+  position: fixed !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  border-radius: 50% !important;
+  filter: blur(80px) !important;
+  -webkit-filter: blur(80px) !important;
+  will-change: transform !important;
+}
+
+/* Floating Orb 1: Top-Left (Soft Indigo / Blue Glow) */
+body::before {
+  top: -10vw !important;
+  left: -10vw !important;
+  width: 55vw !important;
+  height: 55vw !important;
+  max-width: 650px !important;
+  max-height: 650px !important;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.32) 0%, rgba(59, 130, 246, 0.18) 50%, transparent 75%) !important;
+  animation: ambientDrift1 22s ease-in-out infinite alternate !important;
+}
+
+/* Floating Orb 2: Bottom-Right (Soft Magenta / Violet Glow) */
+body::after {
+  bottom: -12vw !important;
+  right: -10vw !important;
+  width: 60vw !important;
+  height: 60vw !important;
+  max-width: 700px !important;
+  max-height: 700px !important;
+  background: radial-gradient(circle, rgba(236, 72, 153, 0.28) 0%, rgba(139, 92, 246, 0.18) 50%, transparent 75%) !important;
+  animation: ambientDrift2 28s ease-in-out infinite alternate !important;
+}
+
+/* Floating Orb 3: Center-Right (Soft Cyan / Teal Glow) */
+#app::before {
+  content: "" !important;
+  position: fixed !important;
+  top: 30vh !important;
+  right: 5vw !important;
+  width: 45vw !important;
+  height: 45vw !important;
+  max-width: 500px !important;
+  max-height: 500px !important;
+  pointer-events: none !important;
+  z-index: 0 !important;
+  border-radius: 50% !important;
+  filter: blur(75px) !important;
+  -webkit-filter: blur(75px) !important;
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.25) 0%, rgba(6, 182, 212, 0.14) 55%, transparent 75%) !important;
+  animation: ambientDrift3 25s ease-in-out infinite alternate !important;
+  will-change: transform !important;
+}
+
+#app, .app-container, .page, main {
+  background: transparent !important;
+  flex-grow: 1 !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+  position: relative;
+  z-index: 1;
+}
+
+/* ==========================================
+   2. Dark Mode Background & Floating Orbs
+   ========================================== */
+html[data-theme="dark"] body,
+:root[data-theme="dark"] body {
+  background: linear-gradient(140deg, #060c18 0%, #0a1326 35%, #150f2b 70%, #071720 100%) !important;
+  background-attachment: fixed !important;
+  color: #e8fffc !important;
+}
+
+html[data-theme="dark"] body::before,
+:root[data-theme="dark"] body::before {
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.38) 0%, rgba(79, 70, 229, 0.22) 50%, transparent 75%) !important;
+}
+
+html[data-theme="dark"] body::after,
+:root[data-theme="dark"] body::after {
+  background: radial-gradient(circle, rgba(192, 38, 211, 0.35) 0%, rgba(147, 51, 234, 0.20) 50%, transparent 75%) !important;
+}
+
+html[data-theme="dark"] #app::before,
+:root[data-theme="dark"] #app::before {
+  background: radial-gradient(circle, rgba(13, 148, 136, 0.32) 0%, rgba(14, 165, 233, 0.16) 55%, transparent 75%) !important;
+}
+
+html[data-theme="dark"] #app,
+html[data-theme="dark"] .app-container,
+html[data-theme="dark"] .page,
+html[data-theme="dark"] main {
+  background: transparent !important;
+  flex-grow: 1 !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  height: auto !important;
+  box-sizing: border-box !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before, body::after, #app::before {
+    animation: none !important;
+  }
+}
+
+/* ==========================================================================
+   Zero-Flicker Viewport Presence
+   تأكيد بقاء كافة العناصر، الأقسام، والمنتجات ظاهرة باستمرار بدون أي اختفاء عند السكرول
+   ========================================================================== */
+.page, .spa-view, .view, #view-home, #view-products, #view-orders, #view-wallet, #view-account, #view-admin,
+.home-section, .home-rail, .home-product-grid, .recent-products-slider, #recentProductsSlider, #catalogGrid, #homeGrid,
+.product-card, .catalog-image-card, .pcard-row, .product, article, .home-flow-item, .category-pill, .platform-chip,
+.hero-slider, .wallet-card, .wallet-strip, .wallet-card-actions {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  animation: none !important;
+  transition: opacity 0s, transform 0s !important;
+  will-change: auto !important;
+  content-visibility: visible !important;
+}
+
+@keyframes pageEnter { 0%, 100% { opacity: 1 !important; transform: none !important; } }
+@keyframes spaFadeIn { 0%, 100% { opacity: 1 !important; transform: none !important; } }
+@keyframes catalogIn { 0%, 100% { opacity: 1 !important; transform: none !important; } }
+@keyframes homePriorityIn { 0%, 100% { opacity: 1 !important; transform: none !important; } }
+@keyframes homeSectionIn { 0%, 100% { opacity: 1 !important; transform: none !important; } }
+
+/* ==========================================================================
+   Responsive buttons inside targeted admin container / article
+   ضمان تجاوب الأزرار داخل الحاوية وعدم تجاوز أبعاد الحاوية، وتصغير الأزرار
+   والنصوص دون الالتفاف إلى سطر جديد
+   ========================================================================== */
+main#app > div#view-dynamic > div#adminContent > div > article,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2),
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(6),
+#adminContent article,
+#adminContent .admin-user-card,
+#adminContent .admin-note-card,
+#adminContent .card,
+#adminContent .item {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) .admin-user-actions,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) .card-actions,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) .item-actions,
+main#app > div#view-dynamic > div#adminContent article .admin-user-actions,
+#adminContent article .admin-user-actions,
+#adminContent article .card-actions,
+#adminContent article .item-actions,
+#adminContent article .btn-group,
+#adminContent article footer,
+#adminContent article .flex,
+#adminContent .admin-user-actions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  gap: clamp(6px, 1.4vw, 10px) !important;
+  margin-top: 10px !important;
+  grid-column: 1 / -1 !important;
+  padding: 0 !important;
+}
+
+/* Active discount button styling */
+#adminContent article [data-user-discount]:not([data-user-discount-percent="0"]) {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+  border-color: rgba(16, 185, 129, 0.35) !important;
+  font-weight: 800 !important;
+}
+#adminContent article [data-user-discount][data-user-discount-percent="0"] {
+  background: var(--control-bg-strong, var(--s)) !important;
+  color: var(--t) !important;
+  border-color: var(--control-border, var(--b)) !important;
+}
+
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) button,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) .btn,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) a.btn,
+main#app > div#view-dynamic > div#adminContent article button,
+main#app > div#view-dynamic > div#adminContent article .btn,
+main#app > div#view-dynamic > div#adminContent article a.btn,
+#adminContent article button,
+#adminContent article .btn,
+#adminContent article a.btn,
+#adminContent article .user-details-btn,
+#adminContent article .whatsapp-btn {
+  flex: 1 1 0px !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: clamp(6px, 1.2vw, 8px) clamp(8px, 1.6vw, 14px) !important;
+  min-height: 32px !important;
+  height: auto !important;
+  font-size: clamp(10.5px, 2.1vw, 12.5px) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  gap: clamp(4px, 0.8vw, 6px) !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) svg,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) i,
+#adminContent article .admin-user-actions svg,
+#adminContent article .admin-user-actions i,
+#adminContent article button svg,
+#adminContent article .btn svg {
+  width: clamp(13px, 2.2vw, 15px) !important;
+  height: clamp(13px, 2.2vw, 15px) !important;
+  flex-shrink: 0 !important;
+}
+
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) button span,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) .btn span,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(3) > article:nth-of-type(2) a span,
+#adminContent article button span,
+#adminContent article .btn span,
+#adminContent article a.btn span,
+#adminContent article .user-details-btn span,
+#adminContent article .whatsapp-btn span {
+  display: inline-block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: clamp(9.5px, 2vw, 12px) !important;
+  letter-spacing: -0.2px !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+#adminContent article .icon-action,
+#adminContent article .user-more-btn,
+#adminContent article .user-more-wrap {
+  flex: 0 0 auto !important;
+  width: clamp(32px, 5.5vw, 36px) !important;
+  height: clamp(32px, 5.5vw, 36px) !important;
+  min-width: clamp(32px, 5.5vw, 36px) !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 420px) {
+  #adminContent article .admin-user-actions,
+  #adminContent article .card-actions,
+  #adminContent article .item-actions {
+    flex-wrap: wrap !important;
+  }
+}
+
+/* ==========================================================================
+   Hidden elements / removed admin controls
+   حذف زر مسح الفلاتر غير الفعال بناءً على طلب المستخدم
+   ========================================================================== */
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > button#clearFilters:nth-of-type(1),
+#adminContent #clearFilters,
+#clearFilters,
+button#clearFilters {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.admin-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto !important;
+}
+
+/* ==========================================================================
+   Numbered Navigation Tab Container (حاوية تبيوبات تنقل مرقمة)
+   Targeting selected admin container & universal pagination bars
+   ========================================================================== */
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(4).pagination,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(5).pagination,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > .pagination,
+#adminContent .pagination,
+.orders-pagination,
+.wallet-tx-pagination,
+.wallet-deposit-pagination,
+.pagination {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: clamp(6px, 1.5vw, 9px) !important;
+  margin: 24px auto 16px !important;
+  padding: 8px 14px !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  background: var(--s2, rgba(255, 255, 255, 0.05)) !important;
+  border: 1px solid var(--b, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  box-sizing: border-box !important;
+  flex-wrap: wrap !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(4).pagination .page-btn,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > .pagination .page-btn,
+#adminContent .pagination .page-btn,
+.orders-pagination .page-btn,
+.wallet-tx-pagination .page-btn,
+.wallet-deposit-pagination .page-btn,
+.page-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: clamp(36px, 5.5vw, 42px) !important;
+  height: clamp(36px, 5.5vw, 42px) !important;
+  padding: 0 10px !important;
+  border-radius: 14px !important;
+  font-size: clamp(13px, 2.2vw, 15px) !important;
+  font-weight: 800 !important;
+  color: var(--t) !important;
+  background: var(--s, rgba(255, 255, 255, 0.07)) !important;
+  border: 1px solid var(--b, rgba(255, 255, 255, 0.14)) !important;
+  cursor: pointer !important;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  text-decoration: none !important;
+  line-height: 1 !important;
+}
+
+#adminContent .pagination .page-btn:hover,
+.orders-pagination .page-btn:hover,
+.wallet-tx-pagination .page-btn:hover,
+.page-btn:hover {
+  background: color-mix(in srgb, var(--p) 18%, var(--s)) !important;
+  border-color: var(--p) !important;
+  color: var(--p) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--p) 20%, transparent) !important;
+}
+
+#adminContent .pagination .page-btn.active,
+.orders-pagination .page-btn.active,
+.wallet-tx-pagination .page-btn.active,
+.page-btn.active {
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--p, #11b8b1), var(--p2, #087f82)) !important;
+  border-color: var(--p, #11b8b1) !important;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--p) 45%, transparent) !important;
+  transform: scale(1.06) !important;
+}
+
+/* Light mode specific tuning for pagination tab container */
+:root:not([data-theme=dark]) main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(4).pagination,
+:root:not([data-theme=dark]) main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(5).pagination,
+:root:not([data-theme=dark]) main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > .pagination,
+:root:not([data-theme=dark]) #adminContent .pagination,
+:root:not([data-theme=dark]) .orders-pagination,
+:root:not([data-theme=dark]) .wallet-tx-pagination,
+:root:not([data-theme=dark]) .wallet-deposit-pagination,
+:root:not([data-theme=dark]) .pagination {
+  background: #f8f7ff !important;
+  border-color: #cbd0ee !important;
+  box-shadow: 0 10px 28px rgba(75, 69, 150, 0.10) !important;
+}
+
+:root:not([data-theme=dark]) #adminContent .pagination .page-btn,
+:root:not([data-theme=dark]) .page-btn {
+  color: #29345b !important;
+  background: #ffffff !important;
+  border-color: #d5d8ef !important;
+  box-shadow: 0 2px 6px rgba(75, 69, 150, 0.05) !important;
+}
+
+:root:not([data-theme=dark]) #adminContent .pagination .page-btn.active,
+:root:not([data-theme=dark]) .page-btn.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--p, #11b8b1), var(--p2, #087f82)) !important;
+  border-color: var(--p, #11b8b1) !important;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--p) 40%, transparent) !important;
+}
+
+@media (max-width: 480px) {
+  #adminContent .pagination,
+  .orders-pagination,
+  .wallet-tx-pagination,
+  .pagination {
+    gap: 5px !important;
+    padding: 6px 10px !important;
+    border-radius: 16px !important;
+    margin: 18px auto 12px !important;
+  }
+  #adminContent .pagination .page-btn,
+  .page-btn {
+    min-width: 33px !important;
+    height: 33px !important;
+    border-radius: 11px !important;
+    font-size: 12.5px !important;
+    padding: 0 7px !important;
+  }
+}
+
+/* ==========================================================================
+   Product Live Preview Container (معاينة المنتج في نافذة الإضافة والتعديل)
+   Fix: Ensure preview thumbnail image has controlled, proportional sizing
+   ========================================================================== */
+#productLivePreview,
+.catalog-live-preview {
+  margin: 0 0 16px 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.mini-product-preview {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--b, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 18px !important;
+  background: var(--s2, rgba(255, 255, 255, 0.05)) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.mini-product-preview > img,
+.mini-product-preview > div {
+  width: 64px !important;
+  height: 64px !important;
+  min-width: 64px !important;
+  max-width: 64px !important;
+  min-height: 64px !important;
+  max-height: 64px !important;
+  flex: 0 0 64px !important;
+  object-fit: cover !important;
+  border-radius: 14px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--s3, rgba(255, 255, 255, 0.08)) !important;
+  border: 1px solid var(--b, rgba(255, 255, 255, 0.14)) !important;
+  box-sizing: border-box !important;
+}
+
+.mini-product-preview > span {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+  text-align: right !important;
+}
+
+.mini-product-preview > span small {
+  color: var(--m) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.mini-product-preview > span strong {
+  color: var(--t) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.mini-product-preview > span b {
+  color: var(--p, #11b8b1) !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+}
+
+.mini-social-preview {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 12px 14px !important;
+  border: 1px solid var(--b, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 18px !important;
+  background: var(--s2, rgba(255, 255, 255, 0.05)) !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+.mini-social-preview > span {
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  max-width: 52px !important;
+  flex: 0 0 52px !important;
+  border-radius: 15px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--p) !important;
+  background: var(--p-soft, rgba(17, 184, 177, 0.14)) !important;
+  box-sizing: border-box !important;
+}
+
+.mini-social-preview > div {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
+/* Light mode specific tuning for product preview */
+:root:not([data-theme=dark]) .mini-product-preview,
+:root:not([data-theme=dark]) .mini-social-preview {
+  background: #f8f7ff !important;
+  border-color: #cbd0ee !important;
+  box-shadow: 0 4px 14px rgba(75, 69, 150, 0.06) !important;
+}
+
+:root:not([data-theme=dark]) .mini-product-preview > img,
+:root:not([data-theme=dark]) .mini-product-preview > div {
+  background: #ffffff !important;
+  border-color: #d5d8ef !important;
+}
+
+:root:not([data-theme=dark]) .mini-product-preview > span strong,
+:root:not([data-theme=dark]) .mini-social-preview strong {
+  color: #1e2544 !important;
+}
+
+:root:not([data-theme=dark]) .mini-product-preview > span small,
+:root:not([data-theme=dark]) .mini-social-preview small {
+  color: #647098 !important;
+}
+
+/* Constrain upload-preview inside upload-box so it does not overflow */
+.upload-box .upload-preview {
+  max-height: 160px !important;
+  width: auto !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  border-radius: 14px !important;
+  display: block !important;
+  margin: 0 auto !important;
+}
+
+/* ==========================================================================
+   Checkbox & Switch Label State Isolation
+   Fix: Only the small checkbox square toggles checkmark/state; container stays neutral
+   ========================================================================== */
+.switch-label,
+label.switch-label,
+label:has(>input[type="checkbox"]) {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 14px !important;
+  border: 1px solid var(--b, rgba(255, 255, 255, 0.12)) !important;
+  border-radius: 14px !important;
+  background: var(--s2, rgba(255, 255, 255, 0.04)) !important;
+  color: var(--t) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s ease, opacity 0.15s ease !important;
+}
+
+/* Container NEVER changes its background or border color when checked */
+.switch-label:has(input:checked),
+label.switch-label:has(input:checked),
+label:has(>input[type="checkbox"]:checked) {
+  background: var(--s2, rgba(255, 255, 255, 0.04)) !important;
+  border-color: var(--b, rgba(255, 255, 255, 0.12)) !important;
+  box-shadow: none !important;
+}
+
+:root:not([data-theme=dark]) .switch-label,
+:root:not([data-theme=dark]) label.switch-label,
+:root:not([data-theme=dark]) label:has(>input[type="checkbox"]) {
+  background: #f8f9fe !important;
+  border-color: #d8ddf0 !important;
+  color: #1e2544 !important;
+}
+
+:root:not([data-theme=dark]) .switch-label:has(input:checked),
+:root:not([data-theme=dark]) label.switch-label:has(input:checked),
+:root:not([data-theme=dark]) label:has(>input[type="checkbox"]:checked) {
+  background: #f8f9fe !important;
+  border-color: #d8ddf0 !important;
+  box-shadow: none !important;
+}
+
+/* Small Checkbox Square Styling */
+input[type="checkbox"],
+.switch-label input[type="checkbox"],
+#pa[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  max-width: 20px !important;
+  min-height: 20px !important;
+  max-height: 20px !important;
+  flex: 0 0 20px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  cursor: pointer !important;
+  position: relative !important;
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease !important;
+}
+
+/* Unchecked state: Empty, refined square */
+input[type="checkbox"]:not(:checked),
+.switch-label input[type="checkbox"]:not(:checked),
+#pa[type="checkbox"]:not(:checked) {
+  background-color: var(--control-bg, rgba(255, 255, 255, 0.05)) !important;
+  border: 1.5px solid var(--b, rgba(255, 255, 255, 0.24)) !important;
+  background-image: none !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+}
+
+:root:not([data-theme=dark]) input[type="checkbox"]:not(:checked),
+:root:not([data-theme=dark]) .switch-label input[type="checkbox"]:not(:checked),
+:root:not([data-theme=dark]) #pa[type="checkbox"]:not(:checked) {
+  background-color: #f1f3f9 !important;
+  border-color: #c4cae2 !important;
+}
+
+/* Checked state: Active primary fill with sharp vector checkmark (✓) */
+input[type="checkbox"]:checked,
+.switch-label input[type="checkbox"]:checked,
+#pa[type="checkbox"]:checked {
+  background-color: var(--p, #11b8b1) !important;
+  border: 1.5px solid var(--p, #11b8b1) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 13px 13px !important;
+  box-shadow: 0 2px 8px rgba(17, 184, 177, 0.35) !important;
+}
+
+/* Remove legacy pseudo-elements that interfered or drew dark boxes */
+input[type="checkbox"]::after,
+input[type="checkbox"]::before,
+[data-theme=dark] input[type="checkbox"]::after,
+[data-theme=dark] input[type="checkbox"]::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* Hover and focus ring */
+input[type="checkbox"]:hover {
+  transform: scale(1.05) !important;
+}
+input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--p, #11b8b1) !important;
+  outline-offset: 2px !important;
+}
+
+/* Ensure Catalog Add Item button stays neatly on one line without icon wrapping */
+#addCatalogItem {
+  white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+}
+
+/* ==========================================================================
+   Catalog Filter Bar: Status & Category/Platform Selects Side by Side
+   (اجعل العنصرين الى جوار بعض بشكل افقي منسق غير متداخل)
+   ========================================================================== */
+.catalog-filter-bar:not(.orders-filter-bar):not(.deposits-filter-bar):not(.transactions-filter-bar):not(:has(#adminOrderSearch)):not(:has(#depositSearch)):not(:has(#depositStatus)):not(:has(#txSearch)):not(:has(#txType)):not(:has(#txUser)) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin-bottom: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.catalog-filter-bar:not(.orders-filter-bar):not(.deposits-filter-bar):not(.transactions-filter-bar):not(:has(#adminOrderSearch)):not(:has(#depositSearch)):not(:has(#depositStatus)):not(:has(#txSearch)):not(:has(#txType)):not(:has(#txUser)) > input,
+.catalog-filter-bar:not(.orders-filter-bar):not(.deposits-filter-bar):not(.transactions-filter-bar):not(:has(#adminOrderSearch)):not(:has(#depositSearch)):not(:has(#depositStatus)):not(:has(#txSearch)):not(:has(#txType)):not(:has(#txUser)) input[type="search"] {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  height: 42px !important;
+  margin: 0 !important;
+}
+
+select#catalogStatus,
+.catalog-filter-bar select#catalogStatus {
+  grid-column: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 42px !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+select#catalogSecondFilter,
+.catalog-filter-bar select#catalogSecondFilter {
+  grid-column: 2 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 42px !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+}
+
+@media (min-width: 768px) {
+  .catalog-filter-bar:not(.orders-filter-bar):not(.deposits-filter-bar):not(.transactions-filter-bar):not(:has(#adminOrderSearch)):not(:has(#depositSearch)):not(:has(#depositStatus)):not(:has(#txSearch)):not(:has(#txType)):not(:has(#txUser)) {
+    grid-template-columns: minmax(0, 1fr) minmax(130px, 160px) minmax(140px, 180px) !important;
+  }
+  .catalog-filter-bar:not(.orders-filter-bar):not(.deposits-filter-bar):not(.transactions-filter-bar):not(:has(#adminOrderSearch)):not(:has(#depositSearch)):not(:has(#depositStatus)):not(:has(#txSearch)):not(:has(#txType)):not(:has(#txUser)) > input,
+  .catalog-filter-bar:not(.orders-filter-bar):not(.deposits-filter-bar):not(.transactions-filter-bar):not(:has(#adminOrderSearch)):not(:has(#depositSearch)):not(:has(#depositStatus)):not(:has(#txSearch)):not(:has(#txType)):not(:has(#txUser)) input[type="search"] {
+    grid-column: auto !important;
+  }
+  select#catalogStatus,
+  .catalog-filter-bar select#catalogStatus {
+    grid-column: auto !important;
+  }
+  select#catalogSecondFilter,
+  .catalog-filter-bar select#catalogSecondFilter {
+    grid-column: auto !important;
+  }
+}
+
+/* ==========================================================================
+   Admin Orders Filter Bar: 3 Elements on ONE Single Line without Overlap/Wrap
+   (اجعل العناصر الثلاث بجانب بعض بشكل افقي بسطر واحد دون تداخل او التفاف)
+   Targets:
+     1. select#adminOrderStatus
+     2. input#adminOrderUser
+     3. input#adminOrderSearch
+   ========================================================================== */
+.orders-filter-bar,
+.catalog-filter-bar:has(#adminOrderSearch),
+.catalog-filter-bar:has(#adminOrderStatus),
+div:has(> #adminOrderSearch) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1.05fr) !important;
+  grid-template-rows: 1fr !important;
+  grid-auto-flow: column !important;
+  gap: 6px !important;
+  margin-bottom: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Element 3: Search input in orders */
+input#adminOrderSearch,
+.orders-filter-bar input#adminOrderSearch,
+.catalog-filter-bar input#adminOrderSearch {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+}
+
+/* Element 2: User filter input in orders */
+input#adminOrderUser,
+.orders-filter-bar input#adminOrderUser,
+.catalog-filter-bar input#adminOrderUser {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+}
+
+/* Element 1: Status filter select in orders */
+select#adminOrderStatus,
+.orders-filter-bar select#adminOrderStatus,
+.catalog-filter-bar select#adminOrderStatus {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 5px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+}
+
+#adminOrderSearch::placeholder,
+#adminOrderUser::placeholder {
+  font-size: 11px !important;
+  opacity: 0.8 !important;
+}
+
+@media (min-width: 640px) {
+  .orders-filter-bar,
+  .catalog-filter-bar:has(#adminOrderSearch),
+  .catalog-filter-bar:has(#adminOrderStatus),
+  div:has(> #adminOrderSearch) {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) minmax(130px, 160px) !important;
+    gap: 8px !important;
+  }
+  input#adminOrderSearch,
+  .catalog-filter-bar input#adminOrderSearch,
+  input#adminOrderUser,
+  .catalog-filter-bar input#adminOrderUser,
+  select#adminOrderStatus,
+  .catalog-filter-bar select#adminOrderStatus {
+    height: 42px !important;
+    font-size: 13px !important;
+    padding: 0 10px !important;
+  }
+}
+
+/* ==========================================================================
+   Admin Deposits Filter Bar: 3 Elements in ONE Horizontal Row without Wrap/Overlap
+   (اجعل العناصر الثلاث في سطر واحد بشكل منسق افقيا مع منع الالتفاف والتداخل)
+   Targets:
+     1. input#depositSearch
+     2. input#depositUser
+     3. select#depositStatus
+   ========================================================================== */
+.deposits-filter-bar,
+.catalog-filter-bar:has(#depositSearch),
+.catalog-filter-bar:has(#depositUser),
+.catalog-filter-bar:has(#depositStatus),
+div#adminContent > div:has(#depositSearch),
+div#adminContent > div:has(#depositUser),
+div#adminContent > div:has(#depositStatus),
+div:has(> #depositSearch),
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1.05fr) !important;
+  grid-template-rows: 1fr !important;
+  grid-auto-flow: column !important;
+  gap: 6px !important;
+  margin-bottom: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
+/* Element 1: Search input (بحث بالاسم أو المرجع) */
+input#depositSearch,
+.deposits-filter-bar input#depositSearch,
+.catalog-filter-bar input#depositSearch,
+div#adminContent input#depositSearch,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > input#depositSearch:nth-of-type(1),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) > input#depositSearch {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+  flex: 1.35 1 0 !important;
+}
+
+/* Element 2: User filter input (اسم المستخدم) */
+input#depositUser,
+.deposits-filter-bar input#depositUser,
+.catalog-filter-bar input#depositUser,
+div#adminContent input#depositUser,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > input#depositUser:nth-of-type(2),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) > input#depositUser {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+  flex: 1 1 0 !important;
+}
+
+/* Element 3: Status filter select (كل الحالات / معلقة / مقبولة / مرفوضة) */
+select#depositStatus,
+.deposits-filter-bar select#depositStatus,
+.catalog-filter-bar select#depositStatus,
+div#adminContent select#depositStatus,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > select#depositStatus:nth-of-type(1),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) > select#depositStatus {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 5px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  flex: 1.05 1 0 !important;
+}
+
+#depositSearch::placeholder,
+#depositUser::placeholder {
+  font-size: 11px !important;
+  opacity: 0.8 !important;
+}
+
+@media (min-width: 640px) {
+  .deposits-filter-bar,
+  .catalog-filter-bar:has(#depositSearch),
+  .catalog-filter-bar:has(#depositUser),
+  .catalog-filter-bar:has(#depositStatus),
+  div:has(> #depositSearch),
+  div#adminContent > div:has(#depositSearch),
+  main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2),
+  main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) minmax(130px, 160px) !important;
+    gap: 8px !important;
+  }
+  input#depositSearch,
+  .catalog-filter-bar input#depositSearch,
+  input#depositUser,
+  .catalog-filter-bar input#depositUser,
+  select#depositStatus,
+  .catalog-filter-bar select#depositStatus {
+    height: 42px !important;
+    font-size: 13px !important;
+    padding: 0 10px !important;
+  }
+}
+
+/* ==========================================================================
+   Admin Transactions Filter Bar: 3 Elements in ONE Horizontal Row without Wrap/Overlap
+   (وهنا ايضا نفس الشيء: اجعل العناصر الثلاث في سطر واحد بشكل منسق افقيا مع منع الالتفاف والتداخل)
+   Targets:
+     1. input#txSearch
+     2. input#txUser
+     3. select#txType
+   ========================================================================== */
+.transactions-filter-bar,
+.catalog-filter-bar:has(#txSearch),
+.catalog-filter-bar:has(#txUser),
+.catalog-filter-bar:has(#txType),
+div#adminContent > div:has(#txSearch),
+div#adminContent > div:has(#txUser),
+div#adminContent > div:has(#txType),
+div:has(> #txSearch),
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1.05fr) !important;
+  grid-template-rows: 1fr !important;
+  grid-auto-flow: column !important;
+  gap: 6px !important;
+  margin-bottom: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
+/* Element 1: Search input (بحث بالحركة أو التفاصيل) */
+input#txSearch,
+.transactions-filter-bar input#txSearch,
+.catalog-filter-bar input#txSearch,
+div#adminContent input#txSearch,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > input#txSearch:nth-of-type(1),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) > input#txSearch {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+  flex: 1.35 1 0 !important;
+}
+
+/* Element 2: User filter input (اسم المستخدم) */
+input#txUser,
+.transactions-filter-bar input#txUser,
+.catalog-filter-bar input#txUser,
+div#adminContent input#txUser,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > input#txUser:nth-of-type(2),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) > input#txUser {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 8px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  margin: 0 !important;
+  flex: 1 1 0 !important;
+}
+
+/* Element 3: Type filter select (نوع الحركة) */
+select#txType,
+.transactions-filter-bar select#txType,
+.catalog-filter-bar select#txType,
+div#adminContent select#txType,
+main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2) > select#txType:nth-of-type(1),
+main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) > select#txType {
+  grid-column: 3 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  height: 38px !important;
+  padding: 0 5px !important;
+  font-size: 11.5px !important;
+  line-height: 38px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  flex: 1.05 1 0 !important;
+}
+
+#txSearch::placeholder,
+#txUser::placeholder {
+  font-size: 11px !important;
+  opacity: 0.8 !important;
+}
+
+@media (min-width: 640px) {
+  .transactions-filter-bar,
+  .catalog-filter-bar:has(#txSearch),
+  .catalog-filter-bar:has(#txUser),
+  .catalog-filter-bar:has(#txType),
+  div:has(> #txSearch),
+  div#adminContent > div:has(#txSearch),
+  main#app:nth-of-type(1) > div#view-dynamic:nth-of-type(6) > div#adminContent:nth-of-type(3) > div:nth-of-type(2),
+  main#app > div#view-dynamic > div#adminContent > div:nth-of-type(2) {
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) minmax(130px, 160px) !important;
+    gap: 8px !important;
+  }
+  input#txSearch,
+  .catalog-filter-bar input#txSearch,
+  input#txUser,
+  .catalog-filter-bar input#txUser,
+  select#txType,
+  .catalog-filter-bar select#txType {
+    height: 42px !important;
+    font-size: 13px !important;
+    padding: 0 10px !important;
+  }
+}
+
+/* ==========================================================================
+   Admin Recharge Cards Pro: Luxury Cards Grid, Glowing Monospace Code,
+   Usage Progress, Copy Actions & Toggle Active State
+   ========================================================================== */
+.recharge-cards-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 14px !important;
+  margin-bottom: 20px !important;
+}
+
+@media (min-width: 640px) {
+  .recharge-cards-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+  }
+}
+
+.recharge-card-pro {
+  position: relative !important;
+  background: var(--card-bg, rgba(22, 27, 34, 0.85)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 18px !important;
+  padding: 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.35) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  overflow: hidden !important;
+}
+
+.recharge-card-pro:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(8, 127, 130, 0.35) !important;
+  box-shadow: 0 12px 28px -4px rgba(8, 127, 130, 0.2) !important;
+}
+
+.recharge-card-pro.is-disabled {
+  opacity: 0.72 !important;
+  border-color: rgba(239, 68, 68, 0.25) !important;
+  background: rgba(30, 15, 20, 0.75) !important;
+}
+
+.recharge-card-pro.is-used {
+  border-color: rgba(148, 163, 184, 0.18) !important;
+  opacity: 0.85 !important;
+}
+
+.recharge-card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.recharge-card-badge-wrap {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.card-brand-icon {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, rgba(8, 127, 130, 0.35), rgba(8, 127, 130, 0.1)) !important;
+  border: 1px solid rgba(8, 127, 130, 0.4) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--p, #087f82) !important;
+  font-size: 18px !important;
+  flex-shrink: 0 !important;
+}
+
+.card-brand-icon svg,
+.card-brand-icon i {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+.recharge-card-pro.is-disabled .card-brand-icon {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+}
+
+.card-val-tag {
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.5px !important;
+  color: #fff !important;
+  font-family: inherit !important;
+}
+
+.card-status-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 4px 10px !important;
+  border-radius: 20px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.card-status-pill i,
+.card-status-pill svg {
+  width: 13px !important;
+  height: 13px !important;
+}
+
+.status-active {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.status-disabled {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+.status-used {
+  background: rgba(148, 163, 184, 0.12) !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+.recharge-code-container {
+  margin: 4px 0 !important;
+}
+
+.recharge-code-mono {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 9px 12px !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border: 1px dashed rgba(8, 127, 130, 0.45) !important;
+  border-radius: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.recharge-code-mono:hover {
+  background: rgba(8, 127, 130, 0.12) !important;
+  border-color: var(--p, #087f82) !important;
+  border-style: solid !important;
+}
+
+.recharge-code-mono .code-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 1px !important;
+  color: #38bdf8 !important;
+  direction: ltr !important;
+  user-select: all !important;
+}
+
+.recharge-code-mono .copy-icon-btn {
+  background: transparent !important;
+  border: none !important;
+  color: var(--m, #94a3b8) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  transition: color 0.15s !important;
+}
+
+.recharge-code-mono .copy-icon-btn svg,
+.recharge-code-mono .copy-icon-btn i {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.recharge-code-mono:hover .copy-icon-btn {
+  color: #fff !important;
+}
+
+.usage-progress-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  padding: 8px 10px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+.usage-labels {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 11.5px !important;
+  color: #e2e8f0 !important;
+}
+
+.usage-labels span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.usage-labels svg,
+.usage-labels i {
+  width: 13px !important;
+  height: 13px !important;
+  color: var(--p, #087f82) !important;
+}
+
+.usage-labels .remaining-tag {
+  color: var(--m, #94a3b8) !important;
+  font-size: 11px !important;
+}
+
+.usage-progress-track {
+  width: 100% !important;
+  height: 6px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+}
+
+.usage-progress-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #087f82, #10b981) !important;
+  border-radius: 999px !important;
+  transition: width 0.4s ease !important;
+}
+
+.recharge-card-pro.is-used .usage-progress-fill {
+  background: #64748b !important;
+}
+
+.recharge-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.card-meta-line {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 11px !important;
+  color: #cbd5e1 !important;
+}
+
+.card-meta-line.muted {
+  color: var(--m, #64748b) !important;
+}
+
+.card-meta-line svg,
+.card-meta-line i {
+  width: 12px !important;
+  height: 12px !important;
+  opacity: 0.7 !important;
+  flex-shrink: 0 !important;
+}
+
+.recharge-card-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding-top: 10px !important;
+  margin-top: 4px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.recharge-card-actions .btn {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  height: 34px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+}
+
+.recharge-card-actions .btn svg,
+.recharge-card-actions .btn i {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.warning-soft {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+.warning-soft:hover {
+  background: rgba(245, 158, 11, 0.22) !important;
+  color: #fbbf24 !important;
+}
+
+.success-soft {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+.success-soft:hover {
+  background: rgba(16, 185, 129, 0.22) !important;
+  color: #34d399 !important;
+}
+
+.danger-soft {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+.danger-soft:hover {
+  background: rgba(239, 68, 68, 0.22) !important;
+  color: #f87171 !important;
+}
+
+

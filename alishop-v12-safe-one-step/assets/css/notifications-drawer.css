@@ -1,0 +1,979 @@
+/* ==========================================================================
+   AliShop - Extraordinary Luxury Notifications Drawer (تصميم خرافي متناسق)
+   ========================================================================== */
+
+/* مقبض السحب الأنيق للدرج */
+.lux-drawer-grip {
+  width: 48px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--border, var(--b, rgba(120, 140, 180, 0.35)));
+  margin: 0 auto 16px auto;
+  display: block;
+}
+
+/* 1. الحاوية العامة لدرج الإشعارات */
+.lux-notes-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  direction: rtl;
+  text-align: right;
+  padding: 2px 2px 24px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* 2. رأس درج الإشعارات المنظم على صفين لمنع أي تداخل نهائياً */
+.lux-notes-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 2px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--b, rgba(0, 0, 0, 0.08));
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* الصف الأول: العنوان والأيقونة + زر الإغلاق */
+.lux-header-main-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.lux-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.lux-header-icon-orb {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.32);
+  position: relative;
+  overflow: hidden;
+}
+
+.lux-header-icon-orb::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.lux-header-icon-orb svg,
+.lux-header-icon-orb i {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  position: relative;
+  z-index: 1;
+}
+
+.lux-header-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lux-header-title-flex {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lux-header-title-flex h2 {
+  margin: 0 !important;
+  font-size: 1.18rem !important;
+  font-weight: 800 !important;
+  color: var(--t, #111827) !important;
+  line-height: 1.2 !important;
+  letter-spacing: -0.2px;
+}
+
+.lux-header-unread-chip {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--s2, #f3f4f6);
+  color: var(--m, #6b7280);
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.08));
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lux-header-unread-chip.active {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.14), rgba(244, 63, 94, 0.18));
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.28);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+.lux-header-unread-chip.active::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: luxPulseDot 1.5s infinite ease-in-out;
+}
+
+@keyframes luxPulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.3); }
+}
+
+.lux-header-subtitle {
+  margin: 0 !important;
+  font-size: 0.78rem !important;
+  color: var(--m, #6b7280) !important;
+  line-height: 1.4 !important;
+  font-weight: 500;
+}
+
+.lux-btn-close {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--s2, #f3f4f6);
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.08));
+  color: var(--t, #374151);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+
+.lux-btn-close:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.25);
+  transform: rotate(90deg) scale(1.05);
+}
+
+.lux-btn-close svg,
+.lux-btn-close i {
+  width: 18px;
+  height: 18px;
+}
+
+/* الصف الثاني: شريط الإجراءات والخصائص غير المقروءة */
+.lux-header-action-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(168, 85, 247, 0.08));
+  border: 1px solid rgba(99, 102, 241, 0.22);
+  width: 100%;
+  box-sizing: border-box;
+  animation: luxFadeIn 0.25s ease both;
+  flex-wrap: wrap;
+}
+
+@keyframes luxFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.lux-strip-status {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--t, #374151);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lux-strip-status svg,
+.lux-strip-status i {
+  width: 15px;
+  height: 15px;
+  color: #ef4444;
+}
+
+.lux-strip-status strong {
+  color: #ef4444;
+  font-weight: 800;
+}
+
+.lux-btn-mark-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #ffffff;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lux-btn-mark-all:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 14px rgba(99, 102, 241, 0.38);
+}
+
+.lux-btn-mark-all:active {
+  transform: scale(0.97);
+}
+
+.lux-btn-mark-all svg,
+.lux-btn-mark-all i {
+  width: 14px;
+  height: 14px;
+}
+
+/* 3. شريط التبويبات الفاخر (Segmented Pills Bar) */
+.lux-notes-tabs-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 6px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lux-notes-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.lux-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 15px;
+  font-size: 0.83rem;
+  font-weight: 750;
+  color: var(--m, #6b7280);
+  background: var(--s2, #f3f4f6);
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.06));
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.lux-tab-btn svg,
+.lux-tab-btn i {
+  width: 15px;
+  height: 15px;
+  opacity: 0.85;
+}
+
+.lux-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.07);
+  color: var(--t, #4b5563);
+  transition: all 0.2s ease;
+}
+
+.lux-tab-btn:hover {
+  color: var(--t, #111827);
+  background: color-mix(in srgb, var(--p, #6366f1) 10%, var(--s2, #f3f4f6));
+  transform: translateY(-1px);
+}
+
+.lux-tab-btn.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  border-color: transparent !important;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.38) !important;
+  transform: translateY(-1px);
+}
+
+.lux-tab-btn.active svg,
+.lux-tab-btn.active i {
+  opacity: 1;
+  color: #ffffff !important;
+}
+
+.lux-tab-btn.active .lux-tab-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+}
+
+/* 4. قائمة البطاقات الموزعة والمنسقة (Notifications Stack) */
+.lux-notes-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 2px;
+}
+
+/* البطاقة الفاخرة المنسقة */
+.lux-note-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: var(--surface, var(--s, #ffffff));
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.lux-note-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+
+.lux-note-card.unread {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p, #6366f1) 6%, var(--s, #ffffff)), var(--s, #ffffff));
+  border-color: color-mix(in srgb, var(--p, #6366f1) 35%, var(--b, rgba(0, 0, 0, 0.1)));
+  box-shadow: 0 8px 26px rgba(99, 102, 241, 0.12);
+}
+
+.lux-note-card.unread::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 5px;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  border-radius: 0 22px 22px 0;
+}
+
+/* 5. الصف العلوي للبطاقة (Header Row) */
+.lux-card-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+}
+
+.lux-card-icon-squircle {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.lux-card-icon-squircle::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.lux-card-icon-squircle svg,
+.lux-card-icon-squircle i {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  position: relative;
+  z-index: 1;
+}
+
+/* تدرجات ألوان الفئات */
+.tone-digital .lux-card-icon-squircle {
+  background: linear-gradient(135deg, #2563eb 0%, #06b6d4 100%);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.32);
+}
+
+.tone-social .lux-card-icon-squircle {
+  background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.32);
+}
+
+.tone-finance .lux-card-icon-squircle {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.32);
+}
+
+.tone-general .lux-card-icon-squircle {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  box-shadow: 0 6px 20px rgba(217, 119, 6, 0.32);
+}
+
+.lux-card-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.lux-card-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.lux-card-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.lux-cat-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: var(--s2, #f3f4f6);
+  color: var(--m, #4b5563);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lux-cat-pill::before {
+  content: "•";
+  font-size: 1.1rem;
+  line-height: 0;
+}
+
+.tone-digital .lux-cat-pill { color: #2563eb; background: rgba(37, 99, 235, 0.08); }
+.tone-social .lux-cat-pill { color: #8b5cf6; background: rgba(139, 92, 246, 0.08); }
+.tone-finance .lux-cat-pill { color: #059669; background: rgba(5, 150, 105, 0.08); }
+.tone-general .lux-cat-pill { color: #d97706; background: rgba(217, 119, 6, 0.08); }
+
+.lux-unread-chip {
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(244, 63, 94, 0.2));
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lux-unread-chip::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: luxPulseDot 1.5s infinite ease-in-out;
+}
+
+.lux-card-time {
+  font-size: 0.74rem;
+  color: var(--m, #9ca3af);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.lux-card-time svg,
+.lux-card-time i {
+  width: 13px;
+  height: 13px;
+}
+
+.lux-card-title {
+  margin: 1px 0 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: var(--t, #111827);
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* نص تفاصيل الإشعار المريح للقراءة */
+.lux-card-message {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: var(--t, #374151);
+  word-break: break-word;
+  background: var(--s2, #f9fafb);
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.04));
+}
+
+/* 6. بطاقة بيانات التسليم والأكواد الفاخرة (Voucher Pass Box) */
+.lux-delivery-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p, #6366f1) 10%, var(--s2, #f3f4f6)), var(--s2, #f8fafc));
+  border: 1.5px dashed color-mix(in srgb, var(--p, #6366f1) 40%, var(--b, rgba(0, 0, 0, 0.12)));
+  position: relative;
+  overflow: hidden;
+}
+
+.lux-delivery-box::after {
+  content: "🔐 آمن ومحمي";
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--p, #6366f1);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lux-delivery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lux-delivery-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--p, #6366f1);
+}
+
+.lux-delivery-label svg,
+.lux-delivery-label i {
+  width: 16px;
+  height: 16px;
+}
+
+.lux-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: var(--p, #6366f1);
+  background: #ffffff;
+  border: 1px solid color-mix(in srgb, var(--p, #6366f1) 30%, var(--b, rgba(0, 0, 0, 0.1)));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lux-copy-btn:hover {
+  background: var(--p, #6366f1);
+  color: #ffffff;
+  transform: scale(1.03);
+}
+
+.lux-copy-btn:active {
+  transform: scale(0.97);
+}
+
+.lux-copy-btn.copied {
+  background: #10b981 !important;
+  color: #ffffff !important;
+  border-color: #10b981 !important;
+}
+
+.lux-copy-btn svg,
+.lux-copy-btn i {
+  width: 13px;
+  height: 13px;
+}
+
+.lux-delivery-content {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--t, #111827);
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  word-break: break-all;
+  user-select: all;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+}
+
+/* 7. شبكة تفاصيل الطلب المتناسقة والمنظمة (Clean Metadata Grid) */
+.lux-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.lux-grid-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--s2, #f3f4f6);
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.06));
+}
+
+.lux-grid-chip-title {
+  font-size: 0.7rem;
+  color: var(--m, #6b7280);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lux-grid-chip-title svg,
+.lux-grid-chip-title i {
+  width: 12px;
+  height: 12px;
+  opacity: 0.7;
+}
+
+.lux-grid-chip-val {
+  font-size: 0.85rem;
+  color: var(--t, #111827);
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* تمييز الحالات داخل الشبكة */
+.lux-grid-chip.status-delivered,
+.lux-grid-chip.status-completed,
+.lux-grid-chip.status-ok {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.lux-grid-chip.status-delivered .lux-grid-chip-val,
+.lux-grid-chip.status-completed .lux-grid-chip-val,
+.lux-grid-chip.status-ok .lux-grid-chip-val {
+  color: #059669;
+}
+
+.lux-grid-chip.status-processing,
+.lux-grid-chip.status-running {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.lux-grid-chip.status-processing .lux-grid-chip-val,
+.lux-grid-chip.status-running .lux-grid-chip-val {
+  color: #2563eb;
+}
+
+.lux-grid-chip.status-pending,
+.lux-grid-chip.status-waiting {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.lux-grid-chip.status-pending .lux-grid-chip-val,
+.lux-grid-chip.status-waiting .lux-grid-chip-val {
+  color: #d97706;
+}
+
+.lux-grid-chip.status-cancelled,
+.lux-grid-chip.status-refunded,
+.lux-grid-chip.status-failed {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+.lux-grid-chip.status-cancelled .lux-grid-chip-val,
+.lux-grid-chip.status-refunded .lux-grid-chip-val,
+.lux-grid-chip.status-failed .lux-grid-chip-val {
+  color: #dc2626;
+}
+
+/* 8. ترقيم الصفحات الفاخر (Pagination Bar) */
+.lux-notes-pagination {
+  margin-top: 18px !important;
+  margin-bottom: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+}
+
+.lux-notes-pagination .page-btn {
+  min-width: 38px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  font-size: 0.85rem !important;
+  font-weight: 800 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: var(--s2, #f3f4f6) !important;
+  border: 1px solid var(--b, rgba(0, 0, 0, 0.08)) !important;
+  color: var(--t, #374151) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+}
+
+.lux-notes-pagination .page-btn:hover {
+  background: color-mix(in srgb, var(--p, #6366f1) 12%, var(--s2, #f3f4f6)) !important;
+  border-color: var(--p, #6366f1) !important;
+  color: var(--p, #6366f1) !important;
+  transform: translateY(-1px);
+}
+
+.lux-notes-pagination .page-btn.active {
+  background: linear-gradient(135deg, var(--p, #6366f1), #8b5cf6) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35) !important;
+}
+
+.lux-page-nav svg,
+.lux-page-nav i {
+  width: 17px;
+  height: 17px;
+}
+
+.page-ellipsis {
+  padding: 0 4px;
+  color: var(--m, #9ca3af);
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+/* 9. واجهة الحالة الفارغة الفاخرة (Extraordinary Empty State) */
+.lux-notes-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 44px 20px;
+  gap: 14px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, var(--s2, #f9fafb) 0%, transparent 100%);
+  border: 1px dashed var(--b, rgba(0, 0, 0, 0.08));
+}
+
+.lux-empty-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.2));
+  color: var(--p, #6366f1);
+  box-shadow: 0 10px 28px rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.lux-empty-icon svg,
+.lux-empty-icon i {
+  width: 36px;
+  height: 36px;
+}
+
+.lux-empty-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--t, #1f2937);
+}
+
+.lux-empty-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--m, #6b7280);
+  max-width: 300px;
+  line-height: 1.6;
+}
+
+/* 10. الوضع الداكن الفاخر (Dark Mode Luxury Styling) */
+[data-theme="dark"] .lux-drawer-grip {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .lux-notes-header {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lux-header-title-flex h2 {
+  color: #f9fafb !important;
+}
+
+[data-theme="dark"] .lux-header-subtitle {
+  color: #9ca3af !important;
+}
+
+[data-theme="dark"] .lux-btn-close {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .lux-header-action-strip {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.12));
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+[data-theme="dark"] .lux-strip-status {
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .lux-tab-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .lux-tab-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .lux-tab-count {
+  background: rgba(255, 255, 255, 0.12);
+  color: #e5e7eb;
+}
+
+[data-theme="dark"] .lux-note-card {
+  background: var(--surface, #1e2433);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .lux-note-card.unread {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), #1e2433);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+[data-theme="dark"] .lux-card-title {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .lux-card-message {
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.05);
+  color: #d1d5db;
+}
+
+[data-theme="dark"] .lux-cat-pill {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .lux-delivery-box {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(30, 36, 51, 0.95));
+  border-color: rgba(99, 102, 241, 0.45);
+}
+
+[data-theme="dark"] .lux-delivery-content {
+  background: rgba(0, 0, 0, 0.5);
+  color: #a5b4fc;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lux-copy-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #c7d2fe;
+}
+
+[data-theme="dark"] .lux-copy-btn:hover {
+  background: #6366f1;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .lux-grid-chip {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lux-grid-chip-title {
+  color: #9ca3af;
+}
+
+[data-theme="dark"] .lux-grid-chip-val {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .lux-notes-empty {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .lux-empty-title {
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .lux-notes-pagination .page-btn {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #d1d5db !important;
+}
+
+[data-theme="dark"] .lux-notes-pagination .page-btn:hover {
+  background: rgba(99, 102, 241, 0.2) !important;
+  border-color: #818cf8 !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .lux-notes-pagination .page-btn.active {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+  color: #ffffff !important;
+}

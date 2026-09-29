@@ -1,0 +1,1 @@
+.has-live-notification{animation:liveBellPulse 1.2s ease-in-out 2}.has-live-notification svg{filter:drop-shadow(0 0 7px rgba(17,184,177,.72))}@keyframes liveBellPulse{0%,100%{transform:scale(1)}35%{transform:scale(1.1) rotate(-5deg)}70%{transform:scale(1.05) rotate(5deg)}}@media(prefers-reduced-motion:reduce){.has-live-notification{animation:none!important}}

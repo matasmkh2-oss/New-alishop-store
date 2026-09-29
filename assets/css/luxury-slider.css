@@ -1,0 +1,16 @@
+/* Luxury slider presentation layer */
+.hero-slider{position:relative;overflow:hidden;border-radius:26px!important;border:1px solid rgba(255,255,255,.22)!important;box-shadow:0 22px 55px rgba(4,35,42,.18)!important}
+.luxury-slide{isolation:isolate;overflow:hidden}
+.luxury-slide::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(115deg,rgba(3,20,25,.78) 0%,rgba(3,20,25,.28) 48%,rgba(3,20,25,.06) 100%);mix-blend-mode:multiply}
+.luxury-slide .slide-background-image{transition:transform 8s cubic-bezier(.2,.7,.2,1),filter 1s ease;filter:saturate(.96) contrast(1.04)}
+.luxury-slide.active .slide-background-image{transform:scale(1.045)}
+.luxury-slide-overlay{position:relative;z-index:2;max-width:min(610px,88%);border:1px solid rgba(255,255,255,.18)!important;background:linear-gradient(135deg,rgba(7,26,32,.62),rgba(7,26,32,.18))!important;box-shadow:0 18px 45px rgba(0,0,0,.16)!important;backdrop-filter:blur(14px) saturate(130%);-webkit-backdrop-filter:blur(14px);animation:luxuryOverlayIn .72s cubic-bezier(.2,.8,.2,1) both}
+.luxury-slide.active .luxury-slide-overlay h1{animation:luxuryTextIn .62s .08s both}
+.luxury-slide.active .luxury-slide-overlay p{animation:luxuryTextIn .62s .16s both}
+.luxury-slide.active .luxury-slide-overlay .btn{animation:luxuryTextIn .62s .24s both}
+.luxury-slide-overlay.image-only{padding:0!important;min-height:0;border:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none;-webkit-backdrop-filter:none}
+.luxury-slide-overlay [hidden]{display:none!important}
+@keyframes luxuryOverlayIn{from{opacity:0;transform:translateY(14px) scale(.98);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+@keyframes luxuryTextIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(max-width:520px){.hero-slider{border-radius:22px!important}.luxury-slide-overlay{max-width:92%;backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}}
+@media(prefers-reduced-motion:reduce){.luxury-slide,.luxury-slide-overlay,.luxury-slide-background-image,.luxury-slide-overlay h1,.luxury-slide-overlay p,.luxury-slide-overlay .btn{animation:none!important;transition:none!important}.luxury-slide.active .slide-background-image{transform:none}}
