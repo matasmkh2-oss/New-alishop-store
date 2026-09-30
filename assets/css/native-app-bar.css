@@ -26,7 +26,20 @@ header:nth-of-type(1),
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   box-shadow: 0 14px 34px rgba(4, 4, 25, 0.12), 0 2px 8px rgba(0, 0, 0, 0.04) !important;
-  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease !important;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease !important;
+  will-change: transform, opacity;
+}
+
+/* الإخفاء الذكي للهيدر عند التمرير للأسفل (Smart Auto-Hide on Scroll Down) */
+body.header-is-hidden header:nth-of-type(1),
+body.header-is-hidden .app-header.native-app-bar,
+body.header-is-hidden .native-app-bar,
+header:nth-of-type(1).header-auto-hidden,
+.app-header.native-app-bar.header-auto-hidden,
+.native-app-bar.header-auto-hidden {
+  transform: translateY(-135%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Remove old header underline / gradient after-effect */
