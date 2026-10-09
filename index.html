@@ -59,7 +59,7 @@ window.addEventListener('error',function(e){
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://jcnbbingctwuathvfqty.supabase.co"><link rel="preconnect" href="https://esm.sh"><link rel="preconnect" href="https://unpkg.com"><link rel="dns-prefetch" href="https://jcnbbingctwuathvfqty.supabase.co">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./assets/css/app.css?v=1790750000000">
+<link rel="stylesheet" href="./assets/css/app.css?v=1790760000000">
 <link rel="stylesheet" href="./assets/css/luxury-slider.css">
 <link rel="stylesheet" href="./assets/css/home-polish.css?v=1790542859057">
 <link rel="stylesheet" href="./assets/css/brand-polish.css?v=3">
@@ -278,19 +278,18 @@ document.addEventListener('click', function(e) {
 
 /* إغلاق الحاويات والنوافذ عند النقر على زر الإغلاق أو خارج المحتوى */
 document.addEventListener('click', function(e) {
-  var closeBtn = e.target.closest('[data-close], [data-close-modal], [data-dismiss], .sheet-head > button:not(.btn)');
+  var closeBtn = e.target.closest('[data-close], [data-close-modal], [data-dismiss], [data-close-dialog], .sheet-head > button:not(.btn)');
   if (closeBtn) {
     e.preventDefault();
     e.stopPropagation();
     if (typeof window.closeModal === 'function') {
-      window.closeModal();
-    } else {
-      var m = document.getElementById('modalDialog');
-      if (m && m.close) m.close();
-      var a = document.getElementById('authDialog');
-      if (a && a.close) a.close();
-      document.body.style.overflow = '';
+      try { window.closeModal(); } catch(_) {}
     }
+    var m = document.getElementById('modalDialog');
+    if (m && m.close) { try { m.close(); } catch(_) {} }
+    var a = document.getElementById('authDialog');
+    if (a && a.close) { try { a.close(); } catch(_) {} }
+    document.body.style.overflow = '';
     return;
   }
   if (e.target && e.target.id === 'modalDialog') {

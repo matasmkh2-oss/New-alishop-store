@@ -1480,47 +1480,115 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 
 
 /* =========================================================
-   UX hotfixes — dialogs, active states, announcement grouping
+   UX hotfixes — responsive modal centering & clean backdrops
    ========================================================= */
-/* Unified responsive modal rules */
-@media(min-width:700px){
-  dialog.sheet[open],
-  .modal-overlay,
-  .popup-overlay {
+/* Centered modal rules for screens larger than mobile (tablets, laptops, desktops) */
+@media(min-width:640px){
+  dialog.sheet {
     position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
     inset: 0 !important;
-    width: 100% !important;
-    height: 100vh !important;
+    margin: auto !important;
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: min(calc(100% - 32px), 480px) !important;
+    max-width: 480px !important;
+    height: auto !important;
+    max-height: min(90vh, 820px) !important;
+    max-height: min(90dvh, 820px) !important;
+    border-radius: 26px !important;
+    border: 1px solid var(--b) !important;
+    background: var(--s) !important;
+    color: var(--t) !important;
+    box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--b) !important;
+    padding: 0 !important;
+    outline: none !important;
+    overflow: hidden !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: rgba(0, 0, 0, 0.6) !important;
+    flex-direction: column !important;
     z-index: 9999 !important;
-    margin: 0 !important;
-    padding: 16px !important;
-    transform: none !important;
   }
+
+  [data-theme="dark"] dialog.sheet {
+    background: #111726 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 30px 80px -15px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  }
+
+  dialog.sheet.auth-sheet,
+  dialog#authDialog {
+    width: min(calc(100% - 32px), 480px) !important;
+    max-width: 480px !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  dialog#authDialog .auth-sheet-body {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  dialog.sheet.wide {
+    width: min(calc(100% - 32px), 640px) !important;
+    max-width: 640px !important;
+  }
+
+  /* Smooth center-scale entrance */
+  dialog.sheet[open] {
+    animation: modalCenterZoom 0.25s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+  }
+
+  /* Blurred, clean semi-transparent page backdrop (no black frame on the dialog itself) */
+  dialog.sheet::backdrop {
+    background: rgba(6, 9, 17, 0.65) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
+
+  dialog.sheet[open]::backdrop {
+    animation: backdropIn 0.25s ease both !important;
+  }
+
+  /* Inside modal body / form */
   dialog.sheet > .dialog-body,
   dialog.sheet > form,
-  .sheet-body,
-  .modal-content,
-  .popup-box {
-    width: 90% !important;
-    max-width: 450px !important;
-    position: relative !important;
-    margin: auto !important;
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-    bottom: auto !important;
-    transform: none !important;
-    border-radius: 24px !important;
+  dialog.sheet > .sheet-body,
+  dialog.sheet > form.sheet-body {
+    width: 100% !important;
+    max-width: 100% !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    max-height: min(90vh, 820px) !important;
+    max-height: min(90dvh, 820px) !important;
+    overflow-y: auto !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
   }
-  .sheet>.dialog-body,.sheet-body{overflow:auto}
+
+  /* Hide bottom-sheet pull handle on desktop */
+  dialog.sheet .grip {
+    display: none !important;
+  }
+}
+
+@keyframes modalCenterZoom {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .popup-media{
