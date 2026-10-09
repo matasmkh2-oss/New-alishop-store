@@ -1647,19 +1647,19 @@ article{
 }
 .popup-media img{max-height:clamp(190px,38vh,330px);border-radius:18px}
 
-/* List View Mode */
+/* List View Mode - Base resets */
 .catalog-image-grid.view-list .catalog-image-card,
 .catalog-image-grid.view-list article,
 .catalog-image-grid.view-list .pcard-row,
 .view-list .catalog-image-card,
 .view-list article{
-  display:flex!important;
-  flex-direction:row!important;
-  align-items:center!important;
-  height:auto!important;
-  min-height:0!important;
-  gap:12px!important;
-  position:relative!important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  height: auto !important;
+  min-height: 84px !important;
+  gap: 14px !important;
+  position: relative !important;
 }
 
 .catalog-image-grid.view-list .catalog-image-card .catalog-image,
@@ -1667,16 +1667,14 @@ article{
 .view-list .catalog-image-card .catalog-image,
 .view-list article > div:nth-of-type(1),
 .pcard-row-thumb{
-  width:100px!important;
-  height:100px!important;
-  flex:0 0 100px!important;
-  aspect-ratio:1 / 1!important;
-  position:relative!important;
-  overflow:hidden!important;
-  margin:0!important;
-  padding:0!important;
-  background:transparent!important;
-  background-color:transparent!important;
+  width: 74px !important;
+  height: 74px !important;
+  flex: 0 0 74px !important;
+  aspect-ratio: 1 / 1 !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 .catalog-image-grid.view-list .catalog-overlay,
@@ -1684,17 +1682,17 @@ article{
 .view-list .catalog-overlay,
 .view-list article > div:nth-of-type(2),
 .pcard-row-main{
-  flex:1!important;
-  position:relative!important;
-  inset:auto!important;
-  padding:4px 8px!important;
-  margin:0!important;
-  background:transparent!important;
-  background-color:transparent!important;
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-  min-width:0!important;
+  flex: 1 !important;
+  position: relative !important;
+  inset: auto !important;
+  padding: 2px 4px !important;
+  margin: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  min-width: 0 !important;
 }
 
 /* Grid & Small Grid Views (Dynamic Wrap) */
@@ -1923,28 +1921,445 @@ input[type="checkbox"]:checked,input[type="radio"]:checked{transform:scale(1.02)
 .catalog-image-grid.view-compact .favorite-btn svg{width:13px;height:13px}
 .catalog-image-grid.view-compact .pcard-pkg-chip{display:none}
 
-/* عرض القائمة */
-.catalog-image-grid.view-list{display:flex;flex-direction:column;gap:8px}
-.pcard-row{display:flex;align-items:center;gap:12px;width:100%;padding:10px;border:1px solid var(--b);border-radius:16px;background:var(--card-bg,var(--s));cursor:pointer;text-align:right;transition:.15s transform,.15s border-color}
-.pcard-row:hover{border-color:color-mix(in srgb,var(--p) 40%,transparent)}
-.pcard-row:active{transform:scale(.985)}
-.pcard-row.soldout{opacity:1}
-.pcard-row.soldout img{filter:grayscale(100%)!important;opacity:.5!important}
-.pcard-row-thumb{width:58px;height:58px;flex:none;border-radius:14px;overflow:hidden;background:linear-gradient(145deg,rgba(45,212,191,.14),rgba(34,211,238,.08))}
-.pcard-row-thumb img{width:100%;height:100%;object-fit:contain}
-.pcard-row-thumb .image-fallback{width:100%;height:100%;display:grid;place-items:center;color:var(--icon)}
-.pcard-row-thumb .image-fallback svg{width:26px;height:26px}
-.pcard-row-main{flex:1;min-width:0}
-.pcard-row-main h3{margin:0;font-size:14px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pcard-row-sub{display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap}
-.pcard-cat{font-size:10.5px;color:var(--m);font-weight:700}
-.pcard-pkgs{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;color:var(--p)}
-.pcard-pkgs svg{width:11px;height:11px}
-.pcard-row-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:none}
-.pcard-price{font-size:13px;font-weight:800;color:var(--p)}
-.pcard-sold{font-size:11px;font-weight:800;color:var(--bad)}
-.favorite-btn.static{position:static;width:30px;height:30px;border-radius:10px;border:1px solid var(--b);background:var(--s2);color:var(--m)}
-.favorite-btn.static.active{color:#f43f5e;border-color:rgba(244,63,94,.5);background:rgba(244,63,94,.1)}
+/* ==========================================================================
+   AliShop - Luxurious & Professional List/Strip View Mode (عرض الأشرطة)
+   Targeting: main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article
+   ========================================================================== */
+
+.catalog-image-grid.view-list,
+#pgrid.view-list,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 100% !important;
+  padding: 4px 0 !important;
+}
+
+@media (min-width: 700px) {
+  .catalog-image-grid.view-list,
+  #pgrid.view-list,
+  main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list {
+    gap: 14px !important;
+  }
+}
+
+/* Base Strip Article Card */
+.catalog-image-grid.view-list article,
+.catalog-image-grid.view-list .pcard-row,
+.catalog-image-grid.view-list .catalog-image-card,
+.view-list article,
+.pcard-row,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 14px !important;
+  width: 100% !important;
+  min-height: 84px !important;
+  height: auto !important;
+  padding: 10px 14px !important;
+  border-radius: 18px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  text-align: right !important;
+  direction: rtl !important;
+  box-sizing: border-box !important;
+  
+  /* Light Theme Surface */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 249, 254, 0.94) 100%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.95) !important;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.02) !important;
+  
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.2s ease,
+              background 0.2s ease !important;
+}
+
+@media (min-width: 700px) {
+  .catalog-image-grid.view-list article,
+  .catalog-image-grid.view-list .pcard-row,
+  .pcard-row,
+  main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article {
+    gap: 18px !important;
+    padding: 12px 18px !important;
+    min-height: 92px !important;
+    border-radius: 20px !important;
+  }
+}
+
+/* Dark Theme Surface */
+[data-theme="dark"] .catalog-image-grid.view-list article,
+[data-theme="dark"] .catalog-image-grid.view-list .pcard-row,
+[data-theme="dark"] .catalog-image-grid.view-list .catalog-image-card,
+[data-theme="dark"] .view-list article,
+[data-theme="dark"] .pcard-row,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article {
+  background: linear-gradient(135deg, rgba(25, 31, 48, 0.92) 0%, rgba(16, 20, 32, 0.97) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 6px 22px -3px rgba(0, 0, 0, 0.42), 0 2px 6px -1px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Hover & Active Micro-interactions */
+.catalog-image-grid.view-list article:hover,
+.pcard-row:hover,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(105, 88, 245, 0.42) !important;
+  box-shadow: 0 12px 30px -4px rgba(105, 88, 245, 0.12), 0 4px 10px rgba(15, 23, 42, 0.03) !important;
+}
+
+[data-theme="dark"] .catalog-image-grid.view-list article:hover,
+[data-theme="dark"] .pcard-row:hover,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(105, 88, 245, 0.5) !important;
+  box-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(105, 88, 245, 0.3) !important;
+}
+
+.catalog-image-grid.view-list article:active,
+.pcard-row:active,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article:active {
+  transform: scale(0.99) !important;
+}
+
+/* Subtle luxury accent line on hover */
+.catalog-image-grid.view-list article::before,
+.pcard-row::before,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, var(--p, #6958f5), var(--p2, #9e53e7));
+  opacity: 0;
+  transition: opacity 0.22s ease;
+  pointer-events: none;
+  border-radius: 4px 0 0 4px;
+}
+
+.catalog-image-grid.view-list article:hover::before,
+.pcard-row:hover::before,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article:hover::before {
+  opacity: 1;
+}
+
+/* Thumbnail Frame (Child 1) */
+.catalog-image-grid.view-list article > div:nth-of-type(1),
+.catalog-image-grid.view-list .pcard-row-thumb,
+.catalog-image-grid.view-list .catalog-image,
+.pcard-row-thumb,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(1) {
+  width: 68px !important;
+  height: 68px !important;
+  flex: 0 0 68px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 15px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  
+  /* Light Theme Thumbnail Surface */
+  background: linear-gradient(145deg, #f4f6fd 0%, #e8ecfa 100%) !important;
+  border: 1px solid rgba(105, 88, 245, 0.12) !important;
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.8), 0 2px 6px rgba(105, 88, 245, 0.05) !important;
+}
+
+@media (min-width: 700px) {
+  .catalog-image-grid.view-list article > div:nth-of-type(1),
+  .catalog-image-grid.view-list .pcard-row-thumb,
+  .pcard-row-thumb,
+  main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(1) {
+    width: 78px !important;
+    height: 78px !important;
+    flex: 0 0 78px !important;
+    border-radius: 16px !important;
+  }
+}
+
+[data-theme="dark"] .catalog-image-grid.view-list article > div:nth-of-type(1),
+[data-theme="dark"] .catalog-image-grid.view-list .pcard-row-thumb,
+[data-theme="dark"] .pcard-row-thumb,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(1) {
+  background: linear-gradient(145deg, #1b2234 0%, #121725 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 3px 10px rgba(0, 0, 0, 0.35) !important;
+}
+
+.pcard-row-thumb img,
+.catalog-image-grid.view-list article > div:nth-of-type(1) img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  padding: 6px !important;
+  border-radius: 12px !important;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.catalog-image-grid.view-list article:hover .pcard-row-thumb img,
+.catalog-image-grid.view-list article:hover > div:nth-of-type(1) img {
+  transform: scale(1.08) !important;
+}
+
+.pcard-row-thumb .image-fallback {
+  width: 100% !important;
+  height: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+  color: var(--p, #6958f5) !important;
+}
+
+.pcard-row-thumb .image-fallback svg {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+/* Main Product Details (Child 2) */
+.catalog-image-grid.view-list article > div:nth-of-type(2),
+.catalog-image-grid.view-list .pcard-row-main,
+.catalog-image-grid.view-list .catalog-overlay,
+.pcard-row-main,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  padding: 2px 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  text-align: right !important;
+}
+
+/* Product Title */
+.catalog-image-grid.view-list article h3,
+.catalog-image-grid.view-list .pcard-row-main h3,
+.pcard-row-main h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3 {
+  margin: 0 0 3px 0 !important;
+  font-size: 14.5px !important;
+  font-weight: 750 !important;
+  line-height: 1.35 !important;
+  letter-spacing: -0.01em !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  color: #171b2c !important;
+  transition: color 0.16s ease !important;
+}
+
+@media (min-width: 700px) {
+  .catalog-image-grid.view-list article h3,
+  .catalog-image-grid.view-list .pcard-row-main h3,
+  .pcard-row-main h3,
+  main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3 {
+    font-size: 16px !important;
+    margin-bottom: 4px !important;
+  }
+}
+
+[data-theme="dark"] .catalog-image-grid.view-list article h3,
+[data-theme="dark"] .catalog-image-grid.view-list .pcard-row-main h3,
+[data-theme="dark"] .pcard-row-main h3,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3 {
+  color: #f7f8fc !important;
+}
+
+.catalog-image-grid.view-list article:hover h3,
+.pcard-row:hover h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article:hover h3 {
+  color: var(--p, #6958f5) !important;
+}
+
+[data-theme="dark"] .catalog-image-grid.view-list article:hover h3,
+[data-theme="dark"] .pcard-row:hover h3,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article:hover h3 {
+  color: #a78bfa !important;
+}
+
+/* Sub / Metadata Row */
+.pcard-row-sub,
+.catalog-image-grid.view-list .catalog-meta,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-row-sub {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin-top: 2px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Category Badge */
+.pcard-cat,
+.catalog-image-grid.view-list .catalog-cat,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-cat {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  background: rgba(105, 88, 245, 0.08) !important;
+  color: #5345d8 !important;
+  border: 1px solid rgba(105, 88, 245, 0.16) !important;
+  letter-spacing: normal !important;
+}
+
+[data-theme="dark"] .pcard-cat,
+[data-theme="dark"] .catalog-image-grid.view-list .catalog-cat,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-cat {
+  background: rgba(105, 88, 245, 0.18) !important;
+  color: #c4b5fd !important;
+  border: 1px solid rgba(105, 88, 245, 0.28) !important;
+}
+
+/* Packages Count Badge */
+.pcard-pkgs,
+.catalog-image-grid.view-list .pcard-pkg-chip,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-pkgs {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  padding: 3px 8px !important;
+  border-radius: 6px !important;
+  color: #059669 !important;
+  background: rgba(16, 185, 129, 0.08) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+[data-theme="dark"] .pcard-pkgs,
+[data-theme="dark"] .catalog-image-grid.view-list .pcard-pkg-chip,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-pkgs {
+  color: #34d399 !important;
+  background: rgba(16, 185, 129, 0.15) !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.pcard-pkgs svg {
+  width: 12px !important;
+  height: 12px !important;
+  stroke-width: 2.2 !important;
+}
+
+/* Side Action & Pricing Zone (Child 3) */
+.pcard-row-side,
+.catalog-image-grid.view-list article > div:nth-of-type(3),
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-row-side {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  flex: 0 0 auto !important;
+  margin-inline-start: auto !important;
+}
+
+/* Price presentation */
+.pcard-price,
+.catalog-image-grid.view-list .catalog-price,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-price {
+  font-size: 15.5px !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.02em !important;
+  font-variant-numeric: tabular-nums !important;
+  color: var(--p, #6958f5) !important;
+  white-space: nowrap !important;
+  display: inline-block !important;
+}
+
+@media (min-width: 700px) {
+  .pcard-price,
+  main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-price {
+    font-size: 17.5px !important;
+  }
+}
+
+[data-theme="dark"] .pcard-price,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-price {
+  color: #a78bfa !important;
+}
+
+/* Sold Out Status Badge */
+.pcard-sold,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .pcard-sold {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  border: 1px solid rgba(239, 68, 68, 0.25) !important;
+  padding: 2.5px 8px !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Favorite Button */
+.favorite-btn.static,
+.catalog-image-grid.view-list .favorite-btn,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .favorite-btn {
+  position: static !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  background: #f1f3f9 !important;
+  color: #8c95a6 !important;
+  transition: all 0.18s ease !important;
+}
+
+[data-theme="dark"] .favorite-btn.static,
+[data-theme="dark"] .catalog-image-grid.view-list .favorite-btn,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article .favorite-btn {
+  background: #1e2638 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+.favorite-btn.static:hover,
+.catalog-image-grid.view-list .favorite-btn:hover {
+  transform: scale(1.1) !important;
+  color: #f43f5e !important;
+  border-color: rgba(244, 63, 94, 0.3) !important;
+}
+
+.favorite-btn.static.active,
+.catalog-image-grid.view-list .favorite-btn.active {
+  color: #f43f5e !important;
+  border-color: rgba(244, 63, 94, 0.5) !important;
+  background: rgba(244, 63, 94, 0.12) !important;
+}
+
+/* Sold Out Card Image Desaturation */
+.pcard-row.soldout,
+.catalog-image-grid.view-list article.soldout,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article.soldout {
+  opacity: 1 !important;
+}
+
+.pcard-row.soldout img,
+.catalog-image-grid.view-list article.soldout img,
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article.soldout img {
+  filter: grayscale(100%) !important;
+  opacity: 0.55 !important;
+}
 
 @media(min-width:700px){
   .catalog-image-grid{grid-template-columns:repeat(4,1fr)}
@@ -2380,6 +2795,19 @@ html[data-theme="dark"] .pcard-row-main h3,
 html[data-theme="dark"] .catalog-overlay h3,
 html[data-theme="dark"] main#app > div#view-products > div#catalogDynamic h3 {
   color: #ffffff !important;
+}
+
+/* Ensure list mode product titles in light mode have crisp contrast */
+:root:not([data-theme="dark"]) #pgrid.view-list article h3,
+:root:not([data-theme="dark"]) #pgrid.view-list article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) .catalog-image-grid.view-list article h3,
+:root:not([data-theme="dark"]) .view-list .pcard-row-main h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+html[data-theme="light"] #pgrid.view-list article h3,
+html[data-theme="light"] #pgrid.view-list article > div:nth-of-type(2) > h3,
+html[data-theme="light"] .catalog-image-grid.view-list article h3,
+html[data-theme="light"] .view-list .pcard-row-main h3 {
+  color: #171b2c !important;
 }
 
 

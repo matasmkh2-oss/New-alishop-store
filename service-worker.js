@@ -1,4 +1,4 @@
-const CACHE_NAME = "alishop-v38-clean";
+const CACHE_NAME = "alishop-v39-clean";
 const STATIC_ASSETS = [
   "./",
   "./index.html",
