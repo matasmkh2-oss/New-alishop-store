@@ -1,0 +1,7 @@
+node_modules/
+.dev.env.json
+.dev.pid
+node-compile-cache/
+.hm
+*.log
+.DS_Store

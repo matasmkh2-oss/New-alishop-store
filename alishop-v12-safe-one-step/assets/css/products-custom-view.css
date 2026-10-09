@@ -1,0 +1,607 @@
+/* ==========================================================================
+   AliShop - Products Master Section Hero & Responsive Themed Tabs (V11)
+   متجاوب 100% مع حجم الشاشات، متناغم تماماً مع ألوان الهوية الأصلية
+   دعم الهيدر الذكي المتنحي (Auto-Hide) بدون أي تداخل نهائياً
+   ========================================================================== */
+
+/* 1. إخفاء شريط الأقسام الفرعية بالكامل */
+.category-strip {
+  display: none !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* 2. هيدر الأقسام الرئيسية العائم - متناسق مع الهيدر الذكي */
+div.catalog-top-tabs,
+.catalog-top-tabs {
+  position: sticky !important;
+  top: 80px !important;
+  z-index: 95 !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  margin: 0 0 12px 0 !important;
+  padding: 4px !important;
+  border-radius: 16px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  transition: top 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s ease !important;
+
+  /* النمط النهاري الأصلي من هوية المتجر */
+  background: rgba(255, 255, 255, 0.88) !important;
+  border: 1.5px solid var(--b, #e4e7f0) !important;
+  box-shadow: 0 4px 18px rgba(105, 88, 245, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+@media (max-width: 520px) {
+  div.catalog-top-tabs,
+  .catalog-top-tabs {
+    top: 70px !important;
+  }
+}
+
+/* عندما يختفي الهيدر الرئيسي أثناء التمرير للأسفل: يصعد شريط الأقسام ليطفو وحيداً في قمة الشاشة */
+body.header-is-hidden div.catalog-top-tabs,
+body.header-is-hidden .catalog-top-tabs {
+  top: 10px !important;
+}
+
+@media (max-width: 520px) {
+  body.header-is-hidden div.catalog-top-tabs,
+  body.header-is-hidden .catalog-top-tabs {
+    top: 8px !important;
+  }
+}
+
+/* بطاقات الأقسام المتجاوبة: قياسات مريحة وتنسيق عالي التحديد لمنع التضارب */
+:root:not([data-theme="dark"]) div.catalog-top-tabs button,
+:root:not([data-theme="dark"]) .catalog-top-tabs button,
+html:not([data-theme="dark"]) .catalog-top-tabs button,
+div.catalog-top-tabs button,
+.catalog-top-tabs button {
+  min-width: 0 !important;
+  width: 100% !important;
+  height: 38px !important;
+  padding: 0 4px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  font-weight: 750 !important;
+  font-size: clamp(10px, 2.7vw, 12px) !important;
+  letter-spacing: normal !important;
+  cursor: pointer !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+
+  /* النمط النهاري للبطاقات غير النشطة */
+  background: color-mix(in srgb, var(--s2, #f0f1ff) 70%, #ffffff) !important;
+  border: 1px solid color-mix(in srgb, var(--p, #6958f5) 12%, var(--b, #e4e7f0)) !important;
+  color: var(--t, #171b2c) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+/* أيقونة القسم */
+div.catalog-top-tabs button svg,
+div.catalog-top-tabs button i,
+.catalog-top-tabs button svg,
+.catalog-top-tabs button i {
+  width: 13px !important;
+  height: 13px !important;
+  flex-shrink: 0 !important;
+  color: var(--p, #6958f5) !important;
+  opacity: 0.9 !important;
+}
+
+/* نص القسم: حماية كاملة من الخروج عن الإطار */
+div.catalog-top-tabs button span,
+.catalog-top-tabs button span {
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-weight: 750 !important;
+  letter-spacing: normal !important;
+}
+
+/* تفاعل التحويم في الوضع النهاري */
+:root:not([data-theme="dark"]) div.catalog-top-tabs button:hover,
+:root:not([data-theme="dark"]) .catalog-top-tabs button:hover,
+div.catalog-top-tabs button:hover,
+.catalog-top-tabs button:hover {
+  color: var(--p, #6958f5) !important;
+  background: rgba(240, 241, 255, 0.95) !important;
+  border-color: var(--p, #6958f5) !important;
+}
+
+/* البطاقة النشطة (The Hero Active Card) بألوان علي شوب الرسمية */
+:root:not([data-theme="dark"]) div.catalog-top-tabs button.active,
+:root:not([data-theme="dark"]) .catalog-top-tabs button.active,
+html:not([data-theme="dark"]) .catalog-top-tabs button.active,
+div.catalog-top-tabs button.active,
+.catalog-top-tabs button.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--p, #6958f5) 0%, var(--p2, #9e53e7) 100%) !important;
+  border: 1px solid transparent !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--p, #6958f5) 35%, transparent) !important;
+  font-weight: 800 !important;
+}
+
+div.catalog-top-tabs button.active svg,
+div.catalog-top-tabs button.active i,
+.catalog-top-tabs button.active svg,
+.catalog-top-tabs button.active i {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+div.catalog-top-tabs button.active span,
+.catalog-top-tabs button.active span {
+  color: #ffffff !important;
+}
+
+/* 3. حاوية شرح القسم الرئيسية المدمجة (The Master Section Hero) */
+.section-hero-pro {
+  position: relative !important;
+  overflow: hidden !important;
+  margin-bottom: 14px !important;
+  padding: 16px 15px 14px 15px !important;
+  border-radius: 20px !important;
+  border: 1.5px solid color-mix(in srgb, var(--p, #6958f5) 30%, var(--b, #e4e7f0)) !important;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--p, #6958f5) 12%, var(--card-bg, #ffffff)), color-mix(in srgb, var(--p2, #9e53e7) 8%, var(--card-bg, #ffffff))) !important;
+  box-shadow: 0 8px 24px rgba(105, 88, 245, 0.05), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 13px !important;
+}
+
+.shp-content {
+  position: relative !important;
+  z-index: 3 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.shp-icon {
+  width: 44px !important;
+  height: 44px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 14px !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--p, #6958f5), var(--p2, #9e53e7)) !important;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--p, #6958f5) 35%, transparent) !important;
+}
+
+.shp-icon svg,
+.shp-icon i {
+  width: 22px !important;
+  height: 22px !important;
+}
+
+.shp-text h3 {
+  margin: 0 !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: var(--t, #171b2c) !important;
+  line-height: 1.3 !important;
+}
+
+.shp-text p {
+  margin: 3px 0 0 !important;
+  font-size: 0.78rem !important;
+  color: var(--m, #7a8295) !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+/* 4. شريط الأدوات المدمج بتصميم عصري (Embedded Bottom Toolbar & Standalone) */
+.section-hero-pro .catalog-toolbar,
+.catalog-toolbar {
+  position: relative !important;
+  z-index: 4 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  margin: 0 0 12px 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.section-hero-pro .catalog-toolbar {
+  margin: 0 !important;
+  padding-top: 12px !important;
+  border-top: 1px solid color-mix(in srgb, var(--p, #6958f5) 20%, transparent) !important;
+}
+
+/* 1. حقل البحث في اليمين */
+.section-hero-pro .catalog-toolbar-search,
+.catalog-toolbar-search {
+  order: 1 !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid color-mix(in srgb, var(--p, #6958f5) 28%, transparent) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  padding: 0 12px !important;
+  font-size: 0.8rem !important;
+  color: var(--t, #171b2c) !important;
+  box-shadow: 0 2px 8px rgba(105, 88, 245, 0.04) !important;
+  box-sizing: border-box !important;
+  transition: all 0.2s ease !important;
+}
+
+.section-hero-pro .catalog-toolbar-search:focus,
+.catalog-toolbar-search:focus {
+  outline: none !important;
+  border-color: var(--p, #6958f5) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--p, #6958f5) 20%, transparent) !important;
+}
+
+/* 2. القائمة المنسدلة في الوسط: هيكلة عرض منفصلة تمنع أي تداخل بين الأيقونة والنص نهائياً */
+.section-hero-pro .catalog-cat-select-wrapper,
+.catalog-cat-select-wrapper {
+  order: 2 !important;
+  position: relative !important;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 112px !important;
+  max-width: 148px !important;
+  height: 38px !important;
+  border-radius: 12px !important;
+  border: 1.5px solid color-mix(in srgb, var(--p, #6958f5) 28%, transparent) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  box-shadow: 0 2px 8px rgba(105, 88, 245, 0.04) !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.section-hero-pro .catalog-cat-select-wrapper:hover,
+.section-hero-pro .catalog-cat-select-wrapper:focus-within,
+.catalog-cat-select-wrapper:hover,
+.catalog-cat-select-wrapper:focus-within {
+  border-color: var(--p, #6958f5) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--p, #6958f5) 20%, transparent) !important;
+}
+
+/* طبقة العرض المرئية: عناصر منفصلة جنباً إلى جنب مع مسافات أمان مؤكدة */
+.section-hero-pro .cat-select-display,
+.cat-select-display {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 5px !important;
+  padding: 0 8px !important;
+  box-sizing: border-box !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.section-hero-pro .cat-select-icon,
+.cat-select-icon {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--p, #6958f5) !important;
+}
+
+.section-hero-pro .cat-select-icon svg,
+.section-hero-pro .cat-select-icon i,
+.cat-select-icon svg,
+.cat-select-icon i {
+  width: 12px !important;
+  height: 12px !important;
+}
+
+.section-hero-pro .cat-select-label,
+.cat-select-label {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  text-align: center !important;
+  font-size: clamp(0.67rem, 2.5vw, 0.74rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: normal !important;
+  color: var(--t, #171b2c) !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1 !important;
+}
+
+.section-hero-pro .cat-select-arrow,
+.cat-select-arrow {
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--m, #7a8295) !important;
+}
+
+.section-hero-pro .cat-select-arrow svg,
+.section-hero-pro .cat-select-arrow i,
+.cat-select-arrow svg,
+.cat-select-arrow i {
+  width: 10px !important;
+  height: 10px !important;
+}
+
+/* عنصر الـ Select الحقيقي: يغطي الحاوية بشفافية تامة لاستقبال النقرات natively */
+.section-hero-pro select.catalog-toolbar-cat,
+.section-hero-pro select.catalog-toolbar-cat.input,
+select.catalog-toolbar-cat,
+select.catalog-toolbar-cat.input {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  z-index: 5 !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.section-hero-pro select.catalog-toolbar-cat option,
+select.catalog-toolbar-cat option {
+  background: var(--surface, #ffffff) !important;
+  color: var(--t, #171b2c) !important;
+  font-size: 0.8rem !important;
+  font-weight: 700 !important;
+}
+
+/* 3. زر تبديل الوضع في اليسار (أيقونة فقط) */
+.section-hero-pro .catalog-view-switch,
+.catalog-view-switch {
+  order: 3 !important;
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.section-hero-pro .catalog-view-switch.single-toggle-ready > button[data-view-mode],
+.catalog-view-switch.single-toggle-ready > button[data-view-mode] {
+  display: none !important;
+}
+
+.section-hero-pro .catalog-single-toggle-btn,
+.catalog-single-toggle-btn {
+  width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 12px !important;
+  border: 1.5px solid color-mix(in srgb, var(--p, #6958f5) 30%, transparent) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  color: var(--p, #6958f5) !important;
+  box-shadow: 0 2px 8px rgba(105, 88, 245, 0.04) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+  box-sizing: border-box !important;
+}
+
+.section-hero-pro .catalog-single-toggle-btn:hover,
+.catalog-single-toggle-btn:hover {
+  background: linear-gradient(135deg, var(--p, #6958f5), var(--p2, #9e53e7)) !important;
+  border-color: transparent !important;
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(105, 88, 245, 0.35) !important;
+}
+
+.section-hero-pro .catalog-single-toggle-btn:hover svg,
+.section-hero-pro .catalog-single-toggle-btn:hover i,
+.catalog-single-toggle-btn:hover svg,
+.catalog-single-toggle-btn:hover i {
+  color: #ffffff !important;
+}
+
+.section-hero-pro .catalog-single-toggle-btn:active,
+.catalog-single-toggle-btn:active {
+  transform: scale(0.94) !important;
+}
+
+.section-hero-pro .catalog-single-toggle-btn svg,
+.section-hero-pro .catalog-single-toggle-btn i,
+.catalog-single-toggle-btn svg,
+.catalog-single-toggle-btn i {
+  width: 17px !important;
+  height: 17px !important;
+  color: var(--p, #6958f5) !important;
+  transition: color 0.15s ease !important;
+}
+
+/* ==========================================================================
+   5. تناسق الوضع الداكن التام (Dark Mode Exact Tokens)
+   ========================================================================== */
+[data-theme="dark"] div.catalog-top-tabs,
+[data-theme="dark"] .catalog-top-tabs {
+  background: rgba(21, 27, 40, 0.88) !important;
+  border: 1.5px solid var(--b, #293247) !important;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-theme="dark"] div.catalog-top-tabs button,
+[data-theme="dark"] .catalog-top-tabs button {
+  background: rgba(32, 40, 58, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: var(--t, #f7f8fc) !important;
+  box-shadow: none !important;
+}
+
+[data-theme="dark"] div.catalog-top-tabs button svg,
+[data-theme="dark"] div.catalog-top-tabs button i,
+[data-theme="dark"] .catalog-top-tabs button svg,
+[data-theme="dark"] .catalog-top-tabs button i {
+  color: color-mix(in srgb, var(--p, #6958f5) 75%, #ffffff) !important;
+}
+
+[data-theme="dark"] div.catalog-top-tabs button:hover,
+[data-theme="dark"] .catalog-top-tabs button:hover {
+  background: rgba(40, 50, 72, 0.85) !important;
+  border-color: rgba(105, 88, 245, 0.45) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] div.catalog-top-tabs button.active,
+[data-theme="dark"] .catalog-top-tabs button.active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--p, #6958f5) 0%, var(--p2, #9e53e7) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 4px 18px rgba(105, 88, 245, 0.45) !important;
+}
+
+[data-theme="dark"] div.catalog-top-tabs button.active svg,
+[data-theme="dark"] div.catalog-top-tabs button.active i,
+[data-theme="dark"] .catalog-top-tabs button.active svg,
+[data-theme="dark"] .catalog-top-tabs button.active i {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .section-hero-pro {
+  background: linear-gradient(135deg, rgba(105, 88, 245, 0.14), rgba(21, 27, 40, 0.95)) !important;
+  border-color: rgba(105, 88, 245, 0.3) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-toolbar,
+[data-theme="dark"] .catalog-toolbar {
+  border-top-color: rgba(105, 88, 245, 0.22) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-toolbar-search,
+[data-theme="dark"] .catalog-toolbar-search {
+  background: rgba(32, 40, 58, 0.7) !important;
+  border-color: rgba(105, 88, 245, 0.3) !important;
+  color: #f7f8fc !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-toolbar-search:focus,
+[data-theme="dark"] .catalog-toolbar-search:focus {
+  background: rgba(32, 40, 58, 0.95) !important;
+  border-color: var(--p, #6958f5) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-cat-select-wrapper,
+[data-theme="dark"] .catalog-cat-select-wrapper {
+  background: rgba(32, 40, 58, 0.7) !important;
+  border-color: rgba(105, 88, 245, 0.3) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-cat-select-wrapper:hover,
+[data-theme="dark"] .section-hero-pro .catalog-cat-select-wrapper:focus-within,
+[data-theme="dark"] .catalog-cat-select-wrapper:hover,
+[data-theme="dark"] .catalog-cat-select-wrapper:focus-within {
+  background: rgba(32, 40, 58, 0.95) !important;
+  border-color: var(--p, #6958f5) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .cat-select-label,
+[data-theme="dark"] .cat-select-label {
+  color: var(--t, #f7f8fc) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .cat-select-icon svg,
+[data-theme="dark"] .section-hero-pro .cat-select-icon i,
+[data-theme="dark"] .cat-select-icon svg,
+[data-theme="dark"] .cat-select-icon i {
+  color: color-mix(in srgb, var(--p, #6958f5) 75%, #ffffff) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .cat-select-arrow svg,
+[data-theme="dark"] .section-hero-pro .cat-select-arrow i,
+[data-theme="dark"] .cat-select-arrow svg,
+[data-theme="dark"] .cat-select-arrow i {
+  color: var(--m, #9ca6ba) !important;
+}
+
+[data-theme="dark"] .section-hero-pro select.catalog-toolbar-cat option,
+[data-theme="dark"] select.catalog-toolbar-cat option {
+  background: #151b28 !important;
+  color: #f7f8fc !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-single-toggle-btn,
+[data-theme="dark"] .catalog-single-toggle-btn {
+  background: rgba(32, 40, 58, 0.7) !important;
+  border-color: rgba(105, 88, 245, 0.3) !important;
+  color: color-mix(in srgb, var(--p, #6958f5) 75%, #ffffff) !important;
+}
+
+[data-theme="dark"] .section-hero-pro .catalog-single-toggle-btn svg,
+[data-theme="dark"] .section-hero-pro .catalog-single-toggle-btn i,
+[data-theme="dark"] .catalog-single-toggle-btn svg,
+[data-theme="dark"] .catalog-single-toggle-btn i {
+  color: color-mix(in srgb, var(--p, #6958f5) 75%, #ffffff) !important;
+}
+
+/* ==========================================================================
+   6. التوافق الفائق مع شاشات الهواتف الصغيرة (< 380px)
+   ========================================================================== */
+@media (max-width: 380px) {
+  div.catalog-top-tabs,
+  .catalog-top-tabs {
+    gap: 3px !important;
+    padding: 3px !important;
+  }
+  div.catalog-top-tabs button,
+  .catalog-top-tabs button {
+    height: 35px !important;
+    padding: 0 2px !important;
+    font-size: 10px !important;
+    gap: 3px !important;
+  }
+  div.catalog-top-tabs button svg,
+  div.catalog-top-tabs button i,
+  .catalog-top-tabs button svg,
+  .catalog-top-tabs button i {
+    width: 11.5px !important;
+    height: 11.5px !important;
+  }
+  .section-hero-pro .catalog-cat-select-wrapper,
+  .catalog-cat-select-wrapper {
+    min-width: 104px !important;
+    max-width: 135px !important;
+  }
+  .section-hero-pro .cat-select-label,
+  .cat-select-label {
+    font-size: 0.68rem !important;
+  }
+}

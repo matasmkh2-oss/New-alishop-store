@@ -1,0 +1,120 @@
+/* ==========================================================================
+   AliShop - Unified Responsive Modals, Dialogs & Bottom Sheet Drawers
+   فصل التنسيقات بين النوافذ المنبثقة الوسطية (Centered Modals) 
+   ودرج التفاصيل المنزلق من الأسفل (Bottom Sheet / Product & Order Drawer)
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. النوافذ المنبثقة الوسطية فقط (Centered Dialogs / Confirm / Prompts)
+   -------------------------------------------------------------------------- */
+.modal-overlay,
+.modal-backdrop,
+.popup-overlay,
+.popup-backdrop,
+.dialog-backdrop,
+.auth-modal-overlay,
+dialog.centered-dialog[open],
+dialog:not(.bottom-sheet):not(.sheet)[open] {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  inset: 0 !important;
+  width: 100% !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  z-index: 99999 !important;
+  margin: 0 !important;
+  padding: 16px !important;
+  border: 0 !important;
+  outline: none !important;
+  box-sizing: border-box !important;
+}
+
+dialog:not([open]) {
+  display: none !important;
+}
+
+/* توحيد خلفية الـ backdrop الأصلية للمتصفح */
+dialog::backdrop {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100vh !important;
+  background: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  z-index: 99998 !important;
+}
+
+/* حجم وشكل النوافذ الوسطية */
+.centered-dialog .dialog-body,
+.popup-box,
+.popup-card,
+.popup-dialog,
+.popup-announce {
+  width: 90% !important;
+  max-width: 440px !important;
+  min-width: 0 !important;
+  position: relative !important;
+  margin: auto !important;
+  border-radius: 24px !important;
+  background: var(--surface, var(--s, #ffffff)) !important;
+  color: var(--text, var(--t, #172033)) !important;
+  border: 1px solid var(--border, var(--b, rgba(255, 255, 255, 0.15))) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35) !important;
+  padding: 22px !important;
+  box-sizing: border-box !important;
+  animation: modalBoxFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+[data-theme="dark"] .centered-dialog .dialog-body,
+[data-theme="dark"] .popup-box,
+[data-theme="dark"] .popup-card,
+[data-theme="dark"] .popup-dialog,
+[data-theme="dark"] .popup-announce {
+  background: var(--surface, var(--s, #151b28)) !important;
+  color: var(--text, var(--t, #f5f7ff)) !important;
+  border-color: var(--border, var(--b, #283246)) !important;
+}
+
+/* إلغاء الحاوية الداخلية لمودال التأكيد لتبقى حاوية واحدة فقط */
+.app-dialog {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+}
+
+[data-theme="dark"] .app-dialog {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+@keyframes modalBoxFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

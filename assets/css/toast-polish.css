@@ -1,0 +1,26 @@
+/* Premium Arabic toast system: always above the interface, readable in both themes. */
+.toast-root{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 16px)!important;right:12px!important;left:12px!important;bottom:auto!important;z-index:2147483647!important;display:grid!important;justify-items:center!important;gap:10px!important;pointer-events:none!important;perspective:900px!important}
+.toast{position:fixed!important;top:calc(env(safe-area-inset-top,0px) + 16px)!important;right:12px!important;left:12px!important;margin:0 auto!important;z-index:2147483647!important;isolation:isolate!important;width:min(520px,calc(100% - 24px))!important;min-height:58px!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:15px 22px!important;overflow:hidden!important;border:1px solid rgba(255,255,255,.28)!important;border-radius:19px!important;color:#f8fbff!important;background:linear-gradient(135deg,rgba(18,30,49,.97),rgba(34,44,72,.97))!important;box-shadow:0 18px 48px rgba(8,15,35,.32),0 0 0 1px rgba(255,255,255,.06) inset,0 0 24px rgba(126,98,235,.18)!important;font-size:14px!important;font-weight:800!important;line-height:1.7!important;text-align:center!important;animation:toast3dIn .62s cubic-bezier(.16,1.35,.3,1) both!important;transform-origin:50% -30%!important;pointer-events:auto!important}
+.toast::before{content:"";position:absolute;z-index:-1;inset:-2px;border-radius:inherit;padding:1px;background:linear-gradient(110deg,transparent 12%,rgba(255,255,255,.82) 38%,var(--toast-glow,#8b7cff) 52%,transparent 78%);background-size:220% 100%;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:toastGlowSweep 2.6s linear infinite}
+.toast::after{content:"";position:absolute;z-index:-1;inset:0;border-radius:inherit;background:radial-gradient(circle at 50% -80%,color-mix(in srgb,var(--toast-glow,#8b7cff) 30%,transparent),transparent 62%);opacity:.75;pointer-events:none}
+.toast.success{--toast-glow:#28d7ae;background:linear-gradient(135deg,rgba(8,95,91,.98),rgba(15,57,76,.98))!important}
+.toast.error{--toast-glow:#ff6684;background:linear-gradient(135deg,rgba(130,30,57,.98),rgba(67,28,70,.98))!important}
+.toast.warning{--toast-glow:#ffc45c;background:linear-gradient(135deg,rgba(116,77,21,.98),rgba(73,43,42,.98))!important}
+.toast.info{--toast-glow:#65b7ff;background:linear-gradient(135deg,rgba(26,65,119,.98),rgba(45,35,91,.98))!important}
+.toast.leaving{animation:toast3dOut .38s cubic-bezier(.55,.08,.68,.53) both!important}
+@keyframes toast3dIn{0%{opacity:0;transform:translate3d(0,-34px,0) rotateX(-58deg) rotateY(10deg) scale(.72);filter:blur(7px)}58%{opacity:1;transform:translate3d(0,5px,0) rotateX(8deg) rotateY(-2deg) scale(1.03);filter:blur(0)}100%{opacity:1;transform:translate3d(0,0,0) rotateX(0) rotateY(0) scale(1)}}
+@keyframes toast3dOut{0%{opacity:1;transform:translate3d(0,0,0) rotateX(0) scale(1)}100%{opacity:0;transform:translate3d(0,-22px,0) rotateX(38deg) rotateY(-7deg) scale(.82);filter:blur(5px)}}
+@keyframes toastGlowSweep{to{background-position:-220% 0}}
+@media(max-width:520px){.toast-root{top:calc(env(safe-area-inset-top,0px) + 10px)!important;right:9px!important;left:9px!important}.toast{min-height:54px!important;padding:13px 16px!important;border-radius:17px!important;font-size:13px!important}}
+@media(prefers-reduced-motion:reduce){.toast,.toast::before{animation:none!important}.toast{opacity:1!important;transform:none!important}}
+
+/* سقف طبقة الغلاف الأسود الشفاف للنافذة المنبثقة (Modal Backdrop) - بحد أقصى 9999 */
+dialog::backdrop,
+.modal-backdrop,
+.popup-backdrop,
+.dialog-backdrop,
+.sheet-backdrop,
+.modal-overlay,
+.popup-overlay {
+  z-index: 9999 !important;
+}

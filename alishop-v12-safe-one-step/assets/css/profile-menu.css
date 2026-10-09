@@ -1,0 +1,914 @@
+/* ==========================================================================
+   AliShop Smart Profile Menu & Edit Modal - Glassmorphism & RBAC Styles
+   ========================================================================== */
+
+/* متغيرات الثيم المتوافقة مع الوضعين النهاري والليلي */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --border-color: rgba(0, 0, 0, 0.1);
+  --primary-color: #6958f5;
+  --surface-color: rgba(0, 0, 0, 0.05);
+  --input-bg: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"] {
+  --bg-color: #151b28;
+  --text-color: #f7f8fc;
+  --border-color: rgba(255, 255, 255, 0.12);
+  --primary-color: #6958f5;
+  --surface-color: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.06);
+}
+
+/* 1. قائمة حسابي المنسدلة الطافية (Floating Glass Profile Dropdown) */
+.profile-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 12px;
+  width: min(340px, calc(100vw - 24px));
+  box-sizing: border-box;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 9%, var(--card-bg)), var(--card-bg));
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--b);
+  border-radius: 20px;
+  box-shadow: 0 18px 45px rgba(4, 4, 25, 0.18), 0 2px 10px rgba(0, 0, 0, 0.06);
+  padding: 16px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.24s ease;
+}
+
+.profile-dropdown-menu.pdm-open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* الوضع الليلي للقائمة المنسدلة */
+[data-theme="dark"] .profile-dropdown-menu,
+html[data-theme="dark"] .profile-dropdown-menu {
+  background: linear-gradient(145deg, color-mix(in srgb, var(--p) 12%, rgba(22, 27, 46, 0.95)), rgba(15, 18, 32, 0.97));
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.55), 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* رأس القائمة: بطاقة المستخدم غير القابلة للضغط مع زر القلم */
+.pdm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .pdm-header {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.pdm-avatar-wrap {
+  position: relative;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+}
+
+.pdm-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--p);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+  display: block;
+}
+
+.pdm-avatar-edit-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--p);
+  color: #fff;
+  border: 2px solid var(--card-bg);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.pdm-avatar-edit-icon svg {
+  width: 10px;
+  height: 10px;
+}
+
+.pdm-avatar-edit-icon:hover {
+  transform: scale(1.15);
+}
+
+.pdm-user-meta {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  user-select: text;
+}
+
+/* بيانات الاسم والإيميل كمعلومات نظيفة غير قابلة للضغط */
+.pdm-user-name {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: var(--t);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
+.pdm-user-email {
+  font-size: 12px;
+  color: var(--m);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: ltr;
+  text-align: right;
+  cursor: default;
+  opacity: 0.9;
+}
+
+.pdm-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 10.5px;
+  font-weight: 700;
+  width: fit-content;
+  margin-top: 2px;
+}
+
+.pdm-role-admin {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.pdm-role-customer {
+  background: rgba(99, 102, 241, 0.12);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+/* زر القلم الصغير والأنيق بجانب الاسم والصورة */
+.pdm-edit-trigger {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--b);
+  background: var(--s);
+  color: var(--t);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdm-edit-trigger svg {
+  width: 15px;
+  height: 15px;
+  color: var(--p);
+  transition: transform 0.2s ease;
+}
+
+.pdm-edit-trigger:hover {
+  background: var(--p);
+  color: #fff;
+  border-color: var(--p);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(105, 88, 245, 0.25);
+}
+
+.pdm-edit-trigger:hover svg {
+  color: #fff;
+  transform: rotate(-10deg) scale(1.1);
+}
+
+.pdm-divider {
+  height: 1px;
+  background: var(--b);
+  opacity: 0.7;
+  margin: 2px 0;
+}
+
+/* قائمة الروابط في القائمة المنسدلة */
+.pdm-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdm-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--t);
+  font-size: 13.5px;
+  font-weight: 600;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.pdm-nav-item:hover {
+  background: rgba(105, 88, 245, 0.08);
+  border-color: rgba(105, 88, 245, 0.15);
+  transform: translateX(-3px);
+}
+
+[data-theme="dark"] .pdm-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.pdm-item-ic {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--s);
+  border: 1px solid var(--b);
+  display: grid;
+  place-items: center;
+  color: var(--p);
+  transition: all 0.2s ease;
+}
+
+.pdm-item-ic svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pdm-nav-item:hover .pdm-item-ic {
+  background: var(--p);
+  color: #fff;
+  border-color: var(--p);
+}
+
+.pdm-item-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pdm-item-text strong {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.pdm-item-text small {
+  font-size: 11px;
+  color: var(--m);
+}
+
+.pdm-item-arrow {
+  color: var(--m);
+  font-size: 16px;
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+
+.pdm-nav-item:hover .pdm-item-arrow {
+  opacity: 1;
+  color: var(--p);
+  transform: translateX(-3px);
+}
+
+/* تمييز زر لوحة الإدارة الفاخر (يُحقن حصرياً إذا كان مديراً) */
+.pdm-item-admin {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.09), rgba(217, 119, 6, 0.04));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.pdm-item-admin .pdm-item-ic {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+}
+
+.pdm-item-admin strong {
+  color: #f59e0b;
+}
+
+.pdm-item-admin:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(217, 119, 6, 0.1));
+  border-color: rgba(245, 158, 11, 0.4);
+}
+
+.pdm-item-admin:hover .pdm-item-ic {
+  background: #f59e0b;
+  color: #fff;
+  border-color: #f59e0b;
+}
+
+/* ==========================================================================
+   2.5 خيارات المظهر وتثبيت التطبيق فوق زر تسجيل الخروج مباشرة
+   ========================================================================== */
+.pdm-system-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.pdm-quick-action {
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  border: 1px solid var(--b);
+  background: rgba(255, 255, 255, 0.03);
+  font-family: inherit;
+  text-align: right;
+  padding: 10px 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--t);
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .pdm-quick-action {
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.pdm-quick-action:hover {
+  background: var(--surface-color, rgba(150, 150, 150, 0.1));
+  border-color: var(--primary-color, #6958f5);
+  transform: translateX(-3px);
+}
+
+[data-theme="dark"] .pdm-quick-action:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--primary-color, #6958f5);
+}
+
+.pdm-quick-action.hidden {
+  display: none !important;
+}
+
+.pdm-install-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  margin-inline-start: auto;
+}
+
+.pdm-theme-toggle-indicator {
+  width: 32px;
+  height: 18px;
+  border-radius: 99px;
+  background: var(--surface-color, rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  position: relative;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+  margin-inline-start: auto;
+}
+
+.pdm-theme-toggle-indicator::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary-color, #6958f5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pdm-theme-toggle-indicator.pdm-indicator-dark,
+[data-theme="dark"] .pdm-theme-toggle-indicator {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.pdm-theme-toggle-indicator.pdm-indicator-dark::after,
+[data-theme="dark"] .pdm-theme-toggle-indicator::after {
+  right: 16px;
+  background: #f59e0b;
+}
+
+/* ==========================================================================
+   دلالة زر الملف الشخصي في الهيدر (Affordance & Chevron)
+   ========================================================================== */
+.app-bar-user {
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  min-width: 0 !important;
+  border-radius: 50px !important;
+  padding: 4px 12px 4px 8px !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+.app-bar-user:hover,
+.app-bar-user.pdm-active {
+  background: var(--surface-color, rgba(150, 150, 150, 0.1)) !important;
+  border-radius: 50px !important;
+  padding: 4px 12px 4px 8px !important;
+}
+
+[data-theme="dark"] .app-bar-user:hover,
+[data-theme="dark"] .app-bar-user.pdm-active {
+  background: var(--surface-color, rgba(255, 255, 255, 0.08)) !important;
+}
+
+.app-bar-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--text-color, #171b2c) !important;
+  opacity: 0.7 !important;
+  width: 15px !important;
+  height: 15px !important;
+  font-size: 15px !important;
+  line-height: 1 !important;
+  flex-shrink: 0 !important;
+  margin-inline-start: 4px !important;
+  transition: transform 0.2s ease, opacity 0.2s ease, color 0.2s ease !important;
+}
+
+[data-theme="dark"] .app-bar-chevron {
+  color: var(--text-color, #f7f8fc) !important;
+}
+
+.app-bar-user:hover .app-bar-chevron,
+.app-bar-user.pdm-active .app-bar-chevron {
+  opacity: 1 !important;
+}
+
+.app-bar-user.pdm-active .app-bar-chevron {
+  transform: rotate(180deg) !important;
+}
+
+/* 3. زر تسجيل الخروج الثابت في الأسفل مع لون أحمر خفيف (Muted Red) عند التمرير */
+.pdm-footer {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--b);
+}
+
+.pdm-logout-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 10px 14px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--b) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  color: var(--t) !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.pdm-logout-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: var(--m) !important;
+  transition: color 0.22s ease !important;
+}
+
+/* تأثير التمرير الأحمر الخفيف المريح والمحايد (Muted Red Hover) */
+.pdm-logout-btn:hover,
+.pdm-logout-btn:focus-visible {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  border-color: rgba(239, 68, 68, 0.22) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.10) !important;
+}
+
+.pdm-logout-btn:hover svg,
+.pdm-logout-btn:focus-visible svg {
+  color: #ef4444 !important;
+}
+
+[data-theme="dark"] .pdm-logout-btn:hover,
+[data-theme="dark"] .pdm-logout-btn:focus-visible {
+  color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  box-shadow: 0 4px 18px rgba(239, 68, 68, 0.18) !important;
+}
+
+[data-theme="dark"] .pdm-logout-btn:hover svg,
+[data-theme="dark"] .pdm-logout-btn:focus-visible svg {
+  color: #f87171 !important;
+}
+
+/* ==========================================================================
+   4. نافذة تعديل الملف الشخصي المنبثقة (Modal) المتكيفة مع الثيم والـ RTL
+   ========================================================================== */
+
+/* 1. الحاوية الخلفية (Overlay) */
+.profile-edit-overlay,
+#profileEditModal.profile-edit-overlay,
+.modal-overlay {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  z-index: 99999 !important;
+  box-sizing: border-box !important;
+  padding: 16px !important;
+  direction: rtl !important;
+}
+
+.profile-edit-overlay.hidden,
+#profileEditModal.hidden {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* 2. صندوق النافذة (Modal Box) */
+.profile-edit-box,
+.profile-edit-modal-box,
+.modal-box {
+  width: 90% !important;
+  max-width: 380px !important;
+  background: var(--bg-color, #ffffff) !important; /* يتكيف مع الثيم */
+  color: var(--text-color, #000000) !important; /* نص يتكيف مع الثيم */
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1)) !important;
+  border-radius: 24px !important;
+  padding: 24px !important;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2) !important;
+  box-sizing: border-box !important;
+  direction: rtl !important;
+  text-align: right !important;
+  animation: peModalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes peModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* عنوان النافذة المنبثقة */
+.profile-edit-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: right;
+  padding-left: 36px; /* مسافة لعدم التداخل مع زر الإغلاق الموجود في أعلى اليسار */
+}
+
+.profile-edit-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-color, #000000);
+}
+
+.profile-edit-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-color, #000000);
+  opacity: 0.65;
+  font-weight: 500;
+}
+
+/* 3. زر الإغلاق (Close Button) */
+.profile-edit-close,
+.pe-close-btn,
+#peCloseModalBtn {
+  position: absolute !important;
+  top: 16px !important;
+  left: 16px !important;
+  background: var(--surface-color, rgba(0, 0, 0, 0.05)) !important;
+  color: var(--text-color, #000) !important;
+  border: none !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: pointer !important;
+  font-size: 19px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  transition: transform 0.15s ease, background-color 0.15s ease !important;
+  z-index: 10 !important;
+}
+
+.profile-edit-close:hover,
+.pe-close-btn:hover,
+#peCloseModalBtn:hover {
+  transform: scale(1.1) !important;
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #ef4444 !important;
+}
+
+/* 4. حقول الإدخال والصورة (Inputs & Avatar) */
+/* قسم الصورة الشخصية */
+.profile-edit-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.profile-edit-avatar-wrapper,
+.pe-avatar-preview-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* الصورة الشخصية: عرض وارتفاع 80px، دائرية (50%)، مع إطار (border) يستخدم var(--primary-color) */
+.profile-edit-avatar-img,
+.pe-avatar-img,
+#peAvatarPreview {
+  width: 80px !important;
+  height: 80px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 3px solid var(--primary-color) !important;
+  display: block !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12) !important;
+  background: var(--surface-color, rgba(0, 0, 0, 0.05)) !important;
+}
+
+.profile-edit-avatar-badge,
+.pe-avatar-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 2px solid var(--bg-color, #ffffff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.18s ease;
+}
+
+.profile-edit-avatar-badge:hover,
+.pe-avatar-overlay:hover {
+  transform: scale(1.15);
+}
+
+.profile-edit-presets,
+.pe-presets {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pe-preset-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  padding: 0;
+  border: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.pe-preset-btn img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.pe-preset-btn:hover {
+  transform: scale(1.18);
+  border-color: var(--primary-color);
+}
+
+.pe-preset-btn.active {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+/* الحاويات (Form Groups): text-align: right; width: 100%; display: flex; flex-direction: column; gap: 8px; */
+.profile-edit-form-group,
+.pe-field-group,
+.form-group {
+  text-align: right !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+}
+
+.profile-edit-label,
+.pe-label {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--text-color) !important;
+  text-align: right !important;
+  display: block !important;
+}
+
+/* حقول النص (Inputs): عرض 100%، مسافات داخلية 12px، حواف دائرية 12px.
+   ألوان الحقول: background: var(--input-bg, rgba(0,0,0,0.05)); color: var(--text-color); border: 1px solid var(--border-color); */
+.profile-edit-input,
+.pe-input {
+  width: 100% !important;
+  padding: 12px !important;
+  border-radius: 12px !important;
+  background: var(--input-bg, rgba(0, 0, 0, 0.05)) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+  text-align: right !important;
+}
+
+.profile-edit-input:focus,
+.pe-input:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 25%, transparent) !important;
+}
+
+.profile-edit-input::placeholder,
+.pe-input::placeholder {
+  color: var(--text-color) !important;
+  opacity: 0.45 !important;
+}
+
+.profile-edit-input-readonly,
+.pe-input-disabled {
+  opacity: 0.72 !important;
+  cursor: not-allowed !important;
+  direction: ltr !important;
+  text-align: right !important;
+}
+
+/* 5. أزرار الإجراءات (Actions) */
+.profile-edit-actions,
+.pe-footer-actions,
+.modal-actions {
+  display: flex !important;
+  gap: 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 4px !important;
+}
+
+/* الأزرار (حفظ وإلغاء) يجب أن تأخذ flex: 1 */
+.profile-edit-actions button,
+.profile-edit-btn,
+.pe-save-btn,
+.pe-cancel-btn,
+#peSaveBtn,
+#peCancelBtn {
+  flex: 1 !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: none !important;
+  outline: none !important;
+  transition: transform 0.15s ease, opacity 0.15s ease, filter 0.15s ease !important;
+  box-sizing: border-box !important;
+}
+
+.profile-edit-actions button:active,
+.profile-edit-btn:active {
+  transform: scale(0.97) !important;
+}
+
+/* زر الحفظ يأخذ var(--primary-color) */
+.profile-edit-btn-save,
+.pe-save-btn,
+#peSaveBtn {
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-color) 35%, transparent) !important;
+}
+
+.profile-edit-btn-save:hover,
+.pe-save-btn:hover,
+#peSaveBtn:hover {
+  filter: brightness(1.08) !important;
+}
+
+/* زر الإلغاء يأخذ var(--surface-color) مع نص var(--text-color) */
+.profile-edit-btn-cancel,
+.pe-cancel-btn,
+#peCancelBtn {
+  background: var(--surface-color) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.profile-edit-btn-cancel:hover,
+.pe-cancel-btn:hover,
+#peCancelBtn:hover {
+  filter: brightness(0.96) !important;
+}
+
+[data-theme="dark"] .profile-edit-btn-cancel:hover,
+html[data-theme="dark"] .profile-edit-btn-cancel:hover {
+  filter: brightness(1.18) !important;
+}
+
+/* استجابة الهواتف المحمولة والشاشات الصغيرة */
+@media (max-width: 520px) {
+  .profile-dropdown-menu {
+    right: 8px;
+    width: calc(100vw - 16px);
+    top: calc(100% + 8px);
+  }
+  .profile-edit-box,
+  .profile-edit-modal-box {
+    width: 92% !important;
+    padding: 20px 18px !important;
+  }
+}
+

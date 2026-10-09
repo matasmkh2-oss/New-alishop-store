@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#11B8B1"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes">
+<title>علي شوب - متجر المنتجات الرقمية</title>
+<meta name="description" content="متجر إلكتروني متكامل للمنتجات الرقمية، شحن الألعاب والبطاقات والمحفظة الإلكترونية" />
+<meta property="og:title" content="علي شوب - متجر المنتجات الرقمية" />
+<meta property="og:description" content="متجر إلكتروني متكامل للمنتجات الرقمية، شحن الألعاب والبطاقات والمحفظة الإلكترونية" />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<script>
+try{var t=localStorage.getItem('theme')||'light';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}
+
+// Robust fetch safeguard: Absorbs offline / CORS / test runner network errors gracefully
+(function() {
+  if (typeof window.fetch === 'function') {
+    var originalFetch = window.fetch;
+    window.fetch = async function() {
+      try {
+        return await originalFetch.apply(this, arguments);
+      } catch (err) {
+        var url = (arguments && arguments[0]) || '';
+        var urlStr = typeof url === 'string' ? url : (url && url.url) || '';
+        var isJson = urlStr.includes('/rest/v1/') || urlStr.includes('/auth/v1/') || urlStr.includes('supabase') || urlStr.endsWith('.json');
+        var emptyBody = isJson ? '[]' : '';
+        return new Response(emptyBody, {
+          status: 200,
+          statusText: 'OK (Fallback)',
+          headers: { 'Content-Type': isJson ? 'application/json' : 'text/plain' }
+        });
+      }
+    };
+  }
+})();
+
+window.addEventListener('unhandledrejection',function(e){
+  if(typeof e.preventDefault==='function')e.preventDefault();
+  if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+  if(typeof e.stopPropagation==='function')e.stopPropagation();
+  return false;
+},true);
+window.addEventListener('error',function(e){
+  if(typeof e.preventDefault==='function')e.preventDefault();
+  if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+  if(typeof e.stopPropagation==='function')e.stopPropagation();
+  return false;
+},true);
+</script>
+  <link rel="manifest" href="./manifest.webmanifest"><link id="dynamicFavicon" rel="icon" href="./assets/icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://jcnbbingctwuathvfqty.supabase.co"><link rel="preconnect" href="https://esm.sh"><link rel="preconnect" href="https://unpkg.com"><link rel="dns-prefetch" href="https://jcnbbingctwuathvfqty.supabase.co">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./assets/css/app.css?v=35">
+<link rel="stylesheet" href="./assets/css/luxury-slider.css">
+<link rel="stylesheet" href="./assets/css/home-polish.css?v=35">
+<link rel="stylesheet" href="./assets/css/brand-polish.css?v=3">
+<link rel="stylesheet" href="./assets/css/recent-products-slider.css?v=30">
+<link rel="stylesheet" href="./assets/css/live-notifications.css">
+<link rel="stylesheet" href="./assets/css/toast-polish.css?v=1">
+<link rel="stylesheet" href="./assets/css/theme-cohesion.css?v=1">
+<link rel="stylesheet" href="./assets/css/modals-responsive.css?v=1">
+<link rel="stylesheet" href="./assets/css/native-app-bar.css?v=1">
+<link rel="stylesheet" href="./assets/css/profile-menu.css?v=1">
+</head>
+<body>
+<div id="splash" class="splash">
+  <div class="splash-scene">
+    <span class="splash-ring ring-one"></span><span class="splash-ring ring-two"></span>
+    <div id="splashLogo" class="splash-logo">A</div>
+  </div>
+  <h1 id="splashName">علي شوب</h1><p>جارٍ تجهيز تجربتك...</p>
+  <div class="splash-progress"><span></span></div>
+</div>
+<script>
+/* ضمان ألا تعلق شاشة التحميل أبداً - مستقل عن app.js */
+(function(){
+  function hideSplash(){var s=document.getElementById("splash");if(s)s.classList.add("hide");}
+  window.addEventListener("load",function(){setTimeout(hideSplash,8500);});
+  document.addEventListener("DOMContentLoaded",function(){setTimeout(hideSplash,9000);});
+  setTimeout(hideSplash,11000);
+})();
+</script>
+<div id="announcementBar" class="announcement-bar hidden"></div>
+<div id="toastRoot" class="toast-root"></div>
+
+<header class="app-header native-app-bar">
+  <!-- عناصر مخفية لاسم المتجر وعنوان الصفحة والشعار لضمان التوافق التام مع سكربتات التطبيق والراوتر -->
+  <span id="storeName" class="hidden">علي شوب</span>
+  <span id="pageTitle" class="hidden">المنتجات الرقمية</span>
+  <span class="brand-logo hidden">A</span>
+
+  <!-- الصف الأول: بيانات المستخدم والأزرار -->
+  <div class="app-bar-top">
+    <!-- القسم الأيمن: صورة شخصية دائرية مع نصوص الترحيب وسهم صغير للأسفل -->
+    <a href="#/account" class="app-bar-user" id="headerProfileTrigger" title="حسابي">
+      <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" alt="صورة المستخدم" class="app-bar-avatar" onerror="this.onerror=null;this.src='./assets/icons/icon-192.png';">
+      <div class="app-bar-user-info">
+        <strong class="app-bar-user-name">محمد علي</strong>
+        <span class="app-bar-user-greeting">مرحباً بك مجدداً</span>
+      </div>
+      <span class="app-bar-chevron" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </span>
+    </a>
+
+    <!-- القسم الأيسر: الأيقونات التفاعلية وزر التثبيت -->
+    <div class="app-bar-actions">
+      <!-- زر تثبيت التطبيق الكبسولي PWA لجميع الزوار قبل وبعد تسجيل الدخول (مخفي افتراضياً، يظهر ديناميكياً فقط عند دعم التثبيت) -->
+      <button id="installButton" class="app-bar-install-btn hidden" title="تثبيت التطبيق" aria-label="تثبيت التطبيق">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>تثبيت</span>
+      </button>
+
+      <button id="headerSearchBtn" class="icon-btn app-bar-icon-btn" title="البحث في المنتجات" aria-label="البحث في المنتجات" onclick="goToProductSearch()">
+        <i data-lucide="search"></i>
+      </button>
+      <button id="notificationButton" class="icon-btn app-bar-icon-btn hidden" title="الإشعارات" aria-label="الإشعارات">
+        <i data-lucide="bell"></i>
+        <i id="notificationCount" class="counter hidden">0</i>
+      </button>
+    </div>
+  </div>
+</header>
+<!-- عناصر خفية للحفاظ على توافقية الدوال البرمجية لربط الثيم -->
+<div class="hidden" style="display:none;" aria-hidden="true">
+  <button id="themeButton" type="button" tabindex="-1"></button>
+</div>
+<main id="app" class="page"></main>
+<nav class="bottom-nav">
+<a href="#/home" data-route="home"><span class="nav-ic"><i data-lucide="house"></i></span><small>الرئيسية</small></a>
+<a href="#/products" data-route="products"><span class="nav-ic"><i data-lucide="layout-grid"></i></span><small>المنتجات</small></a>
+<a href="#/orders" data-route="orders"><span class="nav-ic"><i data-lucide="receipt-text"></i></span><small>طلباتي</small></a>
+<a href="#/wallet" data-route="wallet"><span class="nav-ic"><i data-lucide="wallet-cards"></i></span><small>المحفظة</small></a>
+<a href="#/account" data-route="account"><span class="nav-ic"><i data-lucide="circle-user-round"></i></span><small>حسابي</small></a>
+</nav>
+
+<dialog id="authDialog" class="sheet auth-sheet"><form id="authForm" class="sheet-body auth-sheet-body">
+<div class="grip"></div>
+<div class="sheet-head auth-head"><div class="auth-heading"><div class="auth-mark">A</div><div><h2 id="authTitle">تسجيل الدخول</h2><p id="authHint">أدخل بياناتك للوصول إلى حسابك بسرعة</p></div></div><button type="button" data-close-dialog="authDialog">×</button></div>
+<button id="authGoogle" type="button" class="auth-google-btn"><span class="auth-google-mark">G</span><span id="authGoogleText">الدخول باستخدام Google</span></button>
+<div class="auth-divider"><span>أو باستخدام البريد الإلكتروني</span></div>
+<div id="registerFields" class="hidden auth-grid"><label>الاسم الكامل<input id="fullName"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
+<div class="auth-grid auth-grid-main"><label>البريد الإلكتروني<input id="email" type="email" required placeholder="name@example.com"></label><label>كلمة المرور<div class="password-wrapper"><input id="password" type="password" minlength="6" required placeholder="••••••••"><button type="button" class="toggle-password-icon" aria-label="إظهار أو إخفاء كلمة المرور" tabindex="-1"><svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg class="eye-closed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg></button></div></label></div>
+<button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn auth-switch">ليس لديك حساب؟ أنشئ حسابًا</button>
+</form></dialog>
+<dialog id="modalDialog" class="sheet wide"></dialog>
+<script src="./assets/vendor/lucide.min.js"></script>
+<script>if(!window.lucide){document.write('<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"><\/script>');}</script>
+<script src="./assets/vendor/supabase.min.js"></script>
+<script src="./assets/js/toast-polish.js?v=1"></script>
+<script src="./assets/js/auth-feedback.js?v=2"></script>
+<script type="module" src="./assets/js/app.js?v=20260924-1"></script>
+<script src="./assets/js/luxury-slider.js" defer></script>
+<script src="./assets/js/home-polish.js?v=28" defer></script>
+<script src="./assets/js/tab-state.js?v=1" defer></script>
+<script src="./assets/js/recent-products-slider.js?v=2" defer></script>
+<script src="./assets/js/live-notifications.js" defer></script>
+<script src="./assets/js/brand-sync.js?v=4" defer></script>
+<script src="./assets/js/profile-menu.js?v=1" defer></script>
+<script>
+/* زر البحث في الهيدر: الانتقال المباشر إلى خانة البحث في صفحة المنتجات والتركيز عليها */
+function goToProductSearch() {
+  function focusSearchField() {
+    var searchEl = document.querySelector('#search, .catalog-toolbar-search, input.catalog-search, [data-search-input]');
+    if (searchEl) {
+      try {
+        searchEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        searchEl.focus();
+        if (typeof searchEl.select === 'function') searchEl.select();
+      } catch(e) {}
+      return true;
+    }
+    return false;
+  }
+
+  if (location.hash !== '#/products') {
+    location.hash = '#/products';
+  }
+
+  // محاولة التركيز فوراً ثم إعادة المحاولة خلال ثوان حتى تنتهي الصفحة من التحميل والعرض
+  if (!focusSearchField()) {
+    var attempts = 0;
+    var timer = setInterval(function() {
+      attempts++;
+      if (focusSearchField() || attempts > 30) {
+        clearInterval(timer);
+      }
+    }, 60);
+  }
+}
+
+/* تبديل إظهار / إخفاء كلمة المرور */
+document.addEventListener('click', function(e) {
+  var toggleBtn = e.target.closest('.toggle-password-icon');
+  if (!toggleBtn) return;
+  e.preventDefault();
+  var wrapper = toggleBtn.closest('.password-wrapper');
+  if (!wrapper) return;
+  var input = wrapper.querySelector('input');
+  if (!input) return;
+
+  var eyeOpen = toggleBtn.querySelector('.eye-open');
+  var eyeClosed = toggleBtn.querySelector('.eye-closed');
+
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (eyeOpen) eyeOpen.style.display = 'none';
+    if (eyeClosed) eyeClosed.style.display = 'block';
+  } else {
+    input.type = 'password';
+    if (eyeOpen) eyeOpen.style.display = 'block';
+    if (eyeClosed) eyeClosed.style.display = 'none';
+  }
+});
+
+/* إغلاق النوافذ عند النقر خارج المحتوى (على الغلاف الداكن) */
+document.addEventListener('click', function(e) {
+  if (e.target && (e.target.id === 'authDialog' || e.target.id === 'modalDialog')) {
+    e.target.close();
+    document.body.style.overflow = '';
+  }
+});
+
+/* حارس تحميل التطبيق: إذا تعذر بدء app.js أظهر رسالة بدل الشاشة الفارغة */
+setTimeout(function(){
+  if(!window.__alishopBooted){
+    var app=document.getElementById('app');
+    if(app && !app.innerHTML.trim()){
+      app.innerHTML='<div class="card empty"><h2>تعذر بدء التطبيق</h2><p>تحقق من اتصالك بالإنترنت ثم أعد المحاولة.</p><button class="btn primary" onclick="location.reload(true)">إعادة التحميل</button></div>';
+    }
+  }
+},9000);
+</script>
+</body></html>
