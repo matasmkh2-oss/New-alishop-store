@@ -5,7 +5,8 @@ export const CONFIG={
   WHATSAPP:"963937580652",
   SUPPORT_EMAIL:"matasmkh2@gmail.com",
   PAGE_SIZE:10,
-  VAPID_PUBLIC_KEY:"BNKro9vLOmExrbj1mC4d1gS0bLzMg18eX-MW4pRwdwwStUc9vSkmHMfq8nh-QPLsltCUEAG2TD4Td2kQaRpS3P8"
+  VAPID_PUBLIC_KEY:"BNKro9vLOmExrbj1mC4d1gS0bLzMg18eX-MW4pRwdwwStUc9vSkmHMfq8nh-QPLsltCUEAG2TD4Td2kQaRpS3P8",
+  GOOGLE_CLIENT_ID:"679617267334-8a2oiek26jrsbhtf985sgifvrs6imgvg.apps.googleusercontent.com"
 };
 export const GEMINI_API_KEY="";
 export const VAPID_PUBLIC_KEY="BNKro9vLOmExrbj1mC4d1gS0bLzMg18eX-MW4pRwdwwStUc9vSkmHMfq8nh-QPLsltCUEAG2TD4Td2kQaRpS3P8";
