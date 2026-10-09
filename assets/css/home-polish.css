@@ -544,60 +544,73 @@ html[data-theme="dark"] .user-balance.positive {
 }
 
 /* ==========================================================================
-   ضمان ظهور عناوين المنتجات باللون الأبيض الناصع في الوضع الليلي
+   AliShop - استايل أسماء المنتجات في وضع عرض الأشرطة والوضع النهاري والليلي
+   (الوضع النهاري: أسود بالكامل #000000 لمنع التداخل مع خلفية الحاوية البيضاء)
    ========================================================================== */
-/* ==========================================================================
-   عناوين الأقسام والمنتجات في #catalogDynamic: أسود بالوضع النهاري وأبيض بالوضع الليلي
-   ========================================================================== */
-:root:not([data-theme="dark"]) #catalogDynamic h3,
-html:not([data-theme="dark"]) #catalogDynamic h3,
-body:not([data-theme="dark"]) #catalogDynamic h3,
-:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic h3 {
+
+/* 1. أسماء المنتجات في الوضع النهاري لوضع عرض الأشرطة (Strip/List View) باللون الأسود */
+:root:not([data-theme="dark"]) .catalog-image-grid.view-list article h3,
+:root:not([data-theme="dark"]) .catalog-image-grid.view-list .pcard-row-main h3,
+:root:not([data-theme="dark"]) .pcard-row-main h3,
+:root:not([data-theme="dark"]) .pcard-row h3,
+:root:not([data-theme="dark"]) .view-list article h3,
+:root:not([data-theme="dark"]) #pgrid.view-list article h3,
+:root:not([data-theme="dark"]) #pgrid.view-list article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) #pgrid article.pcard-row h3,
+:root:not([data-theme="dark"]) #pgrid article.pcard-row > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+html[data-theme="light"] .catalog-image-grid.view-list article h3,
+html[data-theme="light"] .catalog-image-grid.view-list .pcard-row-main h3,
+html[data-theme="light"] .pcard-row-main h3,
+html[data-theme="light"] .pcard-row h3,
+html[data-theme="light"] .view-list article h3,
+html[data-theme="light"] #pgrid.view-list article h3,
+html[data-theme="light"] #pgrid.view-list article > div:nth-of-type(2) > h3,
+html[data-theme="light"] #pgrid article.pcard-row h3,
+html[data-theme="light"] #pgrid article.pcard-row > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+html:not([data-theme="dark"]) .pcard-row h3,
+html:not([data-theme="dark"]) .pcard-row-main h3,
+html:not([data-theme="dark"]) #pgrid.view-list article h3,
+body:not([data-theme="dark"]) .pcard-row h3,
+body:not([data-theme="dark"]) .pcard-row-main h3 {
   color: #000000 !important;
 }
 
-[data-theme="dark"] #catalogDynamic h3,
-/* Product title white in BOTH light mode and dark mode */
-#catalogDynamic h3,
-#view-products h3,
-#pgrid article h3,
-#pgrid article > div:nth-of-type(2) > h3,
-.catalog-card .catalog-overlay h3,
-.catalog-overlay h3,
-.catalog-image-card h3,
-.product-card h3,
-.pcard-row-main h3,
-main#app > div#view-products > div#catalogDynamic h3,
-main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) #catalogDynamic h3,
-:root:not([data-theme="dark"]) #view-products h3,
-:root:not([data-theme="dark"]) #pgrid article h3,
-:root:not([data-theme="dark"]) #pgrid article > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) .catalog-overlay h3,
-:root:not([data-theme="dark"]) .catalog-card .catalog-overlay h3,
-:root:not([data-theme="dark"]) .catalog-image-card h3,
-:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-html[data-theme="light"] #catalogDynamic h3,
-html[data-theme="light"] #view-products h3,
-html[data-theme="light"] #pgrid article h3,
-html[data-theme="light"] #pgrid article > div:nth-of-type(2) > h3,
-html[data-theme="light"] .catalog-overlay h3,
-html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-[data-theme="dark"] #catalogDynamic h3,
-html[data-theme="dark"] #catalogDynamic h3,
-body[data-theme="dark"] #catalogDynamic h3,
-[data-theme="dark"] #view-products h3,
-html[data-theme="dark"] #view-products h3,
-body[data-theme="dark"] #view-products h3,
-[data-theme="dark"] .catalog-image-card h3,
-html[data-theme="dark"] .catalog-image-card h3,
-[data-theme="dark"] .product-card h3,
-html[data-theme="dark"] .product-card h3,
+/* 2. أسماء المنتجات في الوضع الليلي لوضع عرض الأشرطة باللون الأبيض */
+[data-theme="dark"] .catalog-image-grid.view-list article h3,
+[data-theme="dark"] .catalog-image-grid.view-list .pcard-row-main h3,
 [data-theme="dark"] .pcard-row-main h3,
+[data-theme="dark"] .pcard-row h3,
+[data-theme="dark"] .view-list article h3,
+[data-theme="dark"] #pgrid.view-list article h3,
+[data-theme="dark"] #pgrid.view-list article > div:nth-of-type(2) > h3,
+[data-theme="dark"] #pgrid article.pcard-row h3,
+[data-theme="dark"] #pgrid article.pcard-row > div:nth-of-type(2) > h3,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
+[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
+[data-theme="dark"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="dark"] .pcard-row h3,
 html[data-theme="dark"] .pcard-row-main h3,
-[data-theme="dark"] .catalog-overlay h3,
-html[data-theme="dark"] .catalog-overlay h3,
-html[data-theme="dark"] main#app > div#view-products > div#catalogDynamic h3 {
+html[data-theme="dark"] #pgrid.view-list article h3,
+body[data-theme="dark"] .pcard-row h3,
+body[data-theme="dark"] .pcard-row-main h3 {
+  color: #ffffff !important;
+}
+
+/* 3. عناوين بطاقات العرض الشبكي (Catalog Overlay فوق الصورة) تظل بيضاء لوضوحها فوق طبقة التدرج الداكن */
+.catalog-overlay h3,
+.catalog-card .catalog-overlay h3,
+.catalog-image-card .catalog-overlay h3 {
   color: #ffffff !important;
 }
 

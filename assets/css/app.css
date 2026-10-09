@@ -2144,8 +2144,17 @@ main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > articl
 .catalog-image-grid.view-list article h3,
 .catalog-image-grid.view-list .pcard-row-main h3,
 .pcard-row-main h3,
+.pcard-row h3,
+.view-list article h3,
+#pgrid.view-list article h3,
+#pgrid.view-list article > div:nth-of-type(2) > h3,
+#pgrid article.pcard-row h3,
+#pgrid article.pcard-row > div:nth-of-type(2) > h3,
 main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
-main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3 {
+main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1) {
   margin: 0 0 3px 0 !important;
   font-size: 14.5px !important;
   font-weight: 750 !important;
@@ -2768,9 +2777,12 @@ article.catalog-image-card,
 :root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic h3,
 :root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
 :root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 html:not([data-theme="dark"]) #pgrid article h3,
 html:not([data-theme="dark"]) #pgrid article > div:nth-of-type(2) > h3,
 html:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
+html:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 html[data-theme="light"] #catalogDynamic h3,
 html[data-theme="light"] #view-products h3,
 html[data-theme="light"] #pgrid article h3,
@@ -2785,9 +2797,12 @@ html[data-theme="light"] .view-list article h3,
 html[data-theme="light"] main#app > div#view-products > div#catalogDynamic h3,
 html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
 html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 body:not([data-theme="dark"]) #pgrid article h3,
 body:not([data-theme="dark"]) #pgrid article > div:nth-of-type(2) > h3,
-body:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3 {
+body:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
+body:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1) {
   color: #000000 !important;
 }
 
