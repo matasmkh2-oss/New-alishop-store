@@ -74,6 +74,21 @@ window.addEventListener('error',function(e){
 <link rel="stylesheet" href="./assets/css/products-custom-view.css?v=11">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+// ترويض تنبيهات FedCM في بيئة الـ iframe لضمان هدوء الكونسول وتدفق تسجيل الدخول
+(function() {
+  var origWarn = console.warn;
+  var origError = console.error;
+  console.warn = function() {
+    if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('GSI_LOGGER') !== -1 && arguments[0].indexOf('identity-credentials-get') !== -1) return;
+    return origWarn.apply(console, arguments);
+  };
+  console.error = function() {
+    if (arguments.length > 0 && typeof arguments[0] === 'string' && arguments[0].indexOf('GSI_LOGGER') !== -1 && arguments[0].indexOf('identity-credentials-get') !== -1) return;
+    return origError.apply(console, arguments);
+  };
+})();
+</script>
+<script>
 /* مسح أي كاش قديم للموقع لضمان تحميل أحدث ملفات تسجيل الدخول وتحديث شاشات جوجل فوراً */
 try {
   if ('caches' in window) {
@@ -199,7 +214,7 @@ try {
 <dialog id="authDialog" class="sheet auth-sheet"><form id="authForm" class="sheet-body auth-sheet-body">
 <div class="grip"></div>
 <div class="sheet-head auth-head"><div class="auth-heading"><div class="auth-mark">A</div><div><h2 id="authTitle">تسجيل الدخول</h2><p id="authHint">أدخل بياناتك للوصول إلى حسابك بسرعة</p></div></div><button type="button" data-close-dialog="authDialog">×</button></div>
-<div class="auth-google-wrapper"><div id="gsiButtonContainer" class="gsi-button-container"></div><button id="authGoogle" type="button" class="auth-google-btn"><span class="auth-google-mark">G</span><span id="authGoogleText">الدخول باستخدام Google</span></button><button id="authGoogleFallbackLink" type="button" class="auth-google-fallback-link hidden" onclick="window.fallbackOAuthSignIn?.()">تعذر فتح نافذة Google؟ الدخول عبر المتصفح</button></div>
+<div class="auth-google-wrapper"><div id="gsiButtonContainer" class="gsi-button-container"></div><button id="authGoogleFallbackLink" type="button" class="auth-google-fallback-link hidden" onclick="window.fallbackOAuthSignIn?.()">تعذر فتح نافذة Google؟ الدخول عبر المتصفح</button></div>
 <div class="auth-divider"><span>أو باستخدام البريد الإلكتروني</span></div>
 <div id="registerFields" class="hidden auth-grid"><label>الاسم الكامل<input id="fullName"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
 <div class="auth-grid auth-grid-main"><label>البريد الإلكتروني<input id="email" type="email" required placeholder="name@example.com"></label><label>كلمة المرور<div class="password-wrapper"><input id="password" type="password" minlength="6" required placeholder="••••••••"><button type="button" class="toggle-password-icon" aria-label="إظهار أو إخفاء كلمة المرور" tabindex="-1"><svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg class="eye-closed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg></button></div></label></div>
@@ -300,10 +315,25 @@ document.addEventListener('click', function(e) {
       document.body.style.overflow = '';
     }
   } else if (e.target && e.target.id === 'authDialog') {
-    e.target.close();
+    try { e.target.close(); } catch(_) {}
+    e.target.removeAttribute('open');
     document.body.style.overflow = '';
   }
 }, true);
+
+var authDlgEl = document.getElementById('authDialog');
+if (authDlgEl) {
+  authDlgEl.addEventListener('click', function(e) {
+    if (e.target === authDlgEl) {
+      try { authDlgEl.close(); } catch(_) {}
+      authDlgEl.removeAttribute('open');
+      document.body.style.overflow = '';
+    }
+  });
+  authDlgEl.addEventListener('cancel', function() {
+    document.body.style.overflow = '';
+  });
+}
 
 /* حارس تحميل التطبيق: إذا تعذر بدء app.js أظهر رسالة بدل الشاشة الفارغة */
 setTimeout(function(){

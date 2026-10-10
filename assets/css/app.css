@@ -1519,12 +1519,17 @@ input:disabled,textarea:disabled,select:disabled,.styled-select-button:disabled{
 
   dialog.sheet.auth-sheet,
   dialog#authDialog {
-    width: min(calc(100% - 32px), 480px) !important;
+    inset: 0 !important;
+    margin: auto !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: min(calc(100% - 28px), 480px) !important;
     max-width: 480px !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    overflow: visible !important;
+    overflow: hidden !important;
+    border-radius: 28px !important;
   }
 
   dialog#authDialog .auth-sheet-body {
@@ -2153,8 +2158,8 @@ main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > articl
 main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
 main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
 main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
-main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
-main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1) {
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid.view-list:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article.pcard-row:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1) {
   margin: 0 0 3px 0 !important;
   font-size: 14.5px !important;
   font-weight: 750 !important;
@@ -2762,71 +2767,92 @@ article.catalog-image-card,
 
 
 
-/* Product title in Light Mode (الوضع النهاري باللون الأسود) */
-:root:not([data-theme="dark"]) #catalogDynamic h3,
-:root:not([data-theme="dark"]) #view-products h3,
-:root:not([data-theme="dark"]) #pgrid article h3,
-:root:not([data-theme="dark"]) #pgrid article > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) .pcard-row-main h3,
-:root:not([data-theme="dark"]) .pcard-row h3,
-:root:not([data-theme="dark"]) .product-card h3,
-:root:not([data-theme="dark"]) .catalog-image-card h3,
-:root:not([data-theme="dark"]) .catalog-image-grid article h3,
+/* Product title in Strip View ONLY (وضع عرض الأشرطة فقط): باللون الأسود في الوضع النهاري */
 :root:not([data-theme="dark"]) .catalog-image-grid.view-list article h3,
+:root:not([data-theme="dark"]) .catalog-image-grid.view-list .pcard-row-main h3,
 :root:not([data-theme="dark"]) .view-list article h3,
-:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic h3,
-:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article h3,
-:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
-html:not([data-theme="dark"]) #pgrid article h3,
-html:not([data-theme="dark"]) #pgrid article > div:nth-of-type(2) > h3,
-html:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-html:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
-html[data-theme="light"] #catalogDynamic h3,
-html[data-theme="light"] #view-products h3,
-html[data-theme="light"] #pgrid article h3,
-html[data-theme="light"] #pgrid article > div:nth-of-type(2) > h3,
-html[data-theme="light"] .pcard-row-main h3,
-html[data-theme="light"] .pcard-row h3,
-html[data-theme="light"] .product-card h3,
-html[data-theme="light"] .catalog-image-card h3,
-html[data-theme="light"] .catalog-image-grid article h3,
+:root:not([data-theme="dark"]) #pgrid.view-list article h3,
+:root:not([data-theme="dark"]) #pgrid.view-list article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) .pcard-row h3,
+:root:not([data-theme="dark"]) .pcard-row-main h3,
+:root:not([data-theme="dark"]) #pgrid article.pcard-row h3,
+:root:not([data-theme="dark"]) #pgrid article.pcard-row > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid.view-list:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article.pcard-row:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 html[data-theme="light"] .catalog-image-grid.view-list article h3,
+html[data-theme="light"] .catalog-image-grid.view-list .pcard-row-main h3,
 html[data-theme="light"] .view-list article h3,
-html[data-theme="light"] main#app > div#view-products > div#catalogDynamic h3,
-html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article h3,
-html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
-html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
-body:not([data-theme="dark"]) #pgrid article h3,
-body:not([data-theme="dark"]) #pgrid article > div:nth-of-type(2) > h3,
-body:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-body:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1) {
+html[data-theme="light"] #pgrid.view-list article h3,
+html[data-theme="light"] #pgrid.view-list article > div:nth-of-type(2) > h3,
+html[data-theme="light"] .pcard-row h3,
+html[data-theme="light"] .pcard-row-main h3,
+html[data-theme="light"] #pgrid article.pcard-row h3,
+html[data-theme="light"] #pgrid article.pcard-row > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid.view-list:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article.pcard-row:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+html:not([data-theme="dark"]) #pgrid.view-list article h3,
+html:not([data-theme="dark"]) #pgrid article.pcard-row h3,
+body:not([data-theme="dark"]) #pgrid.view-list article h3,
+body:not([data-theme="dark"]) #pgrid article.pcard-row h3 {
   color: #000000 !important;
 }
 
-/* Product title in Dark Mode (الوضع الليلي بالأبيض) */
+/* Product title in ALL other view modes (باقي أوضاع العرض: شبكة، مضغوط، كروت عادية) دائمًا بالأبيض في النهاري والليلي */
+.catalog-overlay h3,
+.catalog-image-grid:not(.view-list) article h3,
+.catalog-image-grid:not(.view-list) .catalog-overlay h3,
+#pgrid:not(.view-list) article h3,
+#pgrid:not(.view-list) article > div:nth-of-type(2) > h3,
+#pgrid:not(.view-list) .catalog-overlay h3,
+article:not(.pcard-row) h3,
+article:not(.pcard-row) .catalog-overlay h3,
+article:not(.pcard-row) > div:nth-of-type(2) > h3,
+.view-compact article h3,
+.view-compact .catalog-overlay h3,
+.view-grid article h3,
+.view-grid .catalog-overlay h3,
+.catalog-image-card:not(.pcard-row) h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:not(.view-list):nth-of-type(3) > article > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row) > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) .catalog-overlay h3,
+:root:not([data-theme="dark"]) .catalog-image-grid:not(.view-list) article h3,
+:root:not([data-theme="dark"]) #pgrid:not(.view-list) article h3,
+:root:not([data-theme="dark"]) #pgrid article:not(.pcard-row) h3,
+:root:not([data-theme="dark"]) #pgrid:not(.view-list) article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) #pgrid article:not(.pcard-row) > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:not(.view-list):nth-of-type(3) > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row) > div:nth-of-type(2) > h3,
+html[data-theme="light"] .catalog-overlay h3,
+html[data-theme="light"] .catalog-image-grid:not(.view-list) article h3,
+html[data-theme="light"] #pgrid:not(.view-list) article h3,
+html[data-theme="light"] #pgrid article:not(.pcard-row) h3,
+html[data-theme="light"] #pgrid:not(.view-list) article > div:nth-of-type(2) > h3,
+html[data-theme="light"] #pgrid article:not(.pcard-row) > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:not(.view-list):nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row) > div:nth-of-type(2) > h3,
+html:not([data-theme="dark"]) .catalog-overlay h3,
+body:not([data-theme="dark"]) .catalog-overlay h3,
 [data-theme="dark"] #catalogDynamic h3,
 html[data-theme="dark"] #catalogDynamic h3,
 body[data-theme="dark"] #catalogDynamic h3,
-[data-theme="dark"] #view-products h3,
-html[data-theme="dark"] #view-products h3,
-body[data-theme="dark"] #view-products h3,
-[data-theme="dark"] #pgrid article h3,
-[data-theme="dark"] #pgrid article > div:nth-of-type(2) > h3,
-[data-theme="dark"] .catalog-image-card h3,
-html[data-theme="dark"] .catalog-image-card h3,
-[data-theme="dark"] .product-card h3,
-html[data-theme="dark"] .product-card h3,
-[data-theme="dark"] .pcard-row-main h3,
-html[data-theme="dark"] .pcard-row-main h3,
 [data-theme="dark"] .catalog-overlay h3,
 html[data-theme="dark"] .catalog-overlay h3,
-[data-theme="dark"] main#app > div#view-products > div#catalogDynamic h3,
-html[data-theme="dark"] main#app > div#view-products > div#catalogDynamic h3,
-[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3,
-html[data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article > div:nth-of-type(2) > h3 {
+[data-theme="dark"] .pcard-row-main h3,
+html[data-theme="dark"] .pcard-row-main h3,
+[data-theme="dark"] .pcard-row h3,
+html[data-theme="dark"] .pcard-row h3,
+[data-theme="dark"] #pgrid.view-list article h3,
+html[data-theme="dark"] #pgrid.view-list article h3 {
   color: #ffffff !important;
 }
 

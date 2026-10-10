@@ -880,6 +880,7 @@
           const authDialog = document.getElementById('authDialog');
           if (authDialog && typeof authDialog.showModal === 'function') {
             authDialog.showModal();
+            try { if (typeof window.initGoogleIdentityServices === 'function') setTimeout(window.initGoogleIdentityServices, 30); } catch (_) {}
           } else {
             location.hash = '#/account';
           }

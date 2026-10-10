@@ -103,20 +103,621 @@ button#homeSearchBtn,
 :root:not([data-theme=dark]) .admin-tile,:root:not([data-theme=dark]) .stat,:root:not([data-theme=dark]) .stats,:root:not([data-theme=dark]) .admin-toolbar,:root:not([data-theme=dark]) .pagination{background:#f9f8ff!important;color:#29345b!important;border-color:#cbd0ee!important;box-shadow:0 10px 24px rgba(75,69,150,.10)!important}
 :root:not([data-theme=dark]) .admin-tile h3,:root:not([data-theme=dark]) .stat strong,:root:not([data-theme=dark]) .admin-toolbar strong{color:#29345b!important}:root:not([data-theme=dark]) .admin-tile p,:root:not([data-theme=dark]) .stat small{color:#68739a!important}
 :root:not([data-theme=dark]) .brand-logo{color:#6656d9!important;border-color:#8b79eb!important;background:linear-gradient(135deg,#e4e1ff,#f5e4fb)!important}
-/* Refined authentication sheet */
-#authDialog{width:min(520px,calc(100% - 24px));max-width:none;padding:0;border:0;border-radius:30px;background:transparent;box-shadow:0 28px 90px rgba(38,31,103,.28);overflow:visible}
-#authDialog::backdrop{background:rgba(33,31,77,.42);backdrop-filter:blur(8px)}
-.auth-sheet-body{position:relative;overflow:hidden;padding:28px!important;border:1px solid rgba(255,255,255,.72);border-radius:30px;background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(241,239,255,.96))!important;color:#29345b;box-shadow:inset 0 1px 0 #fff,0 18px 50px rgba(75,69,150,.18)!important}
-.auth-sheet-body::before{content:"";position:absolute;width:220px;height:220px;top:-120px;left:-70px;border-radius:50%;background:radial-gradient(circle,#bcaeff,transparent 70%);opacity:.34;pointer-events:none}.auth-sheet-body::after{content:"";position:absolute;width:190px;height:190px;right:-90px;bottom:-100px;border-radius:50%;background:radial-gradient(circle,#e5a4df,transparent 70%);opacity:.28;pointer-events:none}
-.auth-head,.auth-google-btn,.auth-divider,.auth-grid,.auth-submit,.auth-switch{position:relative;z-index:1}.auth-head{margin-bottom:20px!important}.auth-head h2{color:#29345b!important;font-size:25px!important;letter-spacing:-.02em}.auth-head p{color:#68739a!important}.auth-mark{width:58px;height:58px;border:5px solid #eeeaff;border-radius:20px;background:linear-gradient(135deg,#6656d9,#a04fd0)!important;box-shadow:0 12px 24px rgba(102,86,217,.25)!important}.auth-google-btn{border:1px solid #cbd0ee!important;border-radius:16px!important;color:#354064!important;background:#fff!important;box-shadow:0 8px 18px rgba(75,69,150,.07)}.auth-google-btn:hover{border-color:#a99aeb!important;box-shadow:0 12px 24px rgba(102,86,217,.14)}.auth-divider{color:#8a91ae!important}.auth-divider:before{border-color:#d5d7ed!important}.auth-divider span{background:#f7f6ff!important}.auth-grid label{color:#4a557d!important;font-weight:800}.auth-grid input{height:48px!important;margin-top:7px;border:1px solid #cbd0ee!important;border-radius:14px!important;background:rgba(255,255,255,.82)!important;color:#29345b!important;box-shadow:inset 0 1px 3px rgba(75,69,150,.04);outline:none}.auth-grid input:focus{border-color:#806fe1!important;box-shadow:0 0 0 4px rgba(102,86,217,.12)!important}.auth-sheet-body #authSubmit{position:relative;z-index:1;width:100%;height:50px;margin-top:18px;border:0;border-radius:15px;color:#fff!important;background:linear-gradient(135deg,#6656d9,#a04fd0)!important;box-shadow:0 12px 24px rgba(102,86,217,.25)}.auth-switch{color:#6656d9!important;background:transparent!important}.auth-head>button{position:relative;z-index:2;color:#68739a!important;background:#eceaff!important;border:1px solid #d5d7ed!important;border-radius:11px!important}
-@media(max-width:520px){#authDialog{width:calc(100% - 16px)}.auth-sheet-body{padding:22px 17px!important;border-radius:25px}.auth-head h2{font-size:21px!important}.auth-mark{width:50px;height:50px;border-radius:17px}.auth-grid{gap:9px}}
+/* Refined authentication sheet with light/dark glassmorphism & robust center responsiveness */
+dialog#authDialog:not([open]),
+dialog.sheet.auth-sheet:not([open]) {
+  display: none !important;
+}
+
+dialog#authDialog[open],
+dialog.sheet.auth-sheet[open] {
+  position: fixed !important;
+  inset: 0 !important;
+  margin: auto !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  width: min(480px, calc(100vw - 32px)) !important;
+  max-width: 480px !important;
+  height: -moz-fit-content !important;
+  height: fit-content !important;
+  max-height: min(90vh, 760px) !important;
+  max-height: min(90dvh, 760px) !important;
+  border-radius: 28px !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  z-index: 100000 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+  animation: authModalZoomIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+}
+
+@keyframes authModalZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+dialog#authDialog .grip {
+  display: none !important;
+}
+
+/* الوضع النهاري: تدرج زجاجي فخم من الكريستال والحرير بأطياف الخزامى والنيلي مع انعكاسات زجاجية راقية */
+:root:not([data-theme="dark"]) dialog#authDialog,
+html:not([data-theme="dark"]) dialog#authDialog,
+[data-theme="light"] dialog#authDialog {
+  background: 
+    radial-gradient(135% 120% at 100% 0%, rgba(139, 92, 246, 0.18) 0%, rgba(192, 132, 252, 0.08) 35%, transparent 65%),
+    radial-gradient(120% 100% at 0% 100%, rgba(45, 212, 191, 0.16) 0%, rgba(56, 189, 248, 0.08) 35%, transparent 60%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 246, 255, 0.88) 38%, rgba(241, 245, 255, 0.85) 70%, rgba(253, 248, 255, 0.90) 100%) !important;
+  backdrop-filter: blur(32px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.88) !important;
+  box-shadow: 
+    0 0 0 1px rgba(124, 58, 237, 0.10),
+    0 28px 75px -12px rgba(79, 70, 229, 0.22),
+    0 12px 35px -8px rgba(15, 23, 42, 0.12),
+    0 0 45px rgba(168, 85, 247, 0.10),
+    inset 0 1.5px 2.5px 0 rgba(255, 255, 255, 1),
+    inset 0 -1.5px 3px 0 rgba(124, 58, 237, 0.08) !important;
+  color: #172033 !important;
+}
+
+:root:not([data-theme="dark"]) dialog#authDialog::backdrop,
+html:not([data-theme="dark"]) dialog#authDialog::backdrop,
+[data-theme="light"] dialog#authDialog::backdrop {
+  background: rgba(15, 23, 42, 0.48) !important;
+  backdrop-filter: blur(12px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+}
+
+/* الوضع الليلي: تدرج زجاجي ملكي فخم بأطياف الأوبسيديان، الجمشت، النيلي والتركواز العميق */
+[data-theme="dark"] dialog#authDialog,
+html[data-theme="dark"] dialog#authDialog {
+  background: 
+    radial-gradient(135% 120% at 100% 0%, rgba(168, 85, 247, 0.28) 0%, rgba(139, 92, 246, 0.12) 40%, transparent 70%),
+    radial-gradient(120% 100% at 0% 100%, rgba(20, 184, 166, 0.22) 0%, rgba(6, 182, 212, 0.10) 38%, transparent 65%),
+    radial-gradient(100% 80% at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+    linear-gradient(155deg, rgba(22, 26, 48, 0.90) 0%, rgba(14, 18, 36, 0.94) 45%, rgba(25, 18, 44, 0.92) 80%, rgba(12, 22, 38, 0.92) 100%) !important;
+  backdrop-filter: blur(36px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.10),
+    0 35px 95px -15px rgba(0, 0, 0, 0.88),
+    0 16px 50px -10px rgba(124, 58, 237, 0.38),
+    0 0 55px rgba(20, 184, 166, 0.18),
+    inset 0 1.5px 2.5px 0 rgba(255, 255, 255, 0.30),
+    inset 0 -1.5px 3px 0 rgba(168, 85, 247, 0.22) !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] dialog#authDialog::backdrop,
+html[data-theme="dark"] dialog#authDialog::backdrop {
+  background: rgba(3, 7, 18, 0.76) !important;
+  backdrop-filter: blur(12px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(160%) !important;
+}
+
+dialog#authDialog .auth-sheet-body,
+dialog#authDialog form#authForm {
+  position: relative !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 28px 24px 22px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  max-height: min(92vh, 820px) !important;
+  max-height: min(92dvh, 820px) !important;
+}
+
+dialog#authDialog .auth-sheet-body::before {
+  content: "" !important;
+  position: absolute !important;
+  width: 260px !important;
+  height: 260px !important;
+  top: -120px !important;
+  left: -80px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(129, 140, 248, 0.35) 0%, rgba(192, 132, 252, 0.18) 45%, transparent 70%) !important;
+  pointer-events: none !important;
+  filter: blur(20px) !important;
+}
+dialog#authDialog .auth-sheet-body::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 240px !important;
+  height: 240px !important;
+  bottom: -100px !important;
+  right: -80px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle, rgba(45, 212, 191, 0.28) 0%, rgba(56, 189, 248, 0.14) 45%, transparent 70%) !important;
+  pointer-events: none !important;
+  filter: blur(20px) !important;
+}
+[data-theme="dark"] dialog#authDialog .auth-sheet-body::before {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.36) 0%, rgba(99, 102, 241, 0.20) 45%, transparent 70%) !important;
+}
+[data-theme="dark"] dialog#authDialog .auth-sheet-body::after {
+  background: radial-gradient(circle, rgba(20, 184, 166, 0.30) 0%, rgba(6, 182, 212, 0.16) 45%, transparent 70%) !important;
+}
+
+#authDialog .auth-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin-bottom: 20px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+#authDialog .auth-heading {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+}
+
+#authDialog .auth-mark {
+  width: 52px !important;
+  height: 52px !important;
+  border-radius: 18px !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, var(--p, #11b8b1), var(--p2, #2dd4bf)) !important;
+  box-shadow: 0 10px 24px rgba(17, 184, 177, 0.3) !important;
+  flex-shrink: 0 !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog .auth-mark {
+  border: 3px solid rgba(255, 255, 255, 0.9) !important;
+}
+
+[data-theme="dark"] #authDialog .auth-mark {
+  border: 3px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog #authTitle,
+:root:not([data-theme="dark"]) #authDialog .auth-head h2 {
+  color: #0f172a !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+  letter-spacing: -0.02em !important;
+}
+:root:not([data-theme="dark"]) #authDialog #authHint,
+:root:not([data-theme="dark"]) #authDialog .auth-head p {
+  color: #64748b !important;
+  font-size: 13px !important;
+  margin: 3px 0 0 !important;
+  line-height: 1.5 !important;
+}
+
+[data-theme="dark"] #authDialog #authTitle,
+[data-theme="dark"] #authDialog .auth-head h2 {
+  color: #f8fafc !important;
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+  letter-spacing: -0.02em !important;
+}
+[data-theme="dark"] #authDialog #authHint,
+[data-theme="dark"] #authDialog .auth-head p {
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+  margin: 3px 0 0 !important;
+  line-height: 1.5 !important;
+}
+
+#authDialog .auth-head > button,
+#authDialog [data-close-dialog="authDialog"] {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 22px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+  transition: all 0.2s ease !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog .auth-head > button,
+:root:not([data-theme="dark"]) #authDialog [data-close-dialog="authDialog"] {
+  color: #475569 !important;
+  background: rgba(241, 245, 249, 0.9) !important;
+  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+}
+:root:not([data-theme="dark"]) #authDialog .auth-head > button:hover,
+:root:not([data-theme="dark"]) #authDialog [data-close-dialog="authDialog"]:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+  transform: scale(1.05) !important;
+}
+
+[data-theme="dark"] #authDialog .auth-head > button,
+[data-theme="dark"] #authDialog [data-close-dialog="authDialog"] {
+  color: #cbd5e1 !important;
+  background: rgba(30, 41, 59, 0.85) !important;
+  border: 1px solid rgba(51, 65, 85, 0.8) !important;
+}
+[data-theme="dark"] #authDialog .auth-head > button:hover,
+[data-theme="dark"] #authDialog [data-close-dialog="authDialog"]:hover {
+  background: rgba(51, 65, 85, 1) !important;
+  color: #ffffff !important;
+  border-color: rgba(100, 116, 139, 0.8) !important;
+  transform: scale(1.05) !important;
+}
+
+#authDialog .auth-google-wrapper {
+  position: relative !important;
+  z-index: 1 !important;
+  width: 100% !important;
+}
+
+#authDialog .gsi-button-container {
+  width: 100% !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 44px !important;
+  margin: 0 auto !important;
+}
+
+#authDialog .gsi-button-container iframe {
+  margin: 0 auto !important;
+  max-width: 100% !important;
+}
+
+#authDialog .auth-google-btn {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  padding: 13px 16px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog .auth-google-btn {
+  color: #1e293b !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(203, 213, 225, 0.9) !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05) !important;
+}
+:root:not([data-theme="dark"]) #authDialog .auth-google-btn:hover {
+  background: #f8fafc !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.12) !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-theme="dark"] #authDialog .auth-google-btn {
+  color: #f8fafc !important;
+  background: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid rgba(51, 65, 85, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+[data-theme="dark"] #authDialog .auth-google-btn:hover {
+  background: rgba(51, 65, 85, 0.95) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+#authDialog .auth-google-mark {
+  font-weight: 900 !important;
+  font-size: 18px !important;
+  background: linear-gradient(135deg, #4285f4, #ea4335 33%, #fbbc05 66%, #34a853) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+#authDialog .auth-google-fallback-link {
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  margin-top: 6px !important;
+  display: block !important;
+  text-align: center !important;
+}
+[data-theme="dark"] #authDialog .auth-google-fallback-link {
+  color: #94a3b8 !important;
+}
+
+#authDialog .auth-divider {
+  position: relative !important;
+  z-index: 1 !important;
+  text-align: center !important;
+  margin: 18px 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog .auth-divider {
+  color: #94a3b8 !important;
+}
+:root:not([data-theme="dark"]) #authDialog .auth-divider::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 50% 0 auto !important;
+  border-top: 1px solid rgba(226, 232, 240, 0.9) !important;
+  z-index: 0 !important;
+}
+:root:not([data-theme="dark"]) #authDialog .auth-divider span {
+  position: relative !important;
+  z-index: 1 !important;
+  padding: 3px 14px !important;
+  border-radius: 9999px !important;
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+}
+
+[data-theme="dark"] #authDialog .auth-divider {
+  color: #64748b !important;
+}
+[data-theme="dark"] #authDialog .auth-divider::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 50% 0 auto !important;
+  border-top: 1px solid rgba(51, 65, 85, 0.7) !important;
+  z-index: 0 !important;
+}
+[data-theme="dark"] #authDialog .auth-divider span {
+  position: relative !important;
+  z-index: 1 !important;
+  padding: 3px 14px !important;
+  border-radius: 9999px !important;
+  background: #141c2e !important;
+  color: #94a3b8 !important;
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+}
+
+#authDialog .auth-grid {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 13px !important;
+  margin-bottom: 6px !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+#authDialog .auth-grid.hidden {
+  display: none !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog .auth-grid label {
+  color: #334155 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+[data-theme="dark"] #authDialog .auth-grid label {
+  color: #e2e8f0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+:root:not([data-theme="dark"]) #authDialog .auth-grid input {
+  height: 48px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 14px !important;
+  border: 1px solid rgba(203, 213, 225, 0.85) !important;
+  border-radius: 14px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #0f172a !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(255, 255, 255, 0.8) !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+:root:not([data-theme="dark"]) #authDialog .auth-grid input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.16), 0 2px 6px rgba(99, 102, 241, 0.08) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+:root:not([data-theme="dark"]) #authDialog .auth-grid input::placeholder {
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+[data-theme="dark"] #authDialog .auth-grid input {
+  height: 48px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 14px !important;
+  border: 1px solid rgba(51, 65, 85, 0.85) !important;
+  border-radius: 14px !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  color: #f8fafc !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+}
+[data-theme="dark"] #authDialog .auth-grid input:focus {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.22), 0 2px 8px rgba(56, 189, 248, 0.15) !important;
+  background: rgba(18, 28, 50, 0.85) !important;
+}
+[data-theme="dark"] #authDialog .auth-grid input::placeholder {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+#authDialog .password-wrapper {
+  position: relative !important;
+  width: 100% !important;
+}
+#authDialog .password-wrapper input {
+  padding-left: 42px !important;
+}
+#authDialog .toggle-password-icon {
+  position: absolute !important;
+  left: 12px !important;
+  right: auto !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 4px !important;
+  transition: color 0.15s ease !important;
+}
+:root:not([data-theme="dark"]) #authDialog .toggle-password-icon {
+  color: #64748b !important;
+}
+:root:not([data-theme="dark"]) #authDialog .toggle-password-icon:hover {
+  color: #0f172a !important;
+}
+[data-theme="dark"] #authDialog .toggle-password-icon {
+  color: #94a3b8 !important;
+}
+[data-theme="dark"] #authDialog .toggle-password-icon:hover {
+  color: #f8fafc !important;
+}
+
+#authDialog #authSubmit {
+  position: relative !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  height: 50px !important;
+  margin-top: 20px !important;
+  border: none !important;
+  border-radius: 16px !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  background: linear-gradient(135deg, var(--p, #11b8b1) 0%, var(--p2, #2dd4bf) 100%) !important;
+  box-shadow: 0 10px 25px -4px rgba(17, 184, 177, 0.40), 0 4px 10px -2px rgba(17, 184, 177, 0.25) !important;
+  cursor: pointer !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+#authDialog #authSubmit:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 16px 32px -4px rgba(17, 184, 177, 0.50), 0 6px 14px -2px rgba(17, 184, 177, 0.32) !important;
+  filter: brightness(1.04) !important;
+}
+#authDialog #authSubmit:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 6px 16px rgba(17, 184, 177, 0.35) !important;
+}
+
+#authDialog #switchAuth,
+#authDialog .auth-switch {
+  position: relative !important;
+  z-index: 1 !important;
+  width: 100% !important;
+  margin-top: 14px !important;
+  padding: 8px 12px !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  transition: color 0.15s ease !important;
+}
+:root:not([data-theme="dark"]) #authDialog #switchAuth,
+:root:not([data-theme="dark"]) #authDialog .auth-switch {
+  color: #6366f1 !important;
+}
+:root:not([data-theme="dark"]) #authDialog #switchAuth:hover,
+:root:not([data-theme="dark"]) #authDialog .auth-switch:hover {
+  color: #4f46e5 !important;
+  text-decoration: underline !important;
+}
+[data-theme="dark"] #authDialog #switchAuth,
+[data-theme="dark"] #authDialog .auth-switch {
+  color: #38bdf8 !important;
+}
+[data-theme="dark"] #authDialog #switchAuth:hover,
+[data-theme="dark"] #authDialog .auth-switch:hover {
+  color: #7dd3fc !important;
+  text-decoration: underline !important;
+}
+
+@media(max-width: 520px) {
+  dialog#authDialog[open],
+  dialog.sheet.auth-sheet[open] {
+    inset: 0 !important;
+    margin: auto !important;
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: calc(100% - 24px) !important;
+    max-width: calc(100% - 24px) !important;
+    border-radius: 24px !important;
+  }
+  dialog#authDialog .auth-sheet-body,
+  dialog#authDialog form#authForm {
+    padding: 22px 18px 18px !important;
+  }
+  #authDialog .auth-mark {
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 15px !important;
+    font-size: 21px !important;
+  }
+  #authDialog #authTitle,
+  #authDialog .auth-head h2 {
+    font-size: 20px !important;
+  }
+}
 
 .home-all-action{display:inline-flex!important;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:8px 15px!important;border:1px solid color-mix(in srgb,var(--p) 20%,var(--b))!important;border-radius:13px!important;color:var(--p)!important;background:color-mix(in srgb,var(--p) 10%,var(--s))!important;font-weight:800!important;white-space:nowrap!important;box-shadow:0 6px 16px color-mix(in srgb,var(--p) 10%,transparent)!important;transition:.2s transform,.2s background,.2s box-shadow!important}.home-all-action:hover{background:color-mix(in srgb,var(--p) 17%,var(--s))!important;transform:translateY(-2px)}
 /* Unified admin/order/wallet surfaces. */
 .admin-page .card,.admin-page .item,.admin-page .admin-tile,.admin-page .stat,.admin-page .admin-toolbar,.admin-page .admin-note-card,.admin-page .admin-order-pro,.admin-page .transaction-card,.admin-page .finance-card,[data-admin] .card,[data-admin] .item,[data-admin] .admin-tile,[data-admin] .stat,[data-admin] .admin-toolbar,[data-admin] .admin-note-card,[data-admin] .admin-order-pro,[data-admin] .transaction-card,[data-admin] .finance-card{border-radius:20px!important;border:1px solid color-mix(in srgb,var(--p) 18%,var(--b))!important;background:linear-gradient(145deg,color-mix(in srgb,var(--s) 96%,var(--p) 4%),color-mix(in srgb,var(--s2) 86%,var(--s) 14%))!important;color:var(--t)!important;box-shadow:0 10px 28px rgba(36,31,93,.10)!important}
 .admin-page .item h3,.admin-page .item-main h3,.admin-page .admin-tile h3,.admin-page .stat strong,.admin-page .admin-order-pro h3,[data-admin] .item h3,[data-admin] .item-main h3,[data-admin] .admin-tile h3,[data-admin] .stat strong{color:var(--t)!important}.admin-page .item p,.admin-page .item-main p,.admin-page .admin-tile p,.admin-page .stat small,.admin-page .admin-order-pro p,[data-admin] .item p,[data-admin] .item-main p,[data-admin] .admin-tile p,[data-admin] .stat small{color:var(--m)!important}
 :root:not([data-theme=dark]) .admin-page .card,:root:not([data-theme=dark]) .admin-page .item,:root:not([data-theme=dark]) .admin-page .admin-tile,:root:not([data-theme=dark]) .admin-page .stat,:root:not([data-theme=dark]) .admin-page .admin-toolbar,:root:not([data-theme=dark]) [data-admin] .card,:root:not([data-theme=dark]) [data-admin] .item{background:linear-gradient(145deg,#fff,#f0efff)!important;border-color:#cbd0ee!important;box-shadow:0 10px 28px rgba(75,69,150,.11)!important}
-[data-theme=dark] #authDialog::backdrop{background:rgba(0,0,0,.62)}[data-theme=dark] .auth-sheet-body{border-color:rgba(164,140,255,.22);background:linear-gradient(145deg,#171d36,#222044)!important;color:#f5f3ff;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 24px 70px rgba(0,0,0,.45)!important}[data-theme=dark] .auth-head h2{color:#f5f3ff!important}[data-theme=dark] .auth-head p,[data-theme=dark] .auth-divider{color:#b8b1d1!important}[data-theme=dark] .auth-divider span{background:#191d38!important}[data-theme=dark] .auth-google-btn{border-color:#3d4272!important;color:#f5f3ff!important;background:#202653!important}[data-theme=dark] .auth-grid label{color:#d8d3ed!important}[data-theme=dark] .auth-grid input{color:#f5f3ff!important;background:#11172f!important;border-color:#4a4b83!important}[data-theme=dark] .auth-head>button{color:#d8d3ed!important;background:#292653!important;border-color:#4a4b83!important}[data-theme=dark] .auth-switch{color:#b995ff!important}
 :root:not([data-theme=dark]) #app .item,:root:not([data-theme=dark]) #app .card.item{background:linear-gradient(145deg,#ffffff,#f0efff)!important;color:#29345b!important;border:1px solid #cbd0ee!important;box-shadow:0 10px 28px rgba(75,69,150,.11)!important}
 :root:not([data-theme=dark]) #app .item h3,:root:not([data-theme=dark]) #app .item strong{color:#29345b!important}:root:not([data-theme=dark]) #app .item p,:root:not([data-theme=dark]) #app .item small{color:#68739a!important}
 :root:not([data-theme=dark]) #app .home-section h2,:root:not([data-theme=dark]) #app .home-section p,:root:not([data-theme=dark]) #app .home-section .section-title{color:#29345b!important}:root:not([data-theme=dark]) #app .home-section p{color:#68739a!important}
@@ -548,7 +1149,7 @@ html[data-theme="dark"] .user-balance.positive {
    (الوضع النهاري: أسود بالكامل #000000 لمنع التداخل مع خلفية الحاوية البيضاء)
    ========================================================================== */
 
-/* 1. أسماء المنتجات في الوضع النهاري لوضع عرض الأشرطة (Strip/List View) باللون الأسود */
+/* 1. أسماء المنتجات في الوضع النهاري لوضع عرض الأشرطة فقط (Strip/List View) باللون الأسود */
 :root:not([data-theme="dark"]) .catalog-image-grid.view-list article h3,
 :root:not([data-theme="dark"]) .catalog-image-grid.view-list .pcard-row-main h3,
 :root:not([data-theme="dark"]) .pcard-row-main h3,
@@ -561,8 +1162,8 @@ html[data-theme="dark"] .user-balance.positive {
 :root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
 :root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
 :root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
-:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid.view-list:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article.pcard-row:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 html[data-theme="light"] .catalog-image-grid.view-list article h3,
 html[data-theme="light"] .catalog-image-grid.view-list .pcard-row-main h3,
 html[data-theme="light"] .pcard-row-main h3,
@@ -575,13 +1176,14 @@ html[data-theme="light"] #pgrid article.pcard-row > div:nth-of-type(2) > h3,
 html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
 html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
 html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
-html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
-html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid.view-list:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article.pcard-row:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 html:not([data-theme="dark"]) .pcard-row h3,
 html:not([data-theme="dark"]) .pcard-row-main h3,
 html:not([data-theme="dark"]) #pgrid.view-list article h3,
 body:not([data-theme="dark"]) .pcard-row h3,
-body:not([data-theme="dark"]) .pcard-row-main h3 {
+body:not([data-theme="dark"]) .pcard-row-main h3,
+body:not([data-theme="dark"]) #pgrid.view-list article h3 {
   color: #000000 !important;
 }
 
@@ -598,19 +1200,73 @@ body:not([data-theme="dark"]) .pcard-row-main h3 {
 [data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article h3,
 [data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid.view-list > article > div:nth-of-type(2) > h3,
 [data-theme="dark"] main#app > div#view-products > div#catalogDynamic > div#pgrid > article.pcard-row > div:nth-of-type(2) > h3,
-[data-theme="dark"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+[data-theme="dark"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid.view-list:nth-of-type(3) > article > div:nth-of-type(2) > h3,
+[data-theme="dark"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article.pcard-row:nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
 html[data-theme="dark"] .pcard-row h3,
 html[data-theme="dark"] .pcard-row-main h3,
 html[data-theme="dark"] #pgrid.view-list article h3,
 body[data-theme="dark"] .pcard-row h3,
-body[data-theme="dark"] .pcard-row-main h3 {
+body[data-theme="dark"] .pcard-row-main h3,
+body[data-theme="dark"] #pgrid.view-list article h3 {
   color: #ffffff !important;
 }
 
-/* 3. عناوين بطاقات العرض الشبكي (Catalog Overlay فوق الصورة) تظل بيضاء لوضوحها فوق طبقة التدرج الداكن */
+/* 3. أسماء المنتجات في كافة أوضاع العرض الأخرى (الشبكة، المضغوط، السلايدر، إلخ) تظل دائماً باللون الأبيض في الوضع النهاري والليلي */
 .catalog-overlay h3,
 .catalog-card .catalog-overlay h3,
-.catalog-image-card .catalog-overlay h3 {
+.catalog-image-card .catalog-overlay h3,
+.catalog-image-card:not(.pcard-row) h3,
+.catalog-image-grid:not(.view-list) article h3,
+.catalog-image-grid:not(.view-list) .catalog-overlay h3,
+#pgrid:not(.view-list) article h3,
+#pgrid:not(.view-list) article > div:nth-of-type(2) > h3,
+#pgrid:not(.view-list) .catalog-overlay h3,
+article:not(.pcard-row) h3,
+article:not(.pcard-row) .catalog-overlay h3,
+article:not(.pcard-row) > div:nth-of-type(2) > h3,
+.view-compact article h3,
+.view-compact .catalog-overlay h3,
+.view-grid article h3,
+.view-grid .catalog-overlay h3,
+.home-rail article h3,
+.home-rail .catalog-overlay h3,
+#homeRail article h3,
+#homeRail .catalog-overlay h3,
+.recent-products-slider article h3,
+.recent-products-slider .catalog-overlay h3,
+#recentProducts article h3,
+#recentProducts .catalog-overlay h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article h3,
+main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:not(.view-list):nth-of-type(3) > article > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row) > div:nth-of-type(2) > h3,
+main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row):nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+:root:not([data-theme="dark"]) .catalog-overlay h3,
+:root:not([data-theme="dark"]) .catalog-image-grid:not(.view-list) article h3,
+:root:not([data-theme="dark"]) #pgrid:not(.view-list) article h3,
+:root:not([data-theme="dark"]) #pgrid:not(.view-list) article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) #pgrid article:not(.pcard-row) h3,
+:root:not([data-theme="dark"]) #pgrid article:not(.pcard-row) > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:not(.view-list):nth-of-type(3) > article > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row) > div:nth-of-type(2) > h3,
+:root:not([data-theme="dark"]) main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row):nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+html[data-theme="light"] .catalog-overlay h3,
+html[data-theme="light"] .catalog-image-grid:not(.view-list) article h3,
+html[data-theme="light"] #pgrid:not(.view-list) article h3,
+html[data-theme="light"] #pgrid:not(.view-list) article > div:nth-of-type(2) > h3,
+html[data-theme="light"] #pgrid article:not(.pcard-row) h3,
+html[data-theme="light"] #pgrid article:not(.pcard-row) > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app > div#view-products > div#catalogDynamic > div#pgrid:not(.view-list) > article h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:not(.view-list):nth-of-type(3) > article > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row) > div:nth-of-type(2) > h3,
+html[data-theme="light"] main#app:nth-of-type(1) > div#view-products:nth-of-type(2) > div#catalogDynamic:nth-of-type(2) > div#pgrid:nth-of-type(3) > article:not(.pcard-row):nth-of-type(1) > div:nth-of-type(2) > h3:nth-of-type(1),
+html:not([data-theme="dark"]) #pgrid:not(.view-list) article h3,
+html:not([data-theme="dark"]) #pgrid article:not(.pcard-row) h3,
+html:not([data-theme="dark"]) .catalog-overlay h3,
+body:not([data-theme="dark"]) #pgrid:not(.view-list) article h3,
+body:not([data-theme="dark"]) #pgrid article:not(.pcard-row) h3,
+body:not([data-theme="dark"]) .catalog-overlay h3 {
   color: #ffffff !important;
 }
 
