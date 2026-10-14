@@ -63,7 +63,7 @@
         .or(`user_id.eq.${userId},user_id.is.null`)
         .eq('is_read', false)
         .order('created_at', { ascending: false })
-        .limit(99);
+        .limit(50);
       if (error) return;
       const rows = data || [];
       const newRows = rows.filter((row) => !lastSeen.has(row.id));

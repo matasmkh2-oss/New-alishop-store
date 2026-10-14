@@ -171,7 +171,7 @@
         <!-- رأس القائمة: الاسم والإيميل كبيانات نظيفة غير قابلة للضغط مع زر القلم -->
         <div class="pdm-header">
           <div class="pdm-avatar-wrap">
-            <img id="pdmAvatarImg" class="pdm-avatar" src="${PRESET_AVATARS[0]}" alt="الصورة الشخصية">
+            <img id="pdmAvatarImg" class="pdm-avatar" src="${PRESET_AVATARS[0]}" alt="الصورة الشخصية" loading="lazy" width="56" height="56" decoding="async">
             <button type="button" class="pdm-avatar-edit-icon" id="pdmAvatarBadgeBtn" title="تغيير الصورة الشخصية" aria-label="تغيير الصورة">
               <i data-lucide="camera"></i>
             </button>
@@ -247,7 +247,7 @@
           <!-- قسم الصورة الشخصية والأفاتار -->
           <div class="profile-edit-avatar-section">
             <div class="profile-edit-avatar-wrapper pe-avatar-preview-wrap">
-              <img id="peAvatarPreview" src="${PRESET_AVATARS[0]}" alt="معاينة الصورة" class="profile-edit-avatar-img pe-avatar-img">
+              <img id="peAvatarPreview" src="${PRESET_AVATARS[0]}" alt="معاينة الصورة" class="profile-edit-avatar-img pe-avatar-img" loading="lazy" width="80" height="80" decoding="async">
               <label for="peAvatarFileInput" class="profile-edit-avatar-badge pe-avatar-overlay" title="رفع صورة من جهازك">
                 <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path>
@@ -290,7 +290,7 @@
           btn.type = 'button';
           btn.className = 'pe-preset-btn';
           btn.title = `مظهر جاهز ${i + 1}`;
-          btn.innerHTML = `<img src="${url}" alt="أفاتار ${i + 1}">`;
+          btn.innerHTML = `<img src="${url}" alt="أفاتار ${i + 1}" loading="lazy" width="44" height="44" decoding="async">`;
           btn.onclick = () => {
             const preview = document.getElementById('peAvatarPreview');
             if (preview) preview.src = url;

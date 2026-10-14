@@ -58,20 +58,27 @@ window.addEventListener('error',function(e){
   <link rel="manifest" href="./manifest.webmanifest"><link id="dynamicFavicon" rel="icon" href="./assets/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://jcnbbingctwuathvfqty.supabase.co"><link rel="preconnect" href="https://esm.sh"><link rel="preconnect" href="https://unpkg.com"><link rel="dns-prefetch" href="https://jcnbbingctwuathvfqty.supabase.co">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 <link rel="stylesheet" href="./assets/css/app.css?v=1790770000000">
 <link rel="stylesheet" href="./assets/css/luxury-slider.css">
 <link rel="stylesheet" href="./assets/css/home-polish.css?v=1790770000000">
 <link rel="stylesheet" href="./assets/css/brand-polish.css?v=3">
 <link rel="stylesheet" href="./assets/css/recent-products-slider.css?v=30">
-<link rel="stylesheet" href="./assets/css/live-notifications.css">
-<link rel="stylesheet" href="./assets/css/toast-polish.css?v=1">
+<link rel="stylesheet" href="./assets/css/live-notifications.css" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="./assets/css/toast-polish.css?v=1" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="./assets/css/theme-cohesion.css?v=3">
-<link rel="stylesheet" href="./assets/css/modals-responsive.css?v=1790542859057">
+<link rel="stylesheet" href="./assets/css/modals-responsive.css?v=1790542859057" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="./assets/css/native-app-bar.css?v=11">
-<link rel="stylesheet" href="./assets/css/profile-menu.css?v=1">
-<link rel="stylesheet" href="./assets/css/notifications-drawer.css?v=1">
+<link rel="stylesheet" href="./assets/css/profile-menu.css?v=1" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="./assets/css/notifications-drawer.css?v=1" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="./assets/css/products-custom-view.css?v=11">
+<style>
+.product-image img, .catalog-image img, .catalog-image-card img, .pcard-row-thumb img, article.catalog-image-card img, #catalogGrid article img, #homeGrid article img {
+  aspect-ratio: 1 / 1 !important;
+  object-fit: cover !important;
+}
+</style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
 // ترويض تنبيهات FedCM في بيئة الـ iframe لضمان هدوء الكونسول وتدفق تسجيل الدخول
@@ -129,7 +136,7 @@ try {
       if(logo){
         var sl = document.getElementById("splashLogo");
         if(sl) {
-          sl.innerHTML = '<img src="' + logo + '" alt="شعار المتجر" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">';
+          sl.innerHTML = '<img src="' + logo + '" alt="شعار المتجر" width="48" height="48" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" onerror="this.remove()">';
           sl.classList.add("has-image");
         }
         var fav = document.getElementById("dynamicFavicon");
@@ -157,7 +164,7 @@ try {
   <div class="app-bar-top">
     <!-- القسم الأيمن: صورة شخصية دائرية مع نصوص الترحيب وسهم صغير للأسفل -->
     <a href="#/account" class="app-bar-user" id="headerProfileTrigger" title="حسابي">
-      <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" alt="صورة المستخدم" class="app-bar-avatar" onerror="this.onerror=null;this.src='./assets/icons/icon-192.png';">
+      <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" alt="صورة المستخدم" class="app-bar-avatar" width="40" height="40" decoding="async" onerror="this.onerror=null;this.src='./assets/icons/icon-192.png';">
       <div class="app-bar-user-info">
         <strong class="app-bar-user-name">محمد علي</strong>
         <span class="app-bar-user-greeting">مرحباً بك مجدداً</span>
@@ -193,7 +200,7 @@ try {
 </header>
 <!-- عناصر خفية للحفاظ على توافقية الدوال البرمجية لربط الثيم -->
 <div class="hidden" style="display:none;" aria-hidden="true">
-  <button id="themeButton" type="button" tabindex="-1"></button>
+  <button id="themeButton" type="button" tabindex="-1" aria-label="تبديل المظهر"></button>
 </div>
 <main id="app" class="page">
   <div id="view-home" class="spa-view active" data-view="home"></div>
@@ -216,16 +223,16 @@ try {
 <div class="sheet-head auth-head"><div class="auth-heading"><div class="auth-mark">A</div><div><h2 id="authTitle">تسجيل الدخول</h2><p id="authHint">أدخل بياناتك للوصول إلى حسابك بسرعة</p></div></div><button type="button" data-close-dialog="authDialog">×</button></div>
 <div class="auth-google-wrapper"><div id="gsiButtonContainer" class="gsi-button-container"></div><button id="authGoogleFallbackLink" type="button" class="auth-google-fallback-link hidden" onclick="window.fallbackOAuthSignIn?.()">تعذر فتح نافذة Google؟ الدخول عبر المتصفح</button></div>
 <div class="auth-divider"><span>أو باستخدام البريد الإلكتروني</span></div>
-<div id="registerFields" class="hidden auth-grid"><label>الاسم الكامل<input id="fullName"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
+<div id="registerFields" class="hidden auth-grid"><label>الاسم الكامل<input id="fullName" aria-label="الاسم الكامل" placeholder="الاسم الكامل"></label><label>رقم واتساب<input id="phone" type="tel" inputmode="numeric" placeholder="مثال: 9639..."></label></div>
 <div class="auth-grid auth-grid-main"><label>البريد الإلكتروني<input id="email" type="email" required placeholder="name@example.com"></label><label>كلمة المرور<div class="password-wrapper"><input id="password" type="password" minlength="6" required placeholder="••••••••"><button type="button" class="toggle-password-icon" aria-label="إظهار أو إخفاء كلمة المرور" tabindex="-1"><svg class="eye-open" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg><svg class="eye-closed" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="m15 18-.722-3.25"></path><path d="M2 8a10.645 10.645 0 0 0 20 0"></path><path d="m20 15-1.726-2.05"></path><path d="m4 15 1.726-2.05"></path><path d="m9 18 .722-3.25"></path></svg></button></div></label></div>
 <button id="authSubmit" class="btn primary block">دخول</button><button id="switchAuth" type="button" class="link-btn auth-switch">ليس لديك حساب؟ أنشئ حسابًا</button>
 </form></dialog>
 <dialog id="modalDialog" class="sheet wide"></dialog>
-<script src="./assets/vendor/lucide.min.js"></script>
-<script>if(!window.lucide){document.write('<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"><\/script>');}</script>
-<script src="./assets/vendor/supabase.min.js"></script>
-<script src="./assets/js/toast-polish.js?v=1"></script>
-<script src="./assets/js/auth-feedback.js?v=2"></script>
+<script src="./assets/vendor/lucide.min.js" defer></script>
+<script>if(!window.lucide){document.write('<script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js" defer><\/script>');}</script>
+<script src="./assets/vendor/supabase.min.js" defer></script>
+<script src="./assets/js/toast-polish.js?v=1" defer></script>
+<script src="./assets/js/auth-feedback.js?v=2" defer></script>
 <script type="module" src="./assets/js/app.js?v=1790750000000"></script>
 <script src="./assets/js/luxury-slider.js" defer></script>
 <script src="./assets/js/home-polish.js?v=28" defer></script>
@@ -255,15 +262,25 @@ function goToProductSearch() {
     location.hash = '#/products';
   }
 
-  // محاولة التركيز فوراً ثم إعادة المحاولة خلال ثوان حتى تنتهي الصفحة من التحميل والعرض
+  // استخدام MutationObserver لمنع حظر الخيط الرئيسي (TBT) مع مؤقت احتياطي 800ms
   if (!focusSearchField()) {
-    var attempts = 0;
-    var timer = setInterval(function() {
-      attempts++;
-      if (focusSearchField() || attempts > 30) {
-        clearInterval(timer);
-      }
-    }, 60);
+    if (typeof MutationObserver !== 'undefined') {
+      var obs = new MutationObserver(function() {
+        if (focusSearchField()) {
+          obs.disconnect();
+        }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+      setTimeout(function() { obs.disconnect(); }, 4000);
+    } else {
+      var attempts = 0;
+      var timer = setInterval(function() {
+        attempts++;
+        if (focusSearchField() || attempts > 5) {
+          clearInterval(timer);
+        }
+      }, 800);
+    }
   }
 }
 
